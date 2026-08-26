@@ -30,6 +30,9 @@ ios_project_StockScope/
 
 ## 一、用 GitHub Actions 云打包(推荐,无需 Mac)
 
+> **当前为无签名模式**:workflow 用 `CODE_SIGNING_ALLOWED=NO` 构建,产出未签名 IPA,用来先验证「构建 → 打包」流程。
+> 未签名 IPA 不能直接安装。需要签名时,恢复 workflow 顶部的签名步骤并配置 Secrets(见下文)。
+
 ### 1. 把代码推到 GitHub
 
 ```bash
@@ -37,6 +40,26 @@ git init && git add -A && git commit -m "init"
 git remote add origin git@github.com:<你的用户名>/ios_ipa_test.git
 git push -u origin main
 ```
+
+### 2. 触发打包
+
+- **自动**:push 到 `main` 分支即触发
+- **手动**:Actions 页面 → 选择 Build iOS IPA → Run workflow
+
+### 3. 取 IPA
+
+Workflow 跑完后,页面底部 **Artifacts** 区下载 `StockScope-IPA`,解压得到 `StockScope-unsigned.ipa`(未签名)。
+
+---
+
+## 二、恢复签名打包(可选,需要真机安装时再做)
+
+### 1. 恢复 workflow 签名步骤
+
+编辑 `.github/workflows/build-ipa.yml`:
+1. 删掉 archive 步骤里的 `CODE_SIGNING_ALLOWED=NO` / `CODE_SIGNING_REQUIRED=NO`
+2. 把文件顶部注释里的「导入签名证书与描述文件」步骤粘贴回「生成 Xcode 工程」之后
+3. 把「打包 IPA(未签名)」步骤换回 `xcodebuild -exportArchive`(参考原版,或直接问助手)
 
 ### 2. 在 GitHub 配置 Secrets
 
@@ -74,16 +97,9 @@ git push -u origin main
    把 base64 字符串粘到 `BUILD_PROVISION_PROFILE_BASE64`
 5. Team ID:登录 https://developer.apple.com/account → **Membership** → Team ID
 
-### 4. 触发打包
+### 4. 重新跑 workflow,下载 IPA
 
-- **自动**:push 到 `main` 分支即触发
-- **手动**:Actions 页面 → 选择 Build iOS IPA → Run workflow
-
-### 5. 取 IPA
-
-Workflow 跑完后,页面底部 **Artifacts** 区下载 `StockScope-IPA`,解压得到 `StockScope.ipa`。
-
-### 6. 安装到 iPhone
+### 5. 安装到 iPhone
 
 下载后两种方式:
 - **Mac**:双击 .ipa 自动打开 Xcode Organizer,选择设备 Install
@@ -91,20 +107,23 @@ Workflow 跑完后,页面底部 **Artifacts** 区下载 `StockScope-IPA`,解压�
 
 ---
 
-## 二、本机 Mac 直接打包
+## 三、本机 Mac 直接打包
 
 ```bash
 brew install xcodegen
+# 无签名(验证流程):
+UNSIGNED=1 ./build_ipa.sh
+# 自动签名(Xcode 已登录 Apple ID):
 ./build_ipa.sh
-# 或带 Team ID 的手动签名:
+# 手动签名:
 TEAM_ID=ABCDE12345 ./build_ipa.sh
 ```
 
-产物在 `build/StockScope.ipa`。
+产物:无签名模式在 `build/StockScope-unsigned.ipa`,签名模式在 `build/StockScope.ipa`。
 
 ---
 
-## 三、上架 App Store
+## 四、上架 App Store
 
 需要付费 Apple Developer Program(USD 99/年):
 1. 把 `exportOptions.plist` 与 workflow 里的 `<string>development</string>` 改成 `<string>app-store</string>`

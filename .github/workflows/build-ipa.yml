@@ -1,28 +1,41 @@
-# StockScope iOS 云打包
+# StockScope iOS 云打包(无签名版)
 #
 # 触发:push 到 main / 手动触发 (workflow_dispatch)
-# 输出:Artifacts 里下载 development 版 IPA,可用于自测或 TestFlight 上传
+# 输出:Artifacts 里下载 StockScope-unsigned.ipa(未签名,不能直接安装)
 #
-# ====== 签名机制 ======
-# 免费 Apple ID 与付费 Apple Developer Program 都适用,本 workflow 使用「手动签名」:
-#   - 仓库 Settings > Secrets and variables > Actions 配置以下 5 个 secrets:
-#     * BUILD_CERTIFICATE_BASE64   .p12 证书的 base64 编码(由 Mac 钥匙串导出)
-#     * P12_PASSWORD                导出 .p12 时设置的密码
-#     * BUILD_PROVISION_PROFILE_BASE64  .mobileprovision 描述文件的 base64 编码
-#     * KEYCHAIN_PASSWORD           本 workflow 临时 keychain 的密码(任意强字符串)
-#     * TEAM_ID                     Apple Developer Team ID(10 位字母数字)
-#   - 可选 PROVISIONING_PROFILE_NAME  描述文件名称,留空则按 bundle id 自动匹配
+# ====== 当前模式:无签名 ======
+# 先用 CODE_SIGNING_ALLOWED=NO 验证「构建 → 打包」全流程能否跑通。
+# 未签名 IPA 无法直接安装到 iPhone;如需签名,恢复手动签名方案:
+#   1. 在 archive 步骤去掉 CODE_SIGNING_ALLOWED=NO,改用:
+#        CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$TEAM_ID
+#   2. 恢复「导入签名证书与描述文件」步骤(见仓库 README「GitHub Actions 云打包」)
+#   3. 仓库 Secrets 配置:
+#        BUILD_CERTIFICATE_BASE64 / P12_PASSWORD /
+#        BUILD_PROVISION_PROFILE_BASE64 / KEYCHAIN_PASSWORD / TEAM_ID
 #
-# 准备步骤(需要一次性使用 Mac):
-#   1. 在 Xcode 用 Apple ID 登录,Personal Team 或付费开发者账号均可
-#   2. 用 iPhone USB 连一次 Mac,Xcode 跑一次 → 自动创建证书+包含设备 UDID 的描述文件
-#   3. 钥匙串访问 → 我的证书 → 右键 "Apple Development: 邮箱" → 导出 .p12
-#      base64 -i Certificates.p12 | pbcopy
-#   4. 在 Xcode 设置 → Apple Development → 复制描述文件路径
-#      或:~ ls ~/Library/MobileDevice/Provisioning\ Profiles/
-#      cp 选中的 .mobileprovision 到桌面,然后 base64 -i <profile>.mobileprovision | pbcopy
-#   5. Team ID:Apple ID 登录后 https://developer.apple.com/account → Membership → Team ID
-name: Build iOS IPA
+# ====== 参考:手动签名版 workflow 的签名部分(恢复时直接粘贴到对应位置)======
+#   - name: 导入签名证书与描述文件
+#     env:
+#       BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+#       P12_PASSWORD:              ${{ secrets.P12_PASSWORD }}
+#       BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+#       KEYCHAIN_PASSWORD:         ${{ secrets.KEYCHAIN_PASSWORD }}
+#     run: |
+#       set -euo pipefail
+#       CERT_PATH="$RUNNER_TEMP/build_certificate.p12"
+#       PP_PATH="$RUNNER_TEMP/build_pp.mobileprovision"
+#       KEYCHAIN="$RUNNER_TEMP/app-signing.keychain-db"
+#       echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
+#       echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
+#       security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+#       security set-keychain-settings -lut 21600 "$KEYCHAIN"
+#       security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+#       security import "$CERT_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+#       security list-keychain -d user -s "$KEYCHAIN"
+#       security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+#       mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+#       cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+name: Build iOS IPA (unsigned)
 
 on:
   push:
@@ -31,7 +44,7 @@ on:
 
 jobs:
   build-ipa:
-    name: Build StockScope IPA
+    name: Build unsigned StockScope IPA
     runs-on: macos-15        # 2026 年最新 macOS runner,自带 Xcode 16+
     timeout-minutes: 25
 
@@ -55,57 +68,9 @@ jobs:
       - name: 生成 Xcode 工程
         run: xcodegen generate
 
-      - name: 导入签名证书与描述文件
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-          P12_PASSWORD:              ${{ secrets.P12_PASSWORD }}
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD:         ${{ secrets.KEYCHAIN_PASSWORD }}
+      # 无签名归档:CODE_SIGNING_ALLOWED=NO 跳过所有签名
+      - name: 归档(archive,不签名)
         run: |
-          set -euo pipefail
-          CERT_PATH="$RUNNER_TEMP/build_certificate.p12"
-          PP_PATH="$RUNNER_TEMP/build_pp.mobileprovision"
-          KEYCHAIN="$RUNNER_TEMP/app-signing.keychain-db"
-
-          # 解码证书和描述文件
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
-
-          # 创建临时 keychain 并导入证书(不影响系统默认 keychain)
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security import "$CERT_PATH" -P "$P12_PASSWORD" \
-            -A -t cert -f pkcs12 -k "$KEYCHAIN"
-          security list-keychain -d user -s "$KEYCHAIN"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-
-          # 放置描述文件
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: 校验签名参数
-        env:
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-        run: |
-          if [ -z "$TEAM_ID" ]; then
-            echo "::error::TEAM_ID secret 未配置,请到仓库 Secrets 写入 Apple Developer Team ID"
-            exit 1
-          fi
-          echo "Team ID: $TEAM_ID"
-          xcodebuild -version
-
-      # 手动签名:CODE_SIGN_STYLE=Manual + 指定 Team
-      - name: 归档(archive)
-        env:
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          PROFILE_NAME: ${{ secrets.PROVISIONING_PROFILE_NAME }}
-        run: |
-          set -euo pipefail
-          PROFILE_ARGS=()
-          if [ -n "$PROFILE_NAME" ]; then
-            PROFILE_ARGS+=( "PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME" )
-          fi
           xcodebuild \
             -project "StockScope.xcodeproj" \
             -scheme "StockScope" \
@@ -113,41 +78,31 @@ jobs:
             -destination "generic/platform=iOS" \
             -archivePath "build/StockScope.xcarchive" \
             archive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM="$TEAM_ID" \
-            "${PROFILE_ARGS[@]}"
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
 
-      - name: 生成 exportOptions.plist(development)
-        env:
-          TEAM_ID: ${{ secrets.TEAM_ID }}
+      # 无签名时无法走 xcodebuild -exportArchive,直接从 xcarchive 提取 .app 手动打包
+      - name: 打包 IPA(未签名)
         run: |
-          cat > exportOptions.plist <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>development</string>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>teamID</key>
-              <string>$TEAM_ID</string>
-          </dict>
-          </plist>
-          EOF
-
-      - name: 导出 IPA
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath "build/StockScope.xcarchive" \
-            -exportOptionsPlist "exportOptions.plist" \
-            -exportPath "build"
-          ls -lh build/StockScope.ipa
+          set -euo pipefail
+          APP_PATH="build/StockScope.xcarchive/Products/Applications/StockScope.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::未找到 $APP_PATH,归档可能失败"
+            ls -R build/StockScope.xcarchive/Products 2>/dev/null || true
+            exit 1
+          fi
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          cd build
+          zip -qry StockScope-unsigned.ipa Payload/
+          cd ..
+          rm -rf build/Payload
+          ls -lh build/StockScope-unsigned.ipa
 
       - name: 上传 IPA 为构建产物
         uses: actions/upload-artifact@v4
         with:
           name: StockScope-IPA
-          path: build/StockScope.ipa
+          path: build/StockScope-unsigned.ipa
           if-no-files-found: error
           retention-days: 14
