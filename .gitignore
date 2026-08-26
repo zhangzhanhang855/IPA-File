@@ -1,0 +1,19 @@
+# Xcode 生成产物(由 xcodegen 生成,不入库)
+StockScope.xcodeproj/
+StockScope.xcworkspace/
+xcuserdata/
+DerivedData/
+
+# 打包产物
+build/
+*.xcarchive
+*.ipa
+exportOptions.local.plist
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

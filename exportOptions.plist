@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      method 说明:
+        development   真机测试(Sideloadly / Xcode 直接安装 / TestFlight)
+        app-store     上架 App Store(需要付费开发者账号)
+        ad-hoc        限定 UDID 设备安装
+        enterprise    企业内分发
+      上架前把 method 改为 app-store 即可,其他不变。
+    -->
+    <key>method</key>
+    <string>development</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>teamID</key>
+    <string></string>
+</dict>
+</plist>
