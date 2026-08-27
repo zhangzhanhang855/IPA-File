@@ -6,21 +6,45 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ipa:
+  package:
     runs-on: macos-latest
+
     steps:
-      - name: Checkout Repository
+      - name: 检出仓库代码
         uses: actions/checkout@v4
 
-      - name: Create Payload and Zip IPA
+      - name: 调试目录结构并打包
         run: |
-          mkdir Payload
-          # Adjust the source .app directory name as needed
-          cp -r *.app Payload/ 2>/dev/null || cp -r $(find . -maxdepth 2 -name "*.app") Payload/
-          zip -r -y unsigned_app.ipa Payload
+          echo "=== 仓库文件列表 ==="
+          ls -la
 
-      - name: Upload IPA Artifact
+          # 1. 递归查找所有 .app 目录
+          APP_PATH=$(find . -name "*.app" -type d -print -quit)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::未在仓库中找到任何 .app 目录！请确认仓库内是否已上传 .app 文件夹。"
+            exit 1
+          fi
+
+          echo "找到应用目录: $APP_PATH"
+
+          # 2. 清理并新建 Payload 文件夹
+          rm -rf Payload unsigned_app.ipa
+          mkdir -p Payload
+
+          # 3. 复制 .app 到 Payload 目录下（加双引号防止空格报错）
+          cp -RH "$APP_PATH" Payload/
+
+          # 4. 打包为未签名 IPA
+          zip -r -y unsigned_app.ipa Payload/
+
+          echo "=== 打包完成，验证 IPA 内容 ==="
+          unzip -l unsigned_app.ipa | head -n 15
+
+      - name: 上传 IPA 产物
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: unsigned-ipa
+          name: unsigned-app-ipa
           path: unsigned_app.ipa
+          retention-days: 7
