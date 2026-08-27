@@ -18,43 +18,45 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      - name: 编译 iOS App (无签名)
+      - name: Archive 编译应用
         run: |
-          # 查找生成的 xcodeproj 文件名
           PROJECT_NAME=$(find . -maxdepth 1 -name "*.xcodeproj" -print -quit)
           
-          # 编译成 Release 架构的 .app
-          xcodebuild clean build \
+          # 1. 编译生成标准 .xcarchive
+          xcodebuild archive \
             -project "$PROJECT_NAME" \
             -scheme StockScope \
             -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath ./build \
+            -destination "generic/platform=iOS" \
+            -archivePath ./build/StockScope.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
-      - name: 提取 .app 并打包为未签名 IPA
+      - name: 提取完整 App 并规范打包 IPA
         run: |
-          mkdir -p Payload
+          # 2. 定位 xcarchive 内生成的标准可执行 App 目录
+          APP_PATH="./build/StockScope.xcarchive/Products/Applications/StockScope.app"
           
-          # 从编译产物中找到 StockScope.app 并复制到 Payload
-          APP_DIR=$(find ./build -name "*.app" -type d -print -quit)
-          
-          if [ -z "$APP_DIR" ]; then
-            echo "::error::编译失败，未找到生成的 .app 文件！"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::未在 xcarchive 中找到 StockScope.app！"
             exit 1
           fi
-          
-          echo "找到编译产物: $APP_DIR"
-          cp -RH "$APP_DIR" Payload/
-          
-          # 压缩为 IPA
+
+          echo "验证 App 主二进制文件..."
+          ls -la "$APP_PATH"
+
+          # 3. 构造干净的 Payload 结构
+          rm -rf Payload StockScope_unsigned.ipa
+          mkdir Payload
+          cp -RH "$APP_PATH" Payload/
+
+          # 4. 压缩为标准 IPA
           zip -r -y StockScope_unsigned.ipa Payload/
 
       - name: 上传 IPA 构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: StockScope-unsigned-ipa
+          name: StockScope_unsigned.ipa
           path: StockScope_unsigned.ipa
           retention-days: 7
