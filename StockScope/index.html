@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Music Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Google Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Load Google Sans Webfonts -->
+    <style>
+        @font-face {
+            font-family: 'Google Sans';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/googlesans/v58/4UaGrENHsxJlGDuGo1OIlL3Owp4.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Google Sans';
+            font-style: normal;
+            font-weight: 500;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwM.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Google Sans';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLV14YtzCwM.woff2') format('woff2');
+        }
+
+        /* Enforce Google Sans everywhere */
+        *, *::before, *::after, html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed, 
+        figure, figcaption, footer, header, hgroup, 
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video, input, button, select, textarea {
+            font-family: 'Google Sans', sans-serif !important;
+        }
+
+        body { 
+            background: #000; 
+            color: #fff; 
+            min-height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #app-container { width: 100vw; height: 100vh; box-sizing: border-box; }
+        #win-content-main { width: 100%; height: 100%; position: relative; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="win-content-main"></div>
+    </div>
+
+    <script>
+        const winObj = { id: 'main', onDestroy: () => {} };
+        const content = document.getElementById('win-content-' + winObj.id);
+
+        // ==========================================
+        // 1. Dynamic Stylesheet Injection
+        // ==========================================
+        const styleEl = document.createElement('style');
+        styleEl.innerHTML = `
+            #win-content-${winObj.id} {
+                --am-red: #fa233b;
+                --am-bg: rgba(0, 0, 0, 0.4);
+                height: 100%; 
+                font-family: 'Google Sans', sans-serif !important;
+            }
+            
+            /* Dynamic Gaussian Blur Background */
+            .am-bg-blur {
+                position: absolute;
+                inset: -10%;
+                background-size: cover;
+                background-position: center;
+                filter: blur(60px) brightness(0.4) saturate(1.5);
+                z-index: 0;
+                transition: background-image 0.8s ease-in-out;
+            }
+
+            /* Main Layout */
+            .am-layout {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                width: 100%;
+                overflow-y: auto;
+                overflow-x: hidden;
+                scroll-snap-type: y proximity;
+                font-family: 'Google Sans', sans-serif !important;
+            }
+            @media (min-width: 768px) {
+                .am-layout { 
+                    flex-direction: row; 
+                    overflow-y: hidden; 
+                    scroll-snap-type: none;
+                }
+            }
+
+            .am-player-panel, .am-lyrics-panel {
+                scroll-snap-align: start;
+            }
+
+            .am-player-panel {
+                background: var(--am-bg);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-right: 1px solid rgba(255,255,255,0.05);
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Album Artwork */
+            .am-cover-art {
+                width: 100%;
+                aspect-ratio: 1/1;
+                border-radius: 12px;
+                background-color: #1a1a1a;
+                background-size: cover;
+                background-position: center;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+                transition: opacity 0.5s ease, transform 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+            .am-cover-art.playing {
+                transform: scale(1.02);
+            }
+
+            /* Lyric Gradient Mask */
+            .lyrics-mask { 
+                -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%); 
+                mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%); 
+            }
+
+            /* Immersive Lyrics Typography */
+            .lyric-line { 
+                font-family: 'Google Sans', sans-serif !important;
+                transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); 
+                color: rgba(255, 255, 255, 0.4); 
+                padding: 10px 0; 
+                font-size: 20px; 
+                font-weight: 700;
+                line-height: 1.4; 
+                cursor: pointer; 
+                transform-origin: left center;
+                filter: blur(0.5px);
+                text-align: left;
+                width: 100%;
+            }
+            @media (min-width: 768px) {
+                .lyric-line { font-size: 32px; padding: 12px 0; line-height: 1.3; }
+            }
+            
+            .lyric-line:hover { 
+                color: rgba(255, 255, 255, 0.8); 
+            }
+            
+            .lyric-line.active { 
+                color: #ffffff; 
+                font-size: 26px; 
+                transform: scale(1.02); 
+                filter: blur(0px);
+                text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            }
+            @media (min-width: 768px) {
+                .lyric-line.active { font-size: 44px; transform: scale(1.05); }
+            }
+            
+            .hidden-ui { display: none !important; }
+            
+            .track-active {
+                background: rgba(250, 35, 59, 0.15);
+                color: var(--am-red);
+                font-weight: 600;
+            }
+        `;
+        content.appendChild(styleEl);
+
+        // ==========================================
+        // 2. HTML Structure
+        // ==========================================
+        content.innerHTML += `
+        <div id="dynamic-bg" class="am-bg-blur"></div>
+        
+        <div class="am-layout no-scrollbar">
+            <!-- Left Panel: Controls & Library -->
+            <section class="am-player-panel w-full md:w-[380px] lg:w-[420px] flex-shrink-0 p-5 md:p-8 flex flex-col min-h-[100dvh] md:min-h-0 md:h-full z-10">
+                
+                <!-- Album Artwork -->
+                <div class="relative w-[55%] sm:w-[60%] md:w-full max-w-[260px] md:max-w-[300px] mx-auto mb-5 md:mb-6">
+                    <div id="cover-art-${winObj.id}" class="am-cover-art opacity-0"></div>
+                    <span class="absolute inset-0 flex items-center justify-center text-5xl md:text-6xl pointer-events-none" id="cover-emoji">🎵</span>
+                </div>
+
+                <!-- Track Info -->
+                <div class="mb-4 md:mb-6 text-center md:text-left">
+                    <h2 class="text-xl md:text-2xl font-bold text-white truncate tracking-tight font-sans" id="title">Not Playing</h2>
+                    <div class="flex items-center justify-center md:justify-start gap-2 mt-1 md:mt-2">
+                        <span class="text-[10px] md:text-sm font-semibold text-white/50 bg-white/10 px-2 py-0.5 rounded font-sans" id="lcd-mode">LIST</span>
+                        <span class="text-[10px] md:text-sm font-medium text-white/60 font-sans">JRmusic Engine</span>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex flex-col mb-4 md:mb-6">
+                    <div class="flex justify-between text-[10px] md:text-xs text-white/50 font-medium mb-3 md:mb-4 px-2 font-sans">
+                        <span id="cur-time">00:00</span>
+                        <button id="mode-btn" class="hover:text-white transition-colors font-sans">MODE</button>
+                    </div>
+                    
+                    <div class="flex justify-center items-center gap-6 md:gap-8">
+                        <button class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/50 hover:text-white transition-colors font-sans" onclick="btnMode.click()">
+                            <svg width="20" height="20" class="md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                        </button>
+                        
+                        <button class="w-14 h-14 md:w-16 md:h-16 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg font-sans" id="btn-play">
+                            <div class="w-0 h-0 border-y-[8px] border-y-transparent border-l-[14px] border-l-black ml-1" id="play-icon"></div>
+                        </button>
+                        
+                        <button class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white hover:text-white/70 transition-colors font-sans" id="btn-next">
+                            <svg width="20" height="20" class="md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4z"/><path d="M15 4h4v16h-4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Playlist Section -->
+                <div class="flex-1 flex flex-col min-h-[300px] md:min-h-0 bg-black/20 rounded-xl overflow-hidden border border-white/5">
+                    <div class="p-2 md:p-3 border-b border-white/5 bg-black/20">
+                        <div class="flex gap-2">
+                            <input class="flex-1 min-w-0 bg-white/10 border border-transparent rounded px-2 py-1.5 text-[10px] md:text-xs outline-none focus:border-white/20 text-white transition-colors placeholder-white/30 font-sans" id="gh-user" placeholder="GitHub User" type="text">
+                            <input class="flex-1 min-w-0 bg-white/10 border border-transparent rounded px-2 py-1.5 text-[10px] md:text-xs outline-none focus:border-white/20 text-white transition-colors placeholder-white/30 font-sans" id="gh-repo" placeholder="Repository" type="text">
+                            <button class="px-2 md:px-3 bg-[#fa233b] text-white rounded text-[10px] md:text-xs font-semibold hover:bg-rose-600 transition-colors shrink-0 font-sans" id="btn-sync">SYNC</button>
+                        </div>
+                    </div>
+                    
+                    <div class="px-2 md:px-3 pt-2 md:pt-3">
+                        <input class="w-full bg-white/5 border border-transparent rounded-lg p-2 text-xs outline-none focus:bg-white/10 text-white placeholder-white/30 transition-colors font-sans" id="search-input" placeholder="Search tracks..." type="text">
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar mt-2 md:mt-3 pb-1" id="playlist-nav"></div>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto no-scrollbar p-2">
+                        <ul id="track-list" class="space-y-1 font-sans"></ul>
+                    </div>
+                    
+                    <div class="p-2 text-center bg-black/40">
+                        <p class="text-[10px] text-white/40 font-medium flex justify-center items-center gap-1 font-sans" id="net-status">System Standby</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Immersive Lyrics -->
+            <section class="am-lyrics-panel flex-1 flex flex-col min-h-[100dvh] md:min-h-0 md:h-full relative z-10 p-5 md:pl-12 md:pr-12 md:pt-8">
+                <div class="absolute top-6 right-5 md:top-8 md:right-12 z-20">
+                    <span class="text-[9px] md:text-xs font-bold text-white/30 uppercase tracking-widest bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm font-sans" id="lyrics-status">LYRICS SYSTEM</span>
+                </div>
+                
+                <div class="flex-1 relative w-full overflow-hidden lyrics-mask">
+                    <div id="lyrics-container-${winObj.id}" class="absolute inset-0 overflow-y-auto no-scrollbar" style="scroll-behavior: smooth;">
+                        <div id="lyrics-content-${winObj.id}" class="w-full max-w-3xl mx-auto pb-[60vh] pt-[40vh] flex flex-col px-0 md:px-4">
+                            <div class="text-left text-white/30 text-lg md:text-xl font-medium mt-10 tracking-widest font-sans">
+                                Loading Lyrics...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <audio id="player-audio-${winObj.id}" playsinline></audio>`;
+
+        // ==========================================
+        // 3. State & References Initialization
+        // ==========================================
+        const audio = content.querySelector('#player-audio-' + winObj.id);
+        const titleEl = content.querySelector('#title');
+        const curTimeEl = content.querySelector('#cur-time');
+        const playIcon = content.querySelector('#play-icon');
+        const btnPlay = content.querySelector('#btn-play');
+        const btnNext = content.querySelector('#btn-next');
+        const btnMode = content.querySelector('#mode-btn');
+        const lcdMode = content.querySelector('#lcd-mode');
+        const navContainer = content.querySelector('#playlist-nav');
+        const listContainer = content.querySelector('#track-list');
+        const searchInput = content.querySelector('#search-input');
+        const artEl = content.querySelector('#cover-art-' + winObj.id);
+        const dynBgEl = content.querySelector('#dynamic-bg');
+        const emjEl = content.querySelector('#cover-emoji');
+        const netStatus = content.querySelector('#net-status');
+        const ghUserInp = content.querySelector('#gh-user');
+        const ghRepoInp = content.querySelector('#gh-repo');
+        const btnSync = content.querySelector('#btn-sync');
+        
+        const lyricsContainerEl = content.querySelector(`#lyrics-container-${winObj.id}`);
+        const lyricsContentEl = content.querySelector(`#lyrics-content-${winObj.id}`);
+        const lyricsStatusEl = content.querySelector('#lyrics-status');
+
+        let playlists = {};
+        let currentPlaylist = 'Root';
+        let filteredTracks = [];
+        let curIdx = 0;
+        let loopMode = 'list';
+        let currentCoverObjectURL = null;
+        
+        let parsedLyrics = [];
+        let currentLyricIndex = -1;
+        let isSyncedLyrics = false;
+
+        let currentTrackMeta = { title: '', artist: 'JRmusic', album: 'Local Music', coverUrl: null };
+
+        const savedUser = localStorage.getItem('jrmusic_gh_user') || 'zhangzhanhang855';
+        const savedRepo = localStorage.getItem('jrmusic_gh_repo') || 'musiconly';
+        ghUserInp.value = savedUser;
+        ghRepoInp.value = savedRepo;
+
+        if (!window.jsmediatags) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js';
+            document.head.appendChild(script);
+        }
+
+        // ==========================================
+        // 4. ID3 Lyric Parser
+        // ==========================================
+        function aggressivelyFindLyrics(tags) {
+            if (!tags) return "";
+
+            const extract = (obj) => {
+                if (!obj) return "";
+                if (typeof obj === 'string') return obj;
+                if (typeof obj.text === 'string') return obj.text;
+                if (typeof obj.lyrics === 'string') return obj.lyrics;
+                if (obj.data) {
+                    if (typeof obj.data === 'string') return obj.data;
+                    if (typeof obj.data.text === 'string') return obj.data.text;
+                }
+                return "";
+            };
+
+            let primary = extract(tags.lyrics) || extract(tags.USLT) || extract(tags.SYLT);
+            if (primary && primary.includes('[')) return primary;
+
+            for (let key in tags) {
+                const item = tags[key];
+                const arr = Array.isArray(item) ? item : [item];
+                
+                for (let i of arr) {
+                    let txt = extract(i);
+                    if (typeof txt === 'string' && txt.includes('[00:')) return txt;
+                    
+                    if (i && i.data) {
+                        let deepTxt = extract(i.data.data) || extract(i.data);
+                        if (typeof deepTxt === 'string' && deepTxt.includes('[00:')) return deepTxt;
+                    }
+                }
+            }
+            return primary; 
+        }
+
+        // ==========================================
+        // 5. Lyrics Processing (Pure Lyrics Only)
+        // ==========================================
+        function processLyrics(rawText, source) {
+            if (!rawText || typeof rawText !== 'string') {
+                parsedLyrics = [];
+                isSyncedLyrics = false;
+                lyricsStatusEl.innerText = "INSTRUMENTAL";
+                lyricsContentEl.innerHTML = '<div class="text-left text-white/30 text-xl font-medium mt-10 tracking-widest font-sans">Instrumental</div>';
+                return;
+            }
+            
+            const cleanText = rawText.replace(/\0/g, '').trim();
+            const lines = cleanText.split(/\r?\n/);
+            
+            const timeReg = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
+            parsedLyrics = [];
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                let match;
+                let timeTags = [];
+                timeReg.lastIndex = 0; 
+                
+                while ((match = timeReg.exec(line)) !== null) {
+                    const m = parseInt(match[1], 10);
+                    const s = parseInt(match[2], 10);
+                    const msStr = match[3] || '0';
+                    const ms = parseInt(msStr.padEnd(3, '0').slice(0, 3), 10);
+                    timeTags.push(m * 60 + s + ms / 1000);
+                }
+                
+                if (timeTags.length > 0) {
+                    let text = line.replace(/\[\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?\]/g, '').trim();
+                    text = text.replace(/[（(](?:翻译|translation)[：:].*?[）)]/gi, '').trim();
+                    
+                    for (let t of timeTags) {
+                        parsedLyrics.push({ time: t, text: text || '...' });
+                    }
+                }
+            }
+            
+            if (parsedLyrics.length > 0) {
+                isSyncedLyrics = true;
+                lyricsStatusEl.innerText = `${source}`;
+                
+                parsedLyrics.sort((a, b) => a.time - b.time);
+                
+                lyricsContentEl.innerHTML = parsedLyrics.map((l, i) => 
+                    `<div class="lyric-line font-sans" id="lyric-${i}" data-time="${l.time}">
+                        <span class="block">${l.text}</span>
+                    </div>`
+                ).join('');
+                
+                lyricsContentEl.style.paddingTop = '40vh';
+                lyricsContentEl.style.paddingBottom = '60vh';
+                
+                lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => {
+                    el.onclick = () => {
+                        audio.currentTime = parseFloat(el.getAttribute('data-time'));
+                        if (audio.paused) audio.play();
+                    };
+                });
+            } else {
+                isSyncedLyrics = false;
+                lyricsStatusEl.innerText = `TEXT [${source}]`;
+                lyricsContentEl.style.paddingTop = '10vh';
+                lyricsContentEl.style.paddingBottom = '10vh';
+                lyricsContentEl.innerHTML = `<div class="text-left text-white/50 text-xl whitespace-pre-wrap leading-loose px-2 font-sans">${cleanText}</div>`;
+            }
+        }
+
+        // ==========================================
+        // 6. Playback & MediaSession Control
+        // ==========================================
+        const updateMediaSession = (lyricText = null) => {
+            if ('mediaSession' in navigator) {
+                const displayArtist = lyricText ? lyricText : currentTrackMeta.artist;
+                
+                navigator.mediaSession.metadata = new MediaMetadata({ 
+                    title: currentTrackMeta.title, 
+                    artist: displayArtist, 
+                    album: currentTrackMeta.album, 
+                    artwork: currentTrackMeta.coverUrl ? [{ src: currentTrackMeta.coverUrl, sizes: '512x512', type: 'image/jpeg' }] : [] 
+                });
+                
+                navigator.mediaSession.setActionHandler('play', () => audio.play());
+                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => executeLoad((curIdx - 1 + filteredTracks.length) % filteredTracks.length, true));
+                navigator.mediaSession.setActionHandler('nexttrack', () => btnNext.click());
+            }
+        };
+
+        const filterAudio = (items) => {
+            const audioRegex = /\.(mp3|flac|wav|m4a)$/i;
+            const extRegex = /\.[^/.]+$/;
+            return items.filter(f => audioRegex.test(f.name)).map(f => ({
+                t: f.name.replace(extRegex, ''), u: f.download_url
+            }));
+        };
+
+        const renderNav = () => {
+            navContainer.innerHTML = Object.keys(playlists).map(name => `<button class="text-[10px] md:text-xs px-3 py-1 bg-white/10 rounded-full hover:bg-white/20 transition-colors whitespace-nowrap btn-nav font-sans" data-name="${name}">${name}</button>`).join('');
+            navContainer.querySelectorAll('.btn-nav').forEach(btn => btn.onclick = () => switchPlaylist(btn.dataset.name));
+        };
+
+        const renderList = () => {
+            listContainer.innerHTML = filteredTracks.map((s, i) => {
+                const isActive = curIdx === i;
+                const activeClass = isActive ? 'track-active' : 'text-white/60 hover:bg-white/5';
+                const playingAnim = isActive && !audio.paused ? `<span class="inline-block w-1.5 h-1.5 bg-[#fa233b] rounded-full animate-pulse ml-2"></span>` : '';
+                return `<li class="p-2 md:p-3 text-xs md:text-sm rounded-lg cursor-pointer transition-colors font-sans ${activeClass}" data-idx="${i}">
+                    <span class="opacity-50 mr-2 font-sans">${String(i + 1).padStart(2, '0')}</span>${s.t} ${playingAnim}
+                </li>`;
+            }).join('');
+            listContainer.querySelectorAll('li').forEach(item => item.onclick = () => executeLoad(parseInt(item.dataset.idx), true));
+        };
+
+        const switchPlaylist = (name) => {
+            currentPlaylist = name;
+            filteredTracks = [...playlists[name]];
+            renderList();
+            if (filteredTracks.length > 0) executeLoad(0, false);
+        };
+
+        const executeLoad = (idx, auto) => {
+            if (filteredTracks.length === 0) return;
+            curIdx = idx;
+            const song = filteredTracks[curIdx];
+            
+            audio.src = song.u;
+            audio.load();
+            titleEl.innerText = song.t;
+
+            currentTrackMeta = {
+                title: song.t,
+                artist: 'JRmusic',
+                album: currentPlaylist,
+                coverUrl: null
+            };
+
+            artEl.classList.remove('loaded', 'opacity-100');
+            artEl.classList.add('opacity-0');
+            artEl.style.backgroundImage = 'none';
+            dynBgEl.style.backgroundImage = 'none';
+            emjEl.style.opacity = '1';
+            
+            currentLyricIndex = -1;
+            processLyrics(null, '');
+            lyricsContainerEl.scrollTo({ top: 0, behavior: 'auto' });
+
+            if (currentCoverObjectURL) {
+                URL.revokeObjectURL(currentCoverObjectURL);
+                currentCoverObjectURL = null;
+            }
+
+            updateMediaSession();
+            if (auto) audio.play().catch(e => console.log('Wait gesture:', e));
+            else renderList();
+
+            let lyricsFound = false;
+
+            const lrcUrl = song.u.replace(/\.(mp3|flac|wav|m4a)$/i, '.lrc');
+            fetch(lrcUrl)
+                .then(res => { if (res.ok) return res.text(); throw new Error(); })
+                .then(lrcText => {
+                    if (lrcText && lrcText.trim()) {
+                        lyricsFound = true;
+                        processLyrics(lrcText, 'LRC FILE');
+                    }
+                })
+                .catch(e => {});
+
+            fetch(song.u)
+                .then(res => { if (!res.ok) throw new Error(); return res.blob(); })
+                .then(audioBlob => {
+                    if (!window.jsmediatags) return;
+                    new window.jsmediatags.Reader(audioBlob).read({
+                        onSuccess: (tag) => {
+                            if (tag.tags.title) {
+                                currentTrackMeta.title = tag.tags.title;
+                                titleEl.innerText = tag.tags.title;
+                            }
+                            if (tag.tags.artist) currentTrackMeta.artist = tag.tags.artist;
+                            if (tag.tags.album) currentTrackMeta.album = tag.tags.album;
+
+                            const pic = tag.tags.picture;
+                            if (pic) {
+                                const byteArray = new Uint8Array(pic.data);
+                                const coverBlob = new Blob([byteArray], { type: pic.format });
+                                currentCoverObjectURL = URL.createObjectURL(coverBlob);
+                                currentTrackMeta.coverUrl = currentCoverObjectURL;
+                                
+                                artEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
+                                dynBgEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
+                                
+                                artEl.classList.remove('opacity-0');
+                                artEl.classList.add('opacity-100');
+                                emjEl.style.opacity = '0';
+                            }
+                            
+                            updateMediaSession();
+
+                            if (!lyricsFound) {
+                                const aggressiveLrcText = aggressivelyFindLyrics(tag.tags);
+                                if (aggressiveLrcText) {
+                                    processLyrics(aggressiveLrcText, 'ID3 TAG');
+                                }
+                            }
+                        },
+                        onError: () => {}
+                    });
+                })
+                .catch(err => {});
+        };
+
+        audio.onended = () => {
+            if (filteredTracks.length === 0) return;
+            if (loopMode === 'single') executeLoad(curIdx, true);
+            else if (loopMode === 'random') {
+                let nextIndex = Math.floor(Math.random() * filteredTracks.length);
+                if (filteredTracks.length > 1 && nextIndex === curIdx) nextIndex = (nextIndex + 1) % filteredTracks.length;
+                executeLoad(nextIndex, true);
+            } else {
+                executeLoad((curIdx + 1) % filteredTracks.length, true);
+            }
+        };
+
+        btnPlay.onclick = () => { audio.paused ? audio.play() : audio.pause(); };
+        btnNext.onclick = () => { executeLoad((curIdx + 1 + filteredTracks.length) % filteredTracks.length, true); };
+
+        audio.onplay = () => { 
+            artEl.classList.add('playing');
+            playIcon.className = 'w-3 h-4 border-l-[4px] border-r-[4px] border-black ml-0'; 
+            renderList();
+        };
+        audio.onpause = () => { 
+            artEl.classList.remove('playing');
+            playIcon.className = 'w-0 h-0 border-y-[8px] border-y-transparent border-l-[14px] border-l-black ml-1'; 
+            renderList();
+        };
+        
+        audio.ontimeupdate = () => {
+            let s = audio.currentTime;
+            if (isNaN(s)) { curTimeEl.innerText = '00:00'; return; }
+            let m = Math.floor(s / 60), sec = Math.floor(s % 60);
+            curTimeEl.innerText = m.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
+            
+            if (isSyncedLyrics && parsedLyrics.length > 0) {
+                let activeIdx = -1;
+                for (let i = 0; i < parsedLyrics.length; i++) {
+                    if (s >= parsedLyrics[i].time) activeIdx = i;
+                    else break;
+                }
+                
+                if (activeIdx !== currentLyricIndex) {
+                    lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                    if (activeIdx !== -1) {
+                        const currEl = lyricsContentEl.querySelector(`#lyric-${activeIdx}`);
+                        if (currEl) {
+                            currEl.classList.add('active');
+                            const container = lyricsContainerEl;
+                            const scrollPos = currEl.offsetTop - (container.clientHeight / 2) + (currEl.clientHeight / 2);
+                            container.scrollTo({ top: scrollPos, behavior: 'smooth' });
+                            
+                            const currentLine = parsedLyrics[activeIdx];
+                            updateMediaSession(currentLine.text);
+                        }
+                    } else {
+                        updateMediaSession();
+                    }
+                    currentLyricIndex = activeIdx;
+                }
+            }
+        };
+
+        searchInput.oninput = () => {
+            const val = searchInput.value.toLowerCase();
+            filteredTracks = playlists[currentPlaylist].filter(s => s.t.toLowerCase().includes(val));
+            renderList();
+        };
+
+        btnMode.onclick = () => { 
+            const modes = ['list', 'random', 'single']; 
+            loopMode = modes[(modes.indexOf(loopMode) + 1) % modes.length]; 
+            lcdMode.innerText = loopMode.toUpperCase();
+        };
+
+        async function loadLibrary(user, repo) {
+            try {
+                audio.pause(); audio.src = ''; curTimeEl.innerText = '00:00';
+                playlists = {}; filteredTracks = []; listContainer.innerHTML = ''; navContainer.innerHTML = '';
+                titleEl.innerText = 'Loading Repo...'; netStatus.innerText = `CONNECTING...`;
+                
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/`);
+                if (!res.ok) throw new Error('API LIMIT OR REPO NOT FOUND');
+                
+                const items = await res.json();
+                playlists['Root'] = filterAudio(items);
+                
+                const folders = items.filter(i => i.type === 'dir');
+                for (let f of folders) {
+                    netStatus.innerText = `FETCHING DIR: ${f.name}`;
+                    const subData = await (await fetch(f.url)).json();
+                    const tracks = filterAudio(subData);
+                    if(tracks.length > 0) playlists[f.name] = tracks;
+                }
+                
+                netStatus.innerText = 'ONLINE';
+                localStorage.setItem('jrmusic_gh_user', user);
+                localStorage.setItem('jrmusic_gh_repo', repo);
+                
+                renderNav(); switchPlaylist('Root');
+            } catch (e) {
+                titleEl.innerText = 'Connection Error'; netStatus.innerText = 'SYNC FAILED - CHECK REPO OR API';
+            }
+        }
+        
+        btnSync.onclick = () => { const u = ghUserInp.value.trim(); const r = ghRepoInp.value.trim(); if(u && r) loadLibrary(u, r); };
+        loadLibrary(savedUser, savedRepo);
+
+        winObj.onDestroy = () => {
+            audio.pause(); audio.src = '';
+            if (currentCoverObjectURL) URL.revokeObjectURL(currentCoverObjectURL);
+        };
+    </script>
+</body>
+</html>
