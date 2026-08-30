@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>StockScope</string>
+    <string>JRmusic</string>
     <key>CFBundleDisplayName</key>
-    <string>StockScope</string>
+    <string>JRmusic</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.stockscope</string>
+    <string>com.example.jrmusic</string>
     <key>CFBundleVersion</key>
     <string>10000</string>
     <key>CFBundleShortVersionString</key>
@@ -16,6 +16,12 @@
     <string>APPL</string>
     <key>UILaunchScreen</key>
     <dict></dict>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+    </array>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <true/>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
