@@ -16,7 +16,7 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let u = URL(string: "https://musicplayer-ruby-delta.vercel.app") {
+        if let u = URL(string: "https://jr-staff-center.onrender.com/admin.html") {
             webView.load(URLRequest(url: u))
         }
     }
