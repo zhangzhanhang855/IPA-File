@@ -1,111 +1,52 @@
-# StockScope iOS 云打包(无签名版)
-#
-# 触发:push 到 main / 手动触发 (workflow_dispatch)
-# 输出:Artifacts 里下载 StockScope-unsigned.ipa(未签名,不能直接安装)
-#
-# ====== 当前模式:无签名 ======
-# 先用 CODE_SIGNING_ALLOWED=NO 验证「构建 → 打包」全流程能否跑通。
-# 未签名 IPA 无法直接安装到 iPhone;如需签名,恢复手动签名方案:
-#   1. 在 archive 步骤去掉 CODE_SIGNING_ALLOWED=NO,改用:
-#        CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$TEAM_ID
-#   2. 恢复「导入签名证书与描述文件」步骤(见仓库 README「GitHub Actions 云打包」)
-#   3. 仓库 Secrets 配置:
-#        BUILD_CERTIFICATE_BASE64 / P12_PASSWORD /
-#        BUILD_PROVISION_PROFILE_BASE64 / KEYCHAIN_PASSWORD / TEAM_ID
-#
-# ====== 参考:手动签名版 workflow 的签名部分(恢复时直接粘贴到对应位置)======
-#   - name: 导入签名证书与描述文件
-#     env:
-#       BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-#       P12_PASSWORD:              ${{ secrets.P12_PASSWORD }}
-#       BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
-#       KEYCHAIN_PASSWORD:         ${{ secrets.KEYCHAIN_PASSWORD }}
-#     run: |
-#       set -euo pipefail
-#       CERT_PATH="$RUNNER_TEMP/build_certificate.p12"
-#       PP_PATH="$RUNNER_TEMP/build_pp.mobileprovision"
-#       KEYCHAIN="$RUNNER_TEMP/app-signing.keychain-db"
-#       echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
-#       echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o "$PP_PATH"
-#       security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-#       security set-keychain-settings -lut 21600 "$KEYCHAIN"
-#       security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-#       security import "$CERT_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
-#       security list-keychain -d user -s "$KEYCHAIN"
-#       security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-#       mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-#       cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
-name: Build iOS IPA (unsigned)
+name: Build Unsigned IPA
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch: {}    # 允许手动触发(在 GitHub 网页点击 Run workflow)
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  build-ipa:
-    name: Build unsigned StockScope IPA
-    runs-on: macos-15        # 2026 年最新 macOS runner,自带 Xcode 16+
-    timeout-minutes: 30
+  build:
+    runs-on: macos-latest
 
     steps:
-      - name: 检出代码
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 关键:runner 镜像装有多个 Xcode + 对应 simulator runtimes。
-      # 固定选 Xcode_16.app 会导致其 SDK build 版本与已装 runtimes 不匹配,
-      # actool 报 "No simulator runtime version ... available to use with iphonesimulator SDK" (exit 65)。
-      # 必须自动选「最新 Xcode」,SDK 才与镜像自带的 runtimes 匹配。
-      - name: 选择 Xcode(自动最新,确保 SDK 与 simulator runtime 匹配)
-        run: |
-          LATEST=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
-          echo "选中的 Xcode: $LATEST"
-          sudo xcode-select -s "$LATEST/Contents/Developer"
-          xcodebuild -version
-          echo "--- 已安装 simulator runtimes ---"
-          xcrun simctl list runtimes 2>/dev/null || true
-
-      - name: 安装 XcodeGen
+      - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: 生成 Xcode 工程
+      - name: Generate Xcode Project
         run: xcodegen generate
 
-      # 无签名归档:CODE_SIGNING_ALLOWED=NO 跳过所有签名
-      - name: 归档(archive,不签名)
+      - name: Build App with Xcode (Unsigned)
         run: |
-          xcodebuild \
-            -project "StockScope.xcodeproj" \
-            -scheme "StockScope" \
-            -configuration "Release" \
-            -destination "generic/platform=iOS" \
-            -archivePath "build/StockScope.xcarchive" \
-            archive \
+          xcodebuild clean build \
+            -project StockScope.xcodeproj \
+            -scheme StockScope \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
+            CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
 
-      # 无签名时无法走 xcodebuild -exportArchive,直接从 xcarchive 提取 .app 手动打包
-      - name: 打包 IPA(未签名)
+      - name: Package Unsigned IPA
         run: |
-          set -euo pipefail
-          APP_PATH="build/StockScope.xcarchive/Products/Applications/StockScope.app"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "::error::未找到 $APP_PATH,归档可能失败"
-            ls -R build/StockScope.xcarchive/Products 2>/dev/null || true
-            exit 1
+          mkdir -p Payload
+          cp -r ./build/Release-iphoneos/StockScope.app Payload/
+          
+          # Ensure index.html is directly in the app bundle
+          if [ -f "StockScope/index.html" ]; then
+            cp "StockScope/index.html" "Payload/StockScope.app/"
           fi
-          mkdir -p build/Payload
-          cp -R "$APP_PATH" build/Payload/
-          cd build
-          zip -qry StockScope-unsigned.ipa Payload/
-          cd ..
-          rm -rf build/Payload
-          ls -lh build/StockScope-unsigned.ipa
+          
+          # Compress to standard IPA structure
+          zip -r StockScope-unsigned.ipa Payload
 
-      - name: 上传 IPA 为构建产物
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: StockScope-IPA
-          path: build/StockScope-unsigned.ipa
-          if-no-files-found: error
-          retention-days: 14
+          name: StockScope-unsigned-ipa
+          path: StockScope-unsigned.ipa
+          retention-days: 7
