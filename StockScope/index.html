@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Gemini Studio Pro — Apple HIG Orchestrator</title>
+<title>Universal AI Studio — Apple HIG Multi-Platform Orchestrator</title>
 <style>
 /* ==========================================================================
-   1. APPLE HIG THEME SYSTEM (Frosted Glassmorphism, Vibrancy, San Francisco)
+   1. APPLE HIG THEME SYSTEM (Vibrancy, Frosted Glass, Typography)
    ========================================================================== */
 :root {
   --system-bg: #000000;
@@ -28,6 +28,11 @@
   --apple-purple: #BF5AF2;
   --apple-indigo: #5E5CE6;
   
+  --vendor-gemini: #4285F4;
+  --vendor-openai: #10A37F;
+  --vendor-claude: #D97706;
+  --vendor-grok: #EA580C;
+
   --text-primary: #FFFFFF;
   --text-secondary: rgba(235, 235, 245, 0.6);
   --text-tertiary: rgba(235, 235, 245, 0.38);
@@ -44,7 +49,7 @@
   --sidebar-w: 280px;
   --header-h: 56px;
   --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "SF Mono", Monaco, Menlo, Consolas, monospace;
+  --font-mono: "SF Mono", Monaco, Menlo, Consolas, "Cascadia Code", monospace;
   
   --shadow-window: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--surface-border);
   --shadow-popup: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -97,6 +102,7 @@ html, body {
   overflow: hidden;
 }
 
+/* Sidebar */
 .sidebar {
   width: var(--sidebar-w);
   height: 100%;
@@ -236,6 +242,7 @@ html, body {
 .session-row:hover .session-delete-btn { opacity: 1; }
 .session-delete-btn:hover { color: var(--apple-red); }
 
+/* Main Stage */
 .main-stage {
   flex: 1;
   height: 100%;
@@ -266,28 +273,21 @@ html, body {
   font-weight: 600;
 }
 
-/* 頂部模型即時切換膠囊選單 */
-.header-model-picker {
+/* 4廠模型選擇膠囊 */
+.header-picker-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--surface-border);
-  padding: 3px 8px 3px 10px;
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
 }
 
-.header-model-picker label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-}
-
-.header-model-select {
+.header-picker-group select {
   background: transparent;
   border: none;
-  color: var(--apple-cyan);
+  color: var(--text-primary);
   font-size: 12.5px;
   font-weight: 600;
   font-family: inherit;
@@ -295,10 +295,22 @@ html, body {
   cursor: pointer;
 }
 
-.header-model-select option {
+.header-picker-group select option {
   background: #1C1C1E;
   color: #FFF;
 }
+
+.vendor-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+}
+.vendor-gemini { background: rgba(66, 133, 244, 0.2); color: var(--vendor-gemini); }
+.vendor-openai { background: rgba(16, 163, 127, 0.2); color: var(--vendor-openai); }
+.vendor-claude { background: rgba(217, 119, 6, 0.2); color: var(--vendor-claude); }
+.vendor-grok { background: rgba(234, 88, 12, 0.2); color: var(--vendor-grok); }
 
 .status-capsule {
   display: inline-flex;
@@ -437,15 +449,6 @@ html, body {
   padding: 0 4px;
 }
 
-.chat-model-tag {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  color: var(--apple-cyan);
-  font-family: var(--font-mono);
-}
-
 .chat-bubble {
   padding: 14px 18px;
   border-radius: var(--radius-lg);
@@ -571,7 +574,7 @@ html, body {
 
 .pipeline-node-body {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 260px 1fr;
   gap: 14px;
 }
 
@@ -651,8 +654,8 @@ html, body {
 
 .modal-sheet {
   width: 100%;
-  max-width: 640px;
-  max-height: 85vh;
+  max-width: 680px;
+  max-height: 88vh;
   background: var(--surface-elevated);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-xl);
@@ -678,31 +681,20 @@ html, body {
   gap: 20px;
 }
 
-.api-pool-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.vendor-config-card {
   background: var(--surface-card);
   border: 1px solid var(--surface-border);
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.api-pool-item .key-preview {
-  flex: 1;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  color: var(--text-secondary);
-}
-
-.key-health-tag {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  text-transform: uppercase;
-  background: rgba(48, 209, 88, 0.2);
-  color: var(--apple-green);
+.vendor-config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .toast-manager {
@@ -759,17 +751,17 @@ html, body {
     <nav class="sidebar-nav">
       <div class="nav-item active" data-view="chatView">
         <span class="icon">💬</span>
-        <span>Gemini 對話</span>
+        <span>多平台 AI 對話</span>
       </div>
       <div class="nav-item" data-view="pipelineView">
         <span class="icon">⚡️</span>
-        <span>多流水線 Matrix</span>
+        <span>多廠商工作流水線</span>
       </div>
     </nav>
 
     <div class="session-section">
       <div class="section-label">
-        <span>歷史對話</span>
+        <span>對話列表</span>
         <span id="sessionCount">0</span>
       </div>
       <div class="session-list" id="sessionList"></div>
@@ -778,38 +770,41 @@ html, body {
     <div style="padding: 12px; border-top: 1px solid var(--surface-separator);">
       <button class="btn" style="width: 100%; justify-content: flex-start;" id="btnOpenSettings">
         <span class="icon">⚙️</span>
-        <span>API 金鑰池 & 設定</span>
+        <span>4 廠 API 設定 & 模型</span>
       </button>
     </div>
   </aside>
 
   <!-- MAIN STAGE -->
   <main class="main-stage">
-    <!-- HEADER -->
     <header class="stage-header">
       <div class="header-meta">
-        <span class="header-title" id="stageTitle">Gemini 對話</span>
+        <span class="header-title" id="stageTitle">多平台 AI 對話</span>
         
-        <!-- 頂欄即時模型切換選單 -->
-        <div class="header-model-picker" id="headerModelPickerWrap">
-          <label>MODEL</label>
-          <select class="header-model-select" id="headerModelSelect">
-            <!-- 動態填充模型選項 -->
+        <!-- 頂欄 4 廠模型快速切換 -->
+        <div class="header-picker-group">
+          <select id="chatVendorSelect">
+            <option value="gemini">Google Gemini</option>
+            <option value="openai">OpenAI (ChatGPT)</option>
+            <option value="claude">Anthropic (Claude)</option>
+            <option value="grok">xAI (Grok)</option>
           </select>
+          <span style="color: var(--text-tertiary);">/</span>
+          <select id="chatModelSelect"></select>
         </div>
 
         <div class="status-capsule">
           <span class="status-dot idle" id="globalStatusDot"></span>
-          <span id="globalStatusText">Gemini 就緒</span>
+          <span id="globalStatusText">就緒</span>
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn" id="btnExportSession" title="匯出當前對話">📤 匯出對話</button>
-        <button class="btn btn-danger" id="btnClearCurrentChat" title="清空對話上下文">清空上下文</button>
+        <button class="btn" id="btnExportSession" title="匯出對話">📤 匯出</button>
+        <button class="btn btn-danger" id="btnClearCurrentChat" title="清空對話">清空</button>
       </div>
     </header>
 
-    <!-- VIEWS -->
+    <!-- VIEWPORT -->
     <div class="view-viewport">
       <!-- 1. CHAT VIEW -->
       <section class="view-panel active" id="chatView">
@@ -817,7 +812,7 @@ html, body {
           <div class="messages-scrollable" id="messagesContainer"></div>
           <div class="chat-dock">
             <div class="chat-input-wrapper">
-              <textarea class="chat-textarea" id="chatInput" placeholder="輸入訊息至 Gemini API (Shift+Enter 換行)..." rows="1"></textarea>
+              <textarea class="chat-textarea" id="chatInput" placeholder="輸入訊息至當前選定的 AI 模型 (Shift+Enter 換行)..." rows="1"></textarea>
               <button class="btn btn-primary" id="btnSendMessage">發送</button>
             </div>
           </div>
@@ -829,8 +824,8 @@ html, body {
         <div class="pipeline-view">
           <div class="pipeline-hero">
             <div>
-              <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Gemini 多階工作流水線</h2>
-              <p style="font-size: 12.5px; color: var(--text-secondary);">自動將前置步驟的分析結果傳遞給後續節點處理。</p>
+              <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">多廠商 AI 串行工作流水線</h2>
+              <p style="font-size: 12.5px; color: var(--text-secondary);">自由組合 Gemini、Claude、GPT 與 Grok，自動流轉多階段推論。</p>
             </div>
             <div style="display: flex; gap: 8px;">
               <button class="btn" id="btnAddPipelineStage">＋ 新增步驟</button>
@@ -840,7 +835,7 @@ html, body {
 
           <div class="field-group" style="background: var(--surface-card); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--surface-border);">
             <label class="field-label">流水線初始輸入數據 / Payload</label>
-            <textarea class="input-textarea" id="pipelineInitialPayload" placeholder="輸入要交由第一個模型處理的初始任務或上下文..." style="min-height: 80px;"></textarea>
+            <textarea class="input-textarea" id="pipelineInitialPayload" placeholder="輸入要交給步驟一處理的原始題目、代碼或文字數據..." style="min-height: 80px;"></textarea>
           </div>
 
           <div class="pipeline-stages-container" id="pipelineStagesList"></div>
@@ -854,31 +849,48 @@ html, body {
 <div class="modal-overlay" id="settingsModal">
   <div class="modal-sheet">
     <div class="modal-header">
-      <h3>Gemini API 設定與金鑰池</h3>
+      <h3>4 廠 API Key 配置與模型動態拉取</h3>
       <button class="btn btn-icon" id="btnCloseSettings">✕</button>
     </div>
     <div class="modal-body">
-      <div class="field-group">
-        <label class="field-label">新增 Gemini API Key 至金鑰池</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="password" class="input-text" id="inputNewApiKey" placeholder="AIzaSy..." style="flex: 1;">
-          <button class="btn btn-primary" id="btnAddApiKey">加入金鑰</button>
+      <!-- Gemini -->
+      <div class="vendor-config-card">
+        <div class="vendor-config-header">
+          <span class="vendor-badge vendor-gemini">Google Gemini</span>
+          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('gemini')">🔄 同步模型</button>
         </div>
+        <input type="password" class="input-text" id="key_gemini" placeholder="AIzaSy... (Gemini API Key)">
       </div>
 
-      <div class="field-group">
-        <label class="field-label">已啟用的 API 金鑰池</label>
-        <div id="apiKeyPoolList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      <!-- OpenAI -->
+      <div class="vendor-config-card">
+        <div class="vendor-config-header">
+          <span class="vendor-badge vendor-openai">OpenAI (ChatGPT)</span>
+          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('openai')">🔄 同步模型</button>
+        </div>
+        <input type="password" class="input-text" id="key_openai" placeholder="sk-... (OpenAI API Key)">
       </div>
 
-      <div class="field-group">
-        <label class="field-label">全域預設模型切換</label>
-        <div style="display: flex; gap: 8px;">
-          <select class="input-select" id="selectDefaultModel" style="flex: 1;">
-            <!-- 自動同步所有可用模型 -->
-          </select>
-          <button class="btn" id="btnSyncOnlineModels">🔄 線上同步模型清單</button>
+      <!-- Claude -->
+      <div class="vendor-config-card">
+        <div class="vendor-config-header">
+          <span class="vendor-badge vendor-claude">Anthropic (Claude)</span>
+          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('claude')">🔄 同步模型</button>
         </div>
+        <input type="password" class="input-text" id="key_claude" placeholder="sk-ant-... (Claude API Key)">
+      </div>
+
+      <!-- Grok -->
+      <div class="vendor-config-card">
+        <div class="vendor-config-header">
+          <span class="vendor-badge vendor-grok">xAI (Grok)</span>
+          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('grok')">🔄 同步模型</button>
+        </div>
+        <input type="password" class="input-text" id="key_grok" placeholder="xai-... (Grok API Key)">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+        <button class="btn btn-primary" id="btnSaveKeys">💾 保存所有配置</button>
       </div>
     </div>
   </div>
@@ -886,64 +898,77 @@ html, body {
 
 <div class="toast-manager" id="toastContainer"></div>
 
-<!-- SCRIPT LOGIC -->
+<!-- 4 VENDORS CLIENT & APPLICATION SCRIPT -->
 <script>
 'use strict';
 
+// 預設模型清單
+const DEFAULT_MODELS = {
+  gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'],
+  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.5-preview', 'o3-mini'],
+  claude: ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
+  grok:   ['grok-2-1212', 'grok-2-vision-1212', 'grok-beta']
+};
+
 const Store = {
-  activeView: 'chatView',
-  sessions: [],
   activeSessionId: null,
-  apiKeys: [],
-  currentKeyIndex: 0,
-  defaultModel: 'gemini-2.5-flash',
-  modelsRegistry: [
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite'
-  ],
+  sessions: [],
+  keys: { gemini: '', openai: '', claude: '', grok: '' },
+  modelsRegistry: JSON.parse(JSON.stringify(DEFAULT_MODELS)),
+  chatSelection: { vendor: 'gemini', model: 'gemini-2.5-flash' },
   pipelineStages: [
     {
       id: 'stg_1',
-      title: '第一階段：核心問題解析',
+      title: '第一階段：Gemini 題意識別與考點解析',
+      vendor: 'gemini',
       model: 'gemini-2.5-flash',
-      systemPrompt: '你是一名資深分析專家，請條理清晰地解析輸入內容的核心要點。',
+      systemPrompt: '請詳細識別問題類型、關鍵已知條件及解題方向。',
       temperature: 0.2,
       lastOutput: ''
     },
     {
       id: 'stg_2',
-      title: '第二階段：生成解決方案',
-      model: 'gemini-2.5-pro',
-      systemPrompt: '你是一名頂級架構師，請針對先前的分析給出最佳落地方案。',
-      temperature: 0.4,
+      title: '第二階段：Claude 邏輯推演與二次複核',
+      vendor: 'claude',
+      model: 'claude-3-7-sonnet-20250219',
+      systemPrompt: '請以獨立視角檢查前置步驟，指出潛在的計算或邏輯漏洞並給出完整步驟。',
+      temperature: 0.2,
+      lastOutput: ''
+    },
+    {
+      id: 'stg_3',
+      title: '第三階段：OpenAI 交叉總結與最終決策',
+      vendor: 'openai',
+      model: 'gpt-4o',
+      systemPrompt: '請融合所有分析，給出標準答案及最終推薦路徑。',
+      temperature: 0.1,
       lastOutput: ''
     }
   ]
 };
 
+// 本地存儲
 function saveStore() {
-  localStorage.setItem('GEMINI_STUDIO_STORE_V3', JSON.stringify({
+  localStorage.setItem('UNIVERSAL_AI_STORE_V1', JSON.stringify({
     sessions: Store.sessions,
     activeSessionId: Store.activeSessionId,
-    apiKeys: Store.apiKeys,
-    defaultModel: Store.defaultModel,
+    keys: Store.keys,
     modelsRegistry: Store.modelsRegistry,
+    chatSelection: Store.chatSelection,
     pipelineStages: Store.pipelineStages
   }));
 }
 
 function loadStore() {
   try {
-    const raw = localStorage.getItem('GEMINI_STUDIO_STORE_V3');
+    const raw = localStorage.getItem('UNIVERSAL_AI_STORE_V1');
     if (raw) {
       const parsed = JSON.parse(raw);
       Store.sessions = parsed.sessions || [];
       Store.activeSessionId = parsed.activeSessionId || null;
-      Store.apiKeys = parsed.apiKeys || [];
-      Store.defaultModel = parsed.defaultModel || 'gemini-2.5-flash';
+      Store.keys = parsed.keys || Store.keys;
       Store.modelsRegistry = parsed.modelsRegistry || Store.modelsRegistry;
+      Store.chatSelection = parsed.chatSelection || Store.chatSelection;
       Store.pipelineStages = parsed.pipelineStages || Store.pipelineStages;
     }
   } catch (err) {
@@ -951,30 +976,18 @@ function loadStore() {
   }
 
   if (Store.sessions.length === 0) {
-    createNewSession('新工作對話');
+    createNewSession('新對話');
   } else if (!Store.activeSessionId || !Store.sessions.find(s => s.id === Store.activeSessionId)) {
     Store.activeSessionId = Store.sessions[0].id;
   }
 }
 
-function getNextAvailableApiKey() {
-  if (!Store.apiKeys || Store.apiKeys.length === 0) {
-    throw new Error('未配置 API Key，請至左下角「設定」新增。');
-  }
-  const keyObj = Store.apiKeys[Store.currentKeyIndex % Store.apiKeys.length];
-  Store.currentKeyIndex++;
-  return keyObj.key;
-}
-
-function showToast(message, type = 'info') {
+function showToast(msg, type = 'info') {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
   toast.className = 'toast';
-  let icon = 'ℹ️';
-  if (type === 'success') icon = '✅';
-  if (type === 'error') icon = '❌';
-  if (type === 'warn') icon = '⚠️';
-  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -982,88 +995,188 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
-// 模型下拉選單雙向同步更新
-function updateAllModelDropdowns() {
-  const headerSelect = document.getElementById('headerModelSelect');
-  const modalSelect = document.getElementById('selectDefaultModel');
+// ==========================================================================
+// 4 廠 API 核心請求調用引擎
+// ==========================================================================
+async function callVendorAPI({ vendor, model, prompt, messages = [], system = '', temperature = 0.7 }) {
+  const key = (Store.keys[vendor] || '').trim();
+  if (!key) throw new Error(`未配置 ${vendor.toUpperCase()} 的 API Key，請至設定中填寫。`);
 
-  const renderOptions = () => {
-    return Store.modelsRegistry.map(m => `<option value="${m}">${m}</option>`).join('');
-  };
+  // 1. Google Gemini
+  if (vendor === 'gemini') {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+    const contents = messages.length > 0 
+      ? messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }))
+      : [{ role: 'user', parts: [{ text: prompt }] }];
+    
+    const body = {
+      contents,
+      generationConfig: { temperature: parseFloat(temperature), maxOutputTokens: 8192 }
+    };
+    if (system) body.systemInstruction = { parts: [{ text: system }] };
 
-  headerSelect.innerHTML = renderOptions();
-  modalSelect.innerHTML = renderOptions();
-
-  // 若當前選中的模型不在註冊表中，預設選第一個
-  if (!Store.modelsRegistry.includes(Store.defaultModel)) {
-    Store.defaultModel = Store.modelsRegistry[0] || 'gemini-2.5-flash';
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
   }
 
-  headerSelect.value = Store.defaultModel;
-  modalSelect.value = Store.defaultModel;
-}
-
-// 核心請求接口
-async function callGeminiApi({ model, contents, systemInstruction, temperature = 0.7 }) {
-  const apiKey = getNextAvailableApiKey();
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-  const payload = {
-    contents: contents,
-    generationConfig: {
-      temperature: parseFloat(temperature),
-      maxOutputTokens: 8192
+  // 2. OpenAI (ChatGPT)
+  if (vendor === 'openai') {
+    const url = 'https://api.openai.com/v1/chat/completions';
+    const reqMsgs = [];
+    if (system) reqMsgs.push({ role: 'system', content: system });
+    if (messages.length > 0) {
+      messages.forEach(m => reqMsgs.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
+    } else {
+      reqMsgs.push({ role: 'user', content: prompt });
     }
-  };
 
-  if (systemInstruction) {
-    payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model, messages: reqMsgs, temperature: parseFloat(temperature) })
+    });
+    if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content || '';
   }
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  // 3. Anthropic (Claude)
+  if (vendor === 'claude') {
+    const url = 'https://api.anthropic.com/v1/messages';
+    const reqMsgs = messages.length > 0
+      ? messages.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }))
+      : [{ role: 'user', content: prompt }];
 
-  if (!response.ok) {
-    const errorDetails = await response.text();
-    throw new Error(`API 錯誤 [${response.status}]: ${errorDetails}`);
+    const body = {
+      model,
+      max_tokens: 4096,
+      messages: reqMsgs,
+      temperature: parseFloat(temperature)
+    };
+    if (system) body.system = system;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'dangerously-allow-browser': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(`Claude HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    return data?.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
   }
 
-  const data = await response.json();
-  return data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+  // 4. xAI (Grok)
+  if (vendor === 'grok') {
+    const url = 'https://api.x.ai/v1/chat/completions';
+    const reqMsgs = [];
+    if (system) reqMsgs.push({ role: 'system', content: system });
+    if (messages.length > 0) {
+      messages.forEach(m => reqMsgs.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
+    } else {
+      reqMsgs.push({ role: 'user', content: prompt });
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model, messages: reqMsgs, temperature: parseFloat(temperature) })
+    });
+    if (!res.ok) throw new Error(`Grok HTTP ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content || '';
+  }
+
+  throw new Error(`未知廠商: ${vendor}`);
 }
 
-// 對話操作
-function createNewSession(title = '新工作對話') {
+// 動態拉取遠端模型清單
+async function fetchRemoteModels(vendor) {
+  const key = (Store.keys[vendor] || '').trim();
+  if (!key) return showToast(`請先輸入 ${vendor.toUpperCase()} 的 API Key`, 'warn');
+  showToast(`正在拉取 ${vendor.toUpperCase()} 模型清單...`, 'info');
+
+  try {
+    let models = [];
+    if (vendor === 'gemini') {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      models = (data.models || [])
+        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+        .map(m => m.name.replace(/^models\//, ''));
+    } else if (vendor === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${key}` } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      models = (data.data || []).map(m => m.id).filter(id => /^(gpt-|o1|o3|o4|chatgpt-)/i.test(id));
+    } else if (vendor === 'claude') {
+      const res = await fetch('https://api.anthropic.com/v1/models', {
+        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'dangerously-allow-browser': 'true' }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      models = (data.data || []).map(m => m.id);
+    } else if (vendor === 'grok') {
+      const res = await fetch('https://api.x.ai/v1/models', { headers: { Authorization: `Bearer ${key}` } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      models = (data.data || []).map(m => m.id);
+    }
+
+    if (models.length > 0) {
+      Store.modelsRegistry[vendor] = models;
+      saveStore();
+      updateChatModelPicker();
+      renderPipelineStages();
+      showToast(`成功同步 ${models.length} 個 ${vendor.toUpperCase()} 模型！`, 'success');
+    } else {
+      showToast('未獲取到有效模型', 'warn');
+    }
+  } catch (err) {
+    showToast(`獲取失敗: ${err.message}`, 'error');
+  }
+}
+
+// ==========================================================================
+// 對話與 UI 渲染
+// ==========================================================================
+function updateChatModelPicker() {
+  const vendorSelect = document.getElementById('chatVendorSelect');
+  const modelSelect = document.getElementById('chatModelSelect');
+  vendorSelect.value = Store.chatSelection.vendor;
+
+  const models = Store.modelsRegistry[Store.chatSelection.vendor] || [];
+  modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  if (!models.includes(Store.chatSelection.model)) {
+    Store.chatSelection.model = models[0] || '';
+  }
+  modelSelect.value = Store.chatSelection.model;
+}
+
+function createNewSession(title = '新對話') {
   const newSession = {
     id: 'ses_' + Date.now(),
-    title: title,
+    title,
     messages: [
       {
         role: 'model',
-        text: '您好！Gemini 工作台已準備就緒，您可以直接對話或在頂欄切換不同模型。',
-        modelUsed: Store.defaultModel,
+        vendor: 'gemini',
+        model: 'gemini-2.5-flash',
+        text: '您好！已連接四大廠商 (Gemini, ChatGPT, Claude, Grok) 引擎，請在頂部隨意切換模型開始對話。',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]
   };
   Store.sessions.unshift(newSession);
   Store.activeSessionId = newSession.id;
-  saveStore();
-  renderSessionList();
-  renderActiveChat();
-}
-
-function deleteSession(id, event) {
-  if (event) event.stopPropagation();
-  if (Store.sessions.length <= 1) {
-    showToast('至少需保留一個對話', 'warn');
-    return;
-  }
-  Store.sessions = Store.sessions.filter(s => s.id !== id);
-  if (Store.activeSessionId === id) Store.activeSessionId = Store.sessions[0].id;
   saveStore();
   renderSessionList();
   renderActiveChat();
@@ -1095,8 +1208,15 @@ function renderSessionList() {
       </div>
       <button class="session-delete-btn" title="刪除">✕</button>
     `;
-
-    row.querySelector('.session-delete-btn').onclick = (e) => deleteSession(session.id, e);
+    row.querySelector('.session-delete-btn').onclick = (e) => {
+      e.stopPropagation();
+      if (Store.sessions.length <= 1) return showToast('至少需保留一個對話', 'warn');
+      Store.sessions = Store.sessions.filter(s => s.id !== session.id);
+      if (Store.activeSessionId === session.id) Store.activeSessionId = Store.sessions[0].id;
+      saveStore();
+      renderSessionList();
+      renderActiveChat();
+    };
     container.appendChild(row);
   });
 }
@@ -1113,8 +1233,8 @@ function renderActiveChat() {
     
     wrap.innerHTML = `
       <div class="chat-bubble-meta">
-        <span>${msg.role === 'user' ? '您' : 'Gemini'}</span>
-        ${msg.modelUsed ? `<span class="chat-model-tag">${msg.modelUsed}</span>` : ''}
+        <span>${msg.role === 'user' ? '您' : (msg.vendor ? msg.vendor.toUpperCase() : 'AI')}</span>
+        ${msg.model ? `<span class="vendor-badge vendor-${msg.vendor || 'gemini'}">${msg.model}</span>` : ''}
         <span>•</span>
         <span>${msg.timestamp || ''}</span>
       </div>
@@ -1122,7 +1242,6 @@ function renderActiveChat() {
     `;
     container.appendChild(wrap);
   });
-
   container.scrollTop = container.scrollHeight;
 }
 
@@ -1137,63 +1256,66 @@ function formatMarkdownToHtml(text) {
 
 async function handleSendMessage() {
   const input = document.getElementById('chatInput');
-  const userText = input.value.trim();
-  if (!userText) return;
+  const text = input.value.trim();
+  if (!text) return;
 
   const session = getActiveSession();
   if (!session) return;
 
   session.messages.push({
     role: 'user',
-    text: userText,
+    text,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   });
 
   if (session.messages.length === 2) {
-    session.title = userText.slice(0, 18) + (userText.length > 18 ? '...' : '');
+    session.title = text.slice(0, 18) + (text.length > 18 ? '...' : '');
     renderSessionList();
   }
 
   input.value = '';
   renderActiveChat();
-  setGlobalStatus('busy', `Gemini (${Store.defaultModel}) 思考中...`);
+
+  const currentVendor = Store.chatSelection.vendor;
+  const currentModel = Store.chatSelection.model;
+
+  setGlobalStatus('busy', `${currentVendor.toUpperCase()} (${currentModel}) 正在生成...`);
 
   try {
-    const historyPayload = session.messages.map(m => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.text }]
-    }));
-
-    // 使用當前選定的模型呼叫 API
-    const reply = await callGeminiApi({
-      model: Store.defaultModel,
-      contents: historyPayload
+    const reply = await callVendorAPI({
+      vendor: currentVendor,
+      model: currentModel,
+      messages: session.messages
     });
 
     session.messages.push({
       role: 'model',
+      vendor: currentVendor,
+      model: currentModel,
       text: reply,
-      modelUsed: Store.defaultModel,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
 
     saveStore();
     renderActiveChat();
-    setGlobalStatus('idle', 'Gemini 就緒');
+    setGlobalStatus('idle', '就緒');
   } catch (err) {
-    setGlobalStatus('error', '請求錯誤');
+    setGlobalStatus('error', '請求失敗');
     showToast(err.message, 'error');
     session.messages.push({
       role: 'model',
-      text: `⚠️ **生成失敗:** ${err.message}`,
-      modelUsed: Store.defaultModel,
+      vendor: currentVendor,
+      model: currentModel,
+      text: `⚠️ **調用失敗:** ${err.message}`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
     renderActiveChat();
   }
 }
 
-// Pipeline 管理
+// ==========================================================================
+// 多廠商流水線 Orchestrator
+// ==========================================================================
 function renderPipelineStages() {
   const container = document.getElementById('pipelineStagesList');
   container.innerHTML = '';
@@ -1210,6 +1332,8 @@ function renderPipelineStages() {
     node.className = 'pipeline-node';
     node.id = `node_${stage.id}`;
 
+    const vendorModels = Store.modelsRegistry[stage.vendor] || [];
+
     node.innerHTML = `
       <div class="pipeline-node-header">
         <div class="node-badge">
@@ -1220,43 +1344,58 @@ function renderPipelineStages() {
       </div>
       <div class="pipeline-node-body">
         <div class="field-group">
-          <label class="field-label">Gemini 模型節點</label>
-          <select class="input-select" onchange="updateStageModel(${idx}, this.value)">
-            ${Store.modelsRegistry.map(m => `<option value="${m}" ${m === stage.model ? 'selected' : ''}>${m}</option>`).join('')}
+          <label class="field-label">執行廠商 & 模型</label>
+          <select class="input-select" onchange="updateStageVendor(${idx}, this.value)">
+            <option value="gemini" ${stage.vendor === 'gemini' ? 'selected' : ''}>Google Gemini</option>
+            <option value="openai" ${stage.vendor === 'openai' ? 'selected' : ''}>OpenAI (ChatGPT)</option>
+            <option value="claude" ${stage.vendor === 'claude' ? 'selected' : ''}>Anthropic (Claude)</option>
+            <option value="grok" ${stage.vendor === 'grok' ? 'selected' : ''}>xAI (Grok)</option>
           </select>
+
+          <select class="input-select" style="margin-top: 6px;" onchange="updateStageModel(${idx}, this.value)">
+            ${vendorModels.map(m => `<option value="${m}" ${m === stage.model ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+
           <label class="field-label" style="margin-top: 6px;">溫度 (Temperature)</label>
           <input type="number" step="0.1" min="0" max="1" class="input-text" value="${stage.temperature}" onchange="updateStageTemp(${idx}, this.value)">
         </div>
+
         <div class="field-group">
-          <label class="field-label">系統指令 (Prompt)</label>
+          <label class="field-label">系統指令 (System Instruction)</label>
           <textarea class="input-textarea" onchange="updateStagePrompt(${idx}, this.value)">${stage.systemPrompt}</textarea>
         </div>
       </div>
       <div class="field-group">
-        <label class="field-label">節點輸出快取</label>
-        <div class="node-output-preview">${stage.lastOutput || '尚未執行。'}</div>
+        <label class="field-label">節點輸出結果</label>
+        <div class="node-output-preview">${stage.lastOutput || '尚未執行該節點。'}</div>
       </div>
     `;
     container.appendChild(node);
   });
 }
 
-function updateStageModel(index, val) { Store.pipelineStages[index].model = val; saveStore(); }
-function updateStageTemp(index, val) { Store.pipelineStages[index].temperature = parseFloat(val); saveStore(); }
-function updateStagePrompt(index, val) { Store.pipelineStages[index].systemPrompt = val; saveStore(); }
+function updateStageVendor(idx, v) {
+  Store.pipelineStages[idx].vendor = v;
+  Store.pipelineStages[idx].model = (Store.modelsRegistry[v] || [])[0] || '';
+  saveStore();
+  renderPipelineStages();
+}
+function updateStageModel(idx, m) { Store.pipelineStages[idx].model = m; saveStore(); }
+function updateStageTemp(idx, t) { Store.pipelineStages[idx].temperature = parseFloat(t); saveStore(); }
+function updateStagePrompt(idx, p) { Store.pipelineStages[idx].systemPrompt = p; saveStore(); }
 
-function deletePipelineStage(index) {
+function deletePipelineStage(idx) {
   if (Store.pipelineStages.length <= 1) return showToast('至少需保留一個步驟', 'warn');
-  Store.pipelineStages.splice(index, 1);
+  Store.pipelineStages.splice(idx, 1);
   saveStore();
   renderPipelineStages();
 }
 
 async function executePipeline() {
   const rootInput = document.getElementById('pipelineInitialPayload').value.trim();
-  if (!rootInput) return showToast('請提供初始輸入數據', 'warn');
+  if (!rootInput) return showToast('請提供流水線初始輸入數據', 'warn');
 
-  setGlobalStatus('busy', '執行流水線中...');
+  setGlobalStatus('busy', '流水線執行中...');
   let rollingPayload = rootInput;
 
   for (let i = 0; i < Store.pipelineStages.length; i++) {
@@ -1265,11 +1404,12 @@ async function executePipeline() {
     if (nodeElem) nodeElem.classList.add('running');
 
     try {
-      const output = await callGeminiApi({
+      const output = await callVendorAPI({
+        vendor: stage.vendor,
         model: stage.model,
-        systemInstruction: stage.systemPrompt,
-        temperature: stage.temperature,
-        contents: [{ role: 'user', parts: [{ text: `前置輸入數據：\n\n${rollingPayload}` }] }]
+        prompt: `【前置步驟輸出數據】：\n\n${rollingPayload}`,
+        system: stage.systemPrompt,
+        temperature: stage.temperature
       });
 
       stage.lastOutput = output;
@@ -1282,77 +1422,14 @@ async function executePipeline() {
       }
     } catch (err) {
       if (nodeElem) nodeElem.classList.remove('running');
-      setGlobalStatus('error', '流水線出錯');
-      return showToast(`步驟 ${i + 1} 失敗: ${err.message}`, 'error');
+      setGlobalStatus('error', '流水線中斷');
+      return showToast(`步驟 ${i + 1} (${stage.vendor.toUpperCase()}) 失敗: ${err.message}`, 'error');
     }
   }
 
   saveStore();
   setGlobalStatus('idle', '流水線完成');
-  showToast('流水線全部處理完成！', 'success');
-}
-
-// API Key 管理
-function renderApiKeyPool() {
-  const container = document.getElementById('apiKeyPoolList');
-  container.innerHTML = '';
-  if (Store.apiKeys.length === 0) {
-    container.innerHTML = '<div style="color: var(--text-tertiary); font-size: 13px;">尚未配置金鑰</div>';
-    return;
-  }
-  Store.apiKeys.forEach((keyObj, idx) => {
-    const row = document.createElement('div');
-    row.className = 'api-pool-item';
-    const masked = keyObj.key.slice(0, 6) + '••••••••••••' + keyObj.key.slice(-4);
-    row.innerHTML = `
-      <span class="key-preview">${masked}</span>
-      <span class="key-health-tag">有效</span>
-      <button class="btn btn-danger btn-icon" onclick="removeApiKey(${idx})">✕</button>
-    `;
-    container.appendChild(row);
-  });
-}
-
-function addApiKey() {
-  const input = document.getElementById('inputNewApiKey');
-  const val = input.value.trim();
-  if (!val) return;
-  Store.apiKeys.push({ key: val, addedAt: new Date().toISOString() });
-  input.value = '';
-  saveStore();
-  renderApiKeyPool();
-  showToast('金鑰已加入', 'success');
-}
-
-function removeApiKey(index) {
-  Store.apiKeys.splice(index, 1);
-  saveStore();
-  renderApiKeyPool();
-}
-
-async function fetchOnlineModels() {
-  if (Store.apiKeys.length === 0) return showToast('請先新增 API Key', 'warn');
-  showToast('正在連接 Google 模型清單 API...', 'info');
-  try {
-    const key = Store.apiKeys[0].key;
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    
-    const geminiModels = (data.models || [])
-      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-      .map(m => m.name.replace(/^models\//, ''));
-
-    if (geminiModels.length > 0) {
-      Store.modelsRegistry = geminiModels;
-      updateAllModelDropdowns();
-      saveStore();
-      renderPipelineStages();
-      showToast(`成功同步 ${geminiModels.length} 個可用模型！`, 'success');
-    }
-  } catch (err) {
-    showToast(`獲取模型失敗: ${err.message}`, 'error');
-  }
+  showToast('流水線全部節點處理完成！', 'success');
 }
 
 function setGlobalStatus(state, label) {
@@ -1360,31 +1437,25 @@ function setGlobalStatus(state, label) {
   document.getElementById('globalStatusText').textContent = label;
 }
 
-// 初始化
+// ==========================================================================
+// 初始化與事件綁定
+// ==========================================================================
 window.addEventListener('DOMContentLoaded', () => {
   loadStore();
-  updateAllModelDropdowns();
+  updateChatModelPicker();
   renderSessionList();
   renderActiveChat();
   renderPipelineStages();
-  renderApiKeyPool();
 
-  // 頂欄模型選單切換監聽
-  const headerSelect = document.getElementById('headerModelSelect');
-  const modalSelect = document.getElementById('selectDefaultModel');
-
-  headerSelect.onchange = (e) => {
-    Store.defaultModel = e.target.value;
-    modalSelect.value = e.target.value;
+  // 頂欄下拉選單聯動
+  document.getElementById('chatVendorSelect').onchange = (e) => {
+    Store.chatSelection.vendor = e.target.value;
+    updateChatModelPicker();
     saveStore();
-    showToast(`模型已切換至：${Store.defaultModel}`, 'info');
   };
-
-  modalSelect.onchange = (e) => {
-    Store.defaultModel = e.target.value;
-    headerSelect.value = e.target.value;
+  document.getElementById('chatModelSelect').onchange = (e) => {
+    Store.chatSelection.model = e.target.value;
     saveStore();
-    showToast(`模型已切換至：${Store.defaultModel}`, 'info');
   };
 
   // 導航切換
@@ -1395,25 +1466,38 @@ window.addEventListener('DOMContentLoaded', () => {
       item.classList.add('active');
       const viewId = item.dataset.view;
       document.getElementById(viewId).classList.add('active');
-      document.getElementById('stageTitle').textContent = viewId === 'chatView' ? 'Gemini 對話' : '多流水線 Matrix';
+      document.getElementById('stageTitle').textContent = viewId === 'chatView' ? '多平台 AI 對話' : '多廠商工作流水線';
     });
   });
 
-  // 設定彈窗
-  document.getElementById('btnOpenSettings').onclick = () => document.getElementById('settingsModal').classList.add('active');
+  // 設定 Modal
+  document.getElementById('btnOpenSettings').onclick = () => {
+    document.getElementById('key_gemini').value = Store.keys.gemini || '';
+    document.getElementById('key_openai').value = Store.keys.openai || '';
+    document.getElementById('key_claude').value = Store.keys.claude || '';
+    document.getElementById('key_grok').value = Store.keys.grok || '';
+    document.getElementById('settingsModal').classList.add('active');
+  };
   document.getElementById('btnCloseSettings').onclick = () => document.getElementById('settingsModal').classList.remove('active');
-  document.getElementById('btnAddApiKey').onclick = addApiKey;
-  document.getElementById('btnSyncOnlineModels').onclick = fetchOnlineModels;
+
+  document.getElementById('btnSaveKeys').onclick = () => {
+    Store.keys.gemini = document.getElementById('key_gemini').value.trim();
+    Store.keys.openai = document.getElementById('key_openai').value.trim();
+    Store.keys.claude = document.getElementById('key_claude').value.trim();
+    Store.keys.grok = document.getElementById('key_grok').value.trim();
+    saveStore();
+    document.getElementById('settingsModal').classList.remove('active');
+    showToast('4 廠 API 設定已全部保存！', 'success');
+  };
 
   // 對話操作
   document.getElementById('btnNewSession').onclick = () => createNewSession();
   document.getElementById('btnExportSession').onclick = () => {
     const session = getActiveSession();
     if (!session) return;
-    const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Gemini_Session_${session.title}.json`;
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' }));
+    a.download = `Universal_Chat_${session.title}.json`;
     a.click();
   };
   document.getElementById('btnClearCurrentChat').onclick = () => {
@@ -1422,7 +1506,7 @@ window.addEventListener('DOMContentLoaded', () => {
       session.messages = [];
       saveStore();
       renderActiveChat();
-      showToast('對話已清空', 'info');
+      showToast('對話內容已清空', 'info');
     }
   };
 
@@ -1431,8 +1515,9 @@ window.addEventListener('DOMContentLoaded', () => {
     Store.pipelineStages.push({
       id: 'stg_' + Date.now(),
       title: `階段 ${Store.pipelineStages.length + 1}：新增任務節點`,
-      model: Store.defaultModel,
-      systemPrompt: '請對前置內容進行分析處理。',
+      vendor: 'gemini',
+      model: 'gemini-2.5-flash',
+      systemPrompt: '請對前置內容進行提煉與改進。',
       temperature: 0.3,
       lastOutput: ''
     });
