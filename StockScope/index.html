@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Gemini Studio Pro — Apple HIG Orchestrator</title>
+<title>Gemini Studio Pro — Apple HIG Orchestrator & Chart Analytics</title>
 <style>
 /* ==========================================================================
    1. APPLE HIG THEME SYSTEM (Frosted Glassmorphism, Vibrancy, San Francisco)
@@ -104,16 +104,6 @@ html, body {
   overflow: hidden;
 }
 
-/* Glass Surface Utility */
-.glass {
-  background: var(--surface-translucent);
-  -webkit-backdrop-filter: blur(40px) saturate(190%);
-  backdrop-filter: blur(40px) saturate(190%);
-  border: 1px solid var(--surface-border);
-  box-shadow: inset 0 1px 0 var(--surface-highlight);
-}
-
-/* Sidebar */
 .sidebar {
   width: var(--sidebar-w);
   height: 100%;
@@ -275,7 +265,6 @@ html, body {
   background: rgba(14, 14, 16, 0.4);
 }
 
-/* Header / Title Bar */
 .stage-header {
   height: var(--header-h);
   padding: 0 20px;
@@ -369,6 +358,16 @@ html, body {
   box-shadow: 0 6px 20px rgba(var(--apple-blue-rgb), 0.5);
 }
 
+.btn-success {
+  background: rgba(48, 209, 88, 0.2);
+  border-color: rgba(48, 209, 88, 0.4);
+  color: var(--apple-green);
+}
+
+.btn-success:hover {
+  background: rgba(48, 209, 88, 0.3);
+}
+
 .btn-danger {
   background: rgba(255, 69, 58, 0.15);
   border-color: rgba(255, 69, 58, 0.3);
@@ -406,7 +405,7 @@ html, body {
 }
 
 /* ==========================================================================
-   3. CHAT VIEW (CONVERSATION & HIG CHAT BUBBLES)
+   3. CHAT VIEW
    ========================================================================== */
 .chat-container {
   flex: 1;
@@ -476,26 +475,6 @@ html, body {
   border-bottom-left-radius: var(--radius-xs);
 }
 
-.chat-bubble pre {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--surface-separator);
-  padding: 12px;
-  border-radius: var(--radius-sm);
-  overflow-x: auto;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  margin: 8px 0;
-}
-
-.chat-bubble code {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 2px 5px;
-  border-radius: 4px;
-}
-
-/* Chat Input Bar */
 .chat-dock {
   padding: 16px 24px 20px;
   background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 12, 0.9) 100%);
@@ -538,7 +517,7 @@ html, body {
 }
 
 /* ==========================================================================
-   4. PIPELINE ORCHESTRATOR VIEW (DAG / SEQUENTIAL MULTI-STAGE ENGINE)
+   4. PIPELINE ORCHESTRATOR VIEW
    ========================================================================== */
 .pipeline-view {
   padding: 24px;
@@ -621,12 +600,6 @@ html, body {
   font-size: 11px;
 }
 
-.node-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .pipeline-node-body {
   display: grid;
   grid-template-columns: 200px 1fr;
@@ -683,7 +656,6 @@ html, body {
   font-family: var(--font-mono);
 }
 
-/* Pipeline Connector Cable Visualizer */
 .pipeline-connector {
   display: flex;
   align-items: center;
@@ -694,7 +666,62 @@ html, body {
 }
 
 /* ==========================================================================
-   5. POOL MANAGEMENT & SETTINGS MODAL (APPLE SHEET)
+   5. CHART & METRICS VIEW (新增圖表與確認保存模組)
+   ========================================================================== */
+.chart-view {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chart-config-card {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chart-control-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.chart-canvas-card {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chart-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 340px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-separator);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+canvas#analyticsChart {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ==========================================================================
+   6. POOL MANAGEMENT & SETTINGS MODAL
    ========================================================================== */
 .modal-overlay {
   position: fixed;
@@ -774,10 +801,9 @@ html, body {
 }
 .key-health-tag.valid { background: rgba(48, 209, 88, 0.2); color: var(--apple-green); }
 .key-health-tag.invalid { background: rgba(255, 69, 58, 0.2); color: var(--apple-red); }
-.key-health-tag.unchecked { background: rgba(255, 255, 255, 0.1); color: var(--text-tertiary); }
 
 /* ==========================================================================
-   6. METRICS & TELEMETRY TOAST
+   7. TOAST NOTIFICATIONS
    ========================================================================== */
 .toast-manager {
   position: fixed;
@@ -811,7 +837,6 @@ html, body {
 @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-/* Scrollbar refinement */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
@@ -831,23 +856,27 @@ html, body {
         <span class="traffic-light traffic-min" title="Minimize"></span>
         <span class="traffic-light traffic-max" title="Maximize"></span>
       </div>
-      <button class="btn btn-icon" id="btnNewSession" title="New Chat (⌘N)">＋</button>
+      <button class="btn btn-icon" id="btnNewSession" title="新建對話 (⌘N)">＋</button>
     </div>
 
     <nav class="sidebar-nav">
       <div class="nav-item active" data-view="chatView">
         <span class="icon">💬</span>
-        <span>Studio Chat</span>
+        <span>Gemini 對話</span>
       </div>
       <div class="nav-item" data-view="pipelineView">
         <span class="icon">⚡️</span>
-        <span>Pipeline Matrix</span>
+        <span>多流水線 Matrix</span>
+      </div>
+      <div class="nav-item" data-view="chartView">
+        <span class="icon">📊</span>
+        <span>圖表數據與指標</span>
       </div>
     </nav>
 
     <div class="session-section">
       <div class="section-label">
-        <span>Conversations</span>
+        <span>歷史對話</span>
         <span id="sessionCount">0</span>
       </div>
       <div class="session-list" id="sessionList"></div>
@@ -856,7 +885,7 @@ html, body {
     <div style="padding: 12px; border-top: 1px solid var(--surface-separator);">
       <button class="btn" style="width: 100%; justify-content: flex-start;" id="btnOpenSettings">
         <span class="icon">⚙️</span>
-        <span>API Keys & Pools</span>
+        <span>API 金鑰池 & 設定</span>
       </button>
     </div>
   </aside>
@@ -866,15 +895,15 @@ html, body {
     <!-- TOP STATUS BAR -->
     <header class="stage-header">
       <div class="header-meta">
-        <span class="header-title" id="stageTitle">Studio Chat</span>
+        <span class="header-title" id="stageTitle">Gemini 對話</span>
         <div class="status-capsule">
           <span class="status-dot idle" id="globalStatusDot"></span>
-          <span id="globalStatusText">Gemini Ready</span>
+          <span id="globalStatusText">Gemini 就緒</span>
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn" id="btnExportSession" title="Export Current Session">📤 Export</button>
-        <button class="btn btn-danger" id="btnClearCurrentChat" title="Clear Context">Clear Context</button>
+        <button class="btn" id="btnExportSession" title="匯出當前對話">📤 匯出對話</button>
+        <button class="btn btn-danger" id="btnClearCurrentChat" title="清空對話上下文">清空上下文</button>
       </div>
     </header>
 
@@ -883,13 +912,11 @@ html, body {
       <!-- 1. STUDIO CHAT VIEW -->
       <section class="view-panel active" id="chatView">
         <div class="chat-container">
-          <div class="messages-scrollable" id="messagesContainer">
-            <!-- Messages rendered dynamically -->
-          </div>
+          <div class="messages-scrollable" id="messagesContainer"></div>
           <div class="chat-dock">
             <div class="chat-input-wrapper">
-              <textarea class="chat-textarea" id="chatInput" placeholder="Message Gemini API or execute workflow (Shift+Enter for newline)..." rows="1"></textarea>
-              <button class="btn btn-primary" id="btnSendMessage">Send</button>
+              <textarea class="chat-textarea" id="chatInput" placeholder="輸入訊息至 Gemini API (Shift+Enter 換行)..." rows="1"></textarea>
+              <button class="btn btn-primary" id="btnSendMessage">發送</button>
             </div>
           </div>
         </div>
@@ -900,22 +927,79 @@ html, body {
         <div class="pipeline-view">
           <div class="pipeline-hero">
             <div class="pipeline-hero-text">
-              <h2>Gemini Sequential Pipeline Orchestrator</h2>
-              <p>Chain multi-turn Gemini reasoning stages where each step dynamically ingests outputs from previous models.</p>
+              <h2>Gemini 多階工作流水線</h2>
+              <p>自動將前一步驟的分析與輸出傳遞給下一步驟，構建端到端的 AI 處理鏈。</p>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn" id="btnAddPipelineStage">＋ Add Step</button>
-              <button class="btn btn-primary" id="btnRunPipeline">🚀 Execute Pipeline</button>
+              <button class="btn" id="btnAddPipelineStage">＋ 新增步驟</button>
+              <button class="btn btn-primary" id="btnRunPipeline">🚀 執行流水線</button>
             </div>
           </div>
 
           <div class="field-group" style="background: var(--surface-card); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--surface-border);">
-            <label class="field-label">Pipeline Initial Input / Context Payload</label>
-            <textarea class="input-textarea" id="pipelineInitialPayload" placeholder="Enter raw context, code, or query for the root node..." style="min-height: 80px;"></textarea>
+            <label class="field-label">流水線初始輸入數據 / Payload</label>
+            <textarea class="input-textarea" id="pipelineInitialPayload" placeholder="輸入要交由第一個模型處理的初始任務或上下文..." style="min-height: 80px;"></textarea>
           </div>
 
-          <div class="pipeline-stages-container" id="pipelineStagesList">
-            <!-- Pipeline stage nodes injected dynamically -->
+          <div class="pipeline-stages-container" id="pipelineStagesList"></div>
+        </div>
+      </section>
+
+      <!-- 3. CHART ANALYTICS VIEW (新增：圖表更改與確認保存) -->
+      <section class="view-panel" id="chartView">
+        <div class="chart-view">
+          <div class="chart-config-card">
+            <div>
+              <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">📊 圖表視覺化自訂與分析</h2>
+              <p style="font-size: 12.5px; color: var(--text-secondary);">調整數據維度、展示圖形及時間跨度，點擊「確認」按鈕將立即生效並保存配置至本地存儲。</p>
+            </div>
+            
+            <div class="chart-control-row">
+              <div class="field-group">
+                <label class="field-label">圖表類型 (Chart Type)</label>
+                <select class="input-select" id="chartTypeSelect">
+                  <option value="line">平滑折線圖 (Line Series)</option>
+                  <option value="bar">漸變柱狀圖 (Bar Columns)</option>
+                  <option value="area">面積堆疊圖 (Spline Area)</option>
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">監控指標維度 (Metric)</label>
+                <select class="input-select" id="chartMetricSelect">
+                  <option value="tokens">Token 消耗總量 (Tokens Count)</option>
+                  <option value="latency">平均響應延遲 (Response Latency ms)</option>
+                  <option value="requests">流水線執行頻次 (Request Count)</option>
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">主題強調色 (Accent Tone)</label>
+                <select class="input-select" id="chartColorSelect">
+                  <option value="#0A84FF">Apple Classic Blue (經典藍)</option>
+                  <option value="#30D158">Apple Emerald Green (翡翠綠)</option>
+                  <option value="#BF5AF2">Apple Vivid Purple (夢幻紫)</option>
+                  <option value="#FF9F0A">Apple Amber Orange (琥珀橙)</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" id="btnConfirmChartChange" style="padding: 9px 20px; font-weight: 600;">
+                  <span>💾</span>
+                  <span>確認並保存圖表</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-canvas-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="font-size: 14px; font-weight: 600;" id="chartDisplayTitle">指標趨勢即時視圖</h3>
+              <span class="status-capsule" id="chartSaveStatusTag" style="color: var(--apple-green);">● 已保存</span>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="analyticsChart"></canvas>
+            </div>
           </div>
         </div>
       </section>
@@ -923,48 +1007,37 @@ html, body {
   </main>
 </div>
 
-<!-- SETTINGS MODAL: API KEY POOL & MODEL DISCOVERY -->
+<!-- SETTINGS MODAL: API KEY POOL -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal-sheet">
     <div class="modal-header">
-      <h3>Gemini API Configuration & Keys Pool</h3>
+      <h3>Gemini API 設定與金鑰池</h3>
       <button class="btn btn-icon" id="btnCloseSettings">✕</button>
     </div>
     <div class="modal-body">
       <div class="field-group">
-        <label class="field-label">Add Gemini API Key to Pool</label>
+        <label class="field-label">新增 Gemini API Key 至負載均衡池</label>
         <div style="display: flex; gap: 8px;">
           <input type="password" class="input-text" id="inputNewApiKey" placeholder="AIzaSy..." style="flex: 1;">
-          <button class="btn btn-primary" id="btnAddApiKey">Add Key</button>
+          <button class="btn btn-primary" id="btnAddApiKey">加入金鑰</button>
         </div>
       </div>
 
       <div class="field-group">
-        <label class="field-label">Active Gemini API Key Pool (Load Balanced)</label>
-        <div id="apiKeyPoolList" style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- Pool items injected dynamically -->
-        </div>
+        <label class="field-label">已啟用的 API 金鑰池 (輪詢均衡)</label>
+        <div id="apiKeyPoolList" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
 
       <div class="field-group">
-        <label class="field-label">Default Model Selector</label>
+        <label class="field-label">預設模型選擇</label>
         <div style="display: flex; gap: 8px;">
           <select class="input-select" id="selectDefaultModel" style="flex: 1;">
-            <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Accurate)</option>
-            <option value="gemini-2.5-pro">gemini-2.5-pro (Reasoning & Analysis)</option>
+            <option value="gemini-2.5-flash">gemini-2.5-flash (極速推薦)</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro (深度推理)</option>
             <option value="gemini-2.0-flash">gemini-2.0-flash</option>
             <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
           </select>
-          <button class="btn" id="btnSyncOnlineModels">🔄 Fetch Models</button>
-        </div>
-      </div>
-
-      <div class="field-group">
-        <label class="field-label">Export / Import Studio Data</label>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn" id="btnExportAllData" style="flex: 1;">Backup Database (JSON)</button>
-          <button class="btn" id="btnImportAllData" style="flex: 1;">Restore Database</button>
-          <input type="file" id="fileImportInput" accept=".json" style="display: none;">
+          <button class="btn" id="btnSyncOnlineModels">🔄 獲取可用模型</button>
         </div>
       </div>
     </div>
@@ -975,16 +1048,15 @@ html, body {
 <div class="toast-manager" id="toastContainer"></div>
 
 <!-- ==========================================================================
-   7. CORE ENGINE JAVASCRIPT LOGIC
-   ========================================================================== -->
+   8. CORE ENGINE JAVASCRIPT LOGIC
+   ========================================================================== */
+-->
 <script>
-/**
- * GEMINI STUDIO ARCHITECTURE ENGINE
- * Single-file reactive state store, multi-key round-robin scheduler,
- * sequential pipeline dispatcher, and Apple-grade renderer.
- */
+'use strict';
 
-// Global State
+/**
+ * GEMINI STUDIO ARCHITECTURE & CHART ENGINE
+ */
 const Store = {
   activeView: 'chatView',
   sessions: [],
@@ -998,48 +1070,56 @@ const Store = {
     'gemini-2.0-flash',
     'gemini-2.0-flash-lite'
   ],
+  // 圖表持久化設定
+  chartConfig: {
+    type: 'line',
+    metric: 'tokens',
+    color: '#0A84FF',
+    dataPoints: [28, 45, 36, 68, 84, 72, 110, 95]
+  },
   pipelineStages: [
     {
       id: 'stg_1',
-      title: 'Phase 1: Analysis & Extraction',
+      title: '第一階段：核心問題解析與提取',
       model: 'gemini-2.5-flash',
-      systemPrompt: 'You are a meticulous analyst. Extract key facts, issues, and constraints from the input.',
+      systemPrompt: '你是一名資深分析專家，請條理清晰地解析輸入內容的核心問題與約束條件。',
       temperature: 0.2,
       lastOutput: ''
     },
     {
       id: 'stg_2',
-      title: 'Phase 2: Solution Architecture',
+      title: '第二階段：架構設計與優化方案',
       model: 'gemini-2.5-flash',
-      systemPrompt: 'You are a senior solutions engineer. Based on the analysis, design a clean, optimal solution.',
+      systemPrompt: '你是一名解決方案工程師，請依據先前的分析給出最佳解決方案與架構路徑。',
       temperature: 0.4,
       lastOutput: ''
     },
     {
       id: 'stg_3',
-      title: 'Phase 3: Code & Verification Matrix',
+      title: '第三階段：代碼生成與最終驗收',
       model: 'gemini-2.5-pro',
-      systemPrompt: 'You are a QA and code architect. Review previous steps and output the complete production-grade result.',
+      systemPrompt: '你是一名代碼評審專家，請輸出可直接執行的代碼並附帶單元測試。',
       temperature: 0.1,
       lastOutput: ''
     }
   ]
 };
 
-// Persistence Handlers
+// 本地存儲管理
 function saveStore() {
-  localStorage.setItem('GEMINI_STUDIO_STORE_V1', JSON.stringify({
+  localStorage.setItem('GEMINI_STUDIO_STORE_V2', JSON.stringify({
     sessions: Store.sessions,
     activeSessionId: Store.activeSessionId,
     apiKeys: Store.apiKeys,
     defaultModel: Store.defaultModel,
-    pipelineStages: Store.pipelineStages
+    pipelineStages: Store.pipelineStages,
+    chartConfig: Store.chartConfig
   }));
 }
 
 function loadStore() {
   try {
-    const raw = localStorage.getItem('GEMINI_STUDIO_STORE_V1');
+    const raw = localStorage.getItem('GEMINI_STUDIO_STORE_V2');
     if (raw) {
       const parsed = JSON.parse(raw);
       Store.sessions = parsed.sessions || [];
@@ -1047,29 +1127,30 @@ function loadStore() {
       Store.apiKeys = parsed.apiKeys || [];
       Store.defaultModel = parsed.defaultModel || 'gemini-2.5-flash';
       Store.pipelineStages = parsed.pipelineStages || Store.pipelineStages;
+      Store.chartConfig = parsed.chartConfig || Store.chartConfig;
     }
   } catch (err) {
-    console.error('Failed to load store from local storage:', err);
+    console.error('加載本地存儲失敗:', err);
   }
 
   if (Store.sessions.length === 0) {
-    createNewSession('General Conversation');
+    createNewSession('新工作對話');
   } else if (!Store.activeSessionId || !Store.sessions.find(s => s.id === Store.activeSessionId)) {
     Store.activeSessionId = Store.sessions[0].id;
   }
 }
 
-// Key Pool Load Balancer
+// 輪詢 API Key 負載均衡
 function getNextAvailableApiKey() {
   if (!Store.apiKeys || Store.apiKeys.length === 0) {
-    throw new Error('No Gemini API Key found. Please add a valid API key in Settings.');
+    throw new Error('未檢測到 Gemini API Key，請點擊左下角「設定」配置金鑰。');
   }
-  const activeKeyObj = Store.apiKeys[Store.currentKeyIndex % Store.apiKeys.length];
+  const keyObj = Store.apiKeys[Store.currentKeyIndex % Store.apiKeys.length];
   Store.currentKeyIndex++;
-  return activeKeyObj.key;
+  return keyObj.key;
 }
 
-// Toast Notifier
+// Toast 通知組件
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
@@ -1086,10 +1167,10 @@ function showToast(message, type = 'info') {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(10px)';
     setTimeout(() => toast.remove(), 300);
-  }, 3500);
+  }, 3200);
 }
 
-// Gemini Raw API Service
+// Gemini 核心 API 請求
 async function callGeminiApi({ model, contents, systemInstruction, temperature = 0.7 }) {
   const apiKey = getNextAvailableApiKey();
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -1116,16 +1197,15 @@ async function callGeminiApi({ model, contents, systemInstruction, temperature =
 
   if (!response.ok) {
     const errorDetails = await response.text();
-    throw new Error(`API Error [HTTP ${response.status}]: ${errorDetails}`);
+    throw new Error(`API 錯誤 [HTTP ${response.status}]: ${errorDetails}`);
   }
 
   const data = await response.json();
-  const textOutput = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
-  return textOutput;
+  return data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
 }
 
-// Session Management
-function createNewSession(title = 'New Conversation') {
+// 對話管理
+function createNewSession(title = '新工作對話') {
   const newSession = {
     id: 'ses_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
     title: title,
@@ -1133,7 +1213,7 @@ function createNewSession(title = 'New Conversation') {
     messages: [
       {
         role: 'model',
-        text: 'Hello! I am connected to the Gemini API engine. How can I assist your workflow today?',
+        text: '您好！Gemini 工作台已準備就緒，您可以開始提問或切換至流水線處理複雜任務。',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]
@@ -1148,7 +1228,7 @@ function createNewSession(title = 'New Conversation') {
 function deleteSession(id, event) {
   if (event) event.stopPropagation();
   if (Store.sessions.length <= 1) {
-    showToast('Cannot delete the last remaining session.', 'warn');
+    showToast('至少需保留一個對話會話。', 'warn');
     return;
   }
   Store.sessions = Store.sessions.filter(s => s.id !== id);
@@ -1158,14 +1238,14 @@ function deleteSession(id, event) {
   saveStore();
   renderSessionList();
   renderActiveChat();
-  showToast('Session deleted.', 'info');
+  showToast('對話已刪除', 'info');
 }
 
 function getActiveSession() {
   return Store.sessions.find(s => s.id === Store.activeSessionId);
 }
 
-// UI Renderers
+// 渲染對話列表
 function renderSessionList() {
   const container = document.getElementById('sessionList');
   container.innerHTML = '';
@@ -1186,7 +1266,7 @@ function renderSessionList() {
         <span>💬</span>
         <span style="overflow: hidden; text-overflow: ellipsis;">${session.title}</span>
       </div>
-      <button class="session-delete-btn" title="Delete">✕</button>
+      <button class="session-delete-btn" title="刪除對話">✕</button>
     `;
 
     row.querySelector('.session-delete-btn').onclick = (e) => deleteSession(session.id, e);
@@ -1206,7 +1286,7 @@ function renderActiveChat() {
     
     wrap.innerHTML = `
       <div class="chat-bubble-meta">
-        <span>${msg.role === 'user' ? 'You' : 'Gemini'}</span>
+        <span>${msg.role === 'user' ? '您' : 'Gemini'}</span>
         <span>•</span>
         <span>${msg.timestamp || ''}</span>
       </div>
@@ -1225,18 +1305,14 @@ function formatMarkdownToHtml(text) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   
-  // Format code blocks
   esc = esc.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-  // Format inline code
   esc = esc.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // Bold & Italic
   esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   esc = esc.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  // Line breaks
   return esc.replace(/\n/g, '<br>');
 }
 
-// Chat Dispatcher
+// 發送對話訊息
 async function handleSendMessage() {
   const input = document.getElementById('chatInput');
   const userText = input.value.trim();
@@ -1245,7 +1321,6 @@ async function handleSendMessage() {
   const session = getActiveSession();
   if (!session) return;
 
-  // Add User Message
   session.messages.push({
     role: 'user',
     text: userText,
@@ -1253,7 +1328,7 @@ async function handleSendMessage() {
   });
 
   if (session.messages.length === 2) {
-    session.title = userText.slice(0, 24) + (userText.length > 24 ? '...' : '');
+    session.title = userText.slice(0, 20) + (userText.length > 20 ? '...' : '');
     renderSessionList();
   }
 
@@ -1261,7 +1336,7 @@ async function handleSendMessage() {
   input.style.height = 'auto';
   renderActiveChat();
 
-  setGlobalStatus('busy', 'Gemini Thinking...');
+  setGlobalStatus('busy', 'Gemini 思考中...');
 
   try {
     const historyPayload = session.messages.map(m => ({
@@ -1282,20 +1357,168 @@ async function handleSendMessage() {
 
     saveStore();
     renderActiveChat();
-    setGlobalStatus('idle', 'Gemini Ready');
+    setGlobalStatus('idle', 'Gemini 就緒');
   } catch (err) {
-    setGlobalStatus('error', 'Error');
+    setGlobalStatus('error', '請求失敗');
     showToast(err.message, 'error');
     session.messages.push({
       role: 'model',
-      text: `⚠️ **Error Generating Response:** ${err.message}`,
+      text: `⚠️ **生成失敗:** ${err.message}`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
     renderActiveChat();
   }
 }
 
-// Pipeline View Logic
+// ==========================================================================
+// 9. 圖表繪製與「確認並保存」模組
+// ==========================================================================
+function initChartControls() {
+  const typeSelect = document.getElementById('chartTypeSelect');
+  const metricSelect = document.getElementById('chartMetricSelect');
+  const colorSelect = document.getElementById('chartColorSelect');
+  const btnConfirm = document.getElementById('btnConfirmChartChange');
+
+  // 還原已保存的設定
+  typeSelect.value = Store.chartConfig.type || 'line';
+  metricSelect.value = Store.chartConfig.metric || 'tokens';
+  colorSelect.value = Store.chartConfig.color || '#0A84FF';
+
+  // 點擊「確認」按鈕保存更改
+  btnConfirm.onclick = () => {
+    Store.chartConfig.type = typeSelect.value;
+    Store.chartConfig.metric = metricSelect.value;
+    Store.chartConfig.color = colorSelect.value;
+
+    // 保存至 LocalStorage
+    saveStore();
+
+    // 重新繪製圖表
+    renderAnalyticsChart();
+
+    // UI 反饋
+    const statusTag = document.getElementById('chartSaveStatusTag');
+    statusTag.textContent = '● 已保存最新配置';
+    statusTag.style.color = 'var(--apple-green)';
+    
+    showToast('圖表設定已確認並持久化保存！', 'success');
+  };
+
+  renderAnalyticsChart();
+}
+
+function renderAnalyticsChart() {
+  const canvas = document.getElementById('analyticsChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  // 處理高清像素適配
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+
+  const { type, color, dataPoints } = Store.chartConfig;
+  const width = rect.width;
+  const height = rect.height;
+  const padX = 40;
+  const padY = 30;
+
+  ctx.clearRect(0, 0, width, height);
+
+  // 繪製背景參考網格
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+  ctx.lineWidth = 1;
+  const gridLines = 4;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = padY + (height - padY * 2) * (i / gridLines);
+    ctx.beginPath();
+    ctx.moveTo(padX, y);
+    ctx.lineTo(width - padX, y);
+    ctx.stroke();
+  }
+
+  const maxVal = Math.max(...dataPoints) * 1.2;
+  const stepX = (width - padX * 2) / (dataPoints.length - 1);
+
+  // 繪製柱狀圖
+  if (type === 'bar') {
+    const barWidth = stepX * 0.45;
+    dataPoints.forEach((val, i) => {
+      const x = padX + i * stepX - barWidth / 2;
+      const barH = (val / maxVal) * (height - padY * 2);
+      const y = height - padY - barH;
+
+      const grad = ctx.createLinearGradient(0, y, 0, height - padY);
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, 'rgba(0,0,0,0.1)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barWidth, barH, [6, 6, 0, 0]);
+      ctx.fill();
+    });
+  } 
+  // 繪製折線圖與面積圖
+  else {
+    ctx.beginPath();
+    dataPoints.forEach((val, i) => {
+      const x = padX + i * stepX;
+      const y = height - padY - (val / maxVal) * (height - padY * 2);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    if (type === 'area') {
+      ctx.lineTo(width - padX, height - padY);
+      ctx.lineTo(padX, height - padY);
+      ctx.closePath();
+      const areaGrad = ctx.createLinearGradient(0, padY, 0, height - padY);
+      areaGrad.addColorStop(0, color + '55');
+      areaGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = areaGrad;
+      ctx.fill();
+    }
+
+    // 線條描邊
+    ctx.beginPath();
+    dataPoints.forEach((val, i) => {
+      const x = padX + i * stepX;
+      const y = height - padY - (val / maxVal) * (height - padY * 2);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 節點圓點
+    dataPoints.forEach((val, i) => {
+      const x = padX + i * stepX;
+      const y = height - padY - (val / maxVal) * (height - padY * 2);
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+  }
+
+  // 渲染標題
+  const metricMap = {
+    tokens: 'Token 消耗總量 (Tokens Count)',
+    latency: '平均響應延遲 (Latency ms)',
+    requests: '請求頻次 (Request Count)'
+  };
+  document.getElementById('chartDisplayTitle').textContent = `即時監控：${metricMap[Store.chartConfig.metric] || '指標視圖'}`;
+}
+
+// ==========================================================================
+// 10. 流水線 Orchestrator 邏輯
+// ==========================================================================
 function renderPipelineStages() {
   const container = document.getElementById('pipelineStagesList');
   container.innerHTML = '';
@@ -1319,26 +1542,26 @@ function renderPipelineStages() {
           <span>${stage.title}</span>
         </div>
         <div class="node-controls">
-          <button class="btn btn-danger btn-icon" onclick="deletePipelineStage(${idx})" title="Remove Stage">✕</button>
+          <button class="btn btn-danger btn-icon" onclick="deletePipelineStage(${idx})" title="刪除此步驟">✕</button>
         </div>
       </div>
       <div class="pipeline-node-body">
         <div class="field-group">
-          <label class="field-label">Model Endpoint</label>
+          <label class="field-label">Gemini 模型節點</label>
           <select class="input-select" onchange="updateStageModel(${idx}, this.value)">
             ${Store.modelsRegistry.map(m => `<option value="${m}" ${m === stage.model ? 'selected' : ''}>${m}</option>`).join('')}
           </select>
-          <label class="field-label" style="margin-top: 6px;">Temperature</label>
+          <label class="field-label" style="margin-top: 6px;">溫度 (Temperature)</label>
           <input type="number" step="0.1" min="0" max="1" class="input-text" value="${stage.temperature}" onchange="updateStageTemp(${idx}, this.value)">
         </div>
         <div class="field-group">
-          <label class="field-label">System Instruction & Task</label>
+          <label class="field-label">系統角色與指令 (Prompt Instruction)</label>
           <textarea class="input-textarea" onchange="updateStagePrompt(${idx}, this.value)">${stage.systemPrompt}</textarea>
         </div>
       </div>
       <div class="field-group">
-        <label class="field-label">Stage Output Cache</label>
-        <div class="node-output-preview">${stage.lastOutput || 'Stage has not run yet.'}</div>
+        <label class="field-label">本節點輸出快取</label>
+        <div class="node-output-preview">${stage.lastOutput || '尚未執行該流水線節點。'}</div>
       </div>
     `;
     container.appendChild(node);
@@ -1351,7 +1574,7 @@ function updateStagePrompt(index, val) { Store.pipelineStages[index].systemPromp
 
 function deletePipelineStage(index) {
   if (Store.pipelineStages.length <= 1) {
-    showToast('At least one pipeline stage is required.', 'warn');
+    showToast('至少需保留一個流水線步驟。', 'warn');
     return;
   }
   Store.pipelineStages.splice(index, 1);
@@ -1362,11 +1585,11 @@ function deletePipelineStage(index) {
 async function executePipeline() {
   const rootInput = document.getElementById('pipelineInitialPayload').value.trim();
   if (!rootInput) {
-    showToast('Please provide an initial payload for the pipeline.', 'warn');
+    showToast('請提供流水線初始輸入數據。', 'warn');
     return;
   }
 
-  setGlobalStatus('busy', 'Running Pipeline...');
+  setGlobalStatus('busy', '執行流水線中...');
   let rollingPayload = rootInput;
 
   for (let i = 0; i < Store.pipelineStages.length; i++) {
@@ -1386,13 +1609,13 @@ async function executePipeline() {
         contents: [
           {
             role: 'user',
-            parts: [{ text: `INPUT PAYLOAD FROM PREVIOUS STEP:\n\n${rollingPayload}` }]
+            parts: [{ text: `【前置步驟處理結果】：\n\n${rollingPayload}` }]
           }
         ]
       });
 
       stage.lastOutput = output;
-      rollingPayload = output; // Hand off to subsequent node
+      rollingPayload = output; // 自動傳遞給下一個步驟
 
       if (nodeElem) {
         nodeElem.classList.remove('running');
@@ -1401,24 +1624,24 @@ async function executePipeline() {
       }
     } catch (err) {
       if (nodeElem) nodeElem.classList.remove('running');
-      setGlobalStatus('error', 'Pipeline Error');
-      showToast(`Stage ${i + 1} Failed: ${err.message}`, 'error');
+      setGlobalStatus('error', '流水線出錯');
+      showToast(`步驟 ${i + 1} 執行失敗: ${err.message}`, 'error');
       return;
     }
   }
 
   saveStore();
-  setGlobalStatus('idle', 'Pipeline Completed');
-  showToast('Pipeline execution finished successfully!', 'success');
+  setGlobalStatus('idle', '流水線執行完畢');
+  showToast('流水線全部節點處理成功！', 'success');
 }
 
-// API Key Pool Management
+// API 金鑰池介面
 function renderApiKeyPool() {
   const container = document.getElementById('apiKeyPoolList');
   container.innerHTML = '';
 
   if (Store.apiKeys.length === 0) {
-    container.innerHTML = '<div style="color: var(--text-tertiary); font-size: 13px;">No keys configured. API calls will fail.</div>';
+    container.innerHTML = '<div style="color: var(--text-tertiary); font-size: 13px;">尚未配置金鑰，請求將受阻。</div>';
     return;
   }
 
@@ -1428,7 +1651,7 @@ function renderApiKeyPool() {
     const masked = keyObj.key.slice(0, 6) + '••••••••••••' + keyObj.key.slice(-4);
     row.innerHTML = `
       <span class="key-preview">${masked}</span>
-      <span class="key-health-tag valid">Active</span>
+      <span class="key-health-tag valid">就緒</span>
       <button class="btn btn-danger btn-icon" style="width: 24px; height: 24px;" onclick="removeApiKey(${idx})">✕</button>
     `;
     container.appendChild(row);
@@ -1439,15 +1662,11 @@ function addApiKey() {
   const input = document.getElementById('inputNewApiKey');
   const val = input.value.trim();
   if (!val) return;
-  if (!val.startsWith('AIza')) {
-    showToast('Notice: Gemini API keys generally begin with "AIza"', 'warn');
-  }
-
   Store.apiKeys.push({ key: val, addedAt: new Date().toISOString() });
   input.value = '';
   saveStore();
   renderApiKeyPool();
-  showToast('API Key added to load balancer.', 'success');
+  showToast('金鑰已加入負載池', 'success');
 }
 
 function removeApiKey(index) {
@@ -1458,10 +1677,10 @@ function removeApiKey(index) {
 
 async function fetchOnlineModels() {
   if (Store.apiKeys.length === 0) {
-    showToast('Add an API Key first to discover available models.', 'warn');
+    showToast('請先新增 API Key 以便獲取模型。', 'warn');
     return;
   }
-  showToast('Connecting to Google Model Discovery API...', 'info');
+  showToast('正在連接 Google 模型清單 API...', 'info');
   try {
     const key = Store.apiKeys[0].key;
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
@@ -1478,14 +1697,13 @@ async function fetchOnlineModels() {
       select.innerHTML = geminiModels.map(m => `<option value="${m}">${m}</option>`).join('');
       select.value = geminiModels.includes('gemini-2.5-flash') ? 'gemini-2.5-flash' : geminiModels[0];
       renderPipelineStages();
-      showToast(`Discovered ${geminiModels.length} models successfully!`, 'success');
+      showToast(`成功同步 ${geminiModels.length} 個最新模型！`, 'success');
     }
   } catch (err) {
-    showToast(`Model Discovery Failed: ${err.message}`, 'error');
+    showToast(`獲取模型失敗: ${err.message}`, 'error');
   }
 }
 
-// Global Indicator Helper
 function setGlobalStatus(state, label) {
   const dot = document.getElementById('globalStatusDot');
   const text = document.getElementById('globalStatusText');
@@ -1493,7 +1711,7 @@ function setGlobalStatus(state, label) {
   text.textContent = label;
 }
 
-// Export Session Dialog
+// 匯出對話
 function exportCurrentSession() {
   const session = getActiveSession();
   if (!session) return;
@@ -1501,21 +1719,22 @@ function exportCurrentSession() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Gemini_Session_${session.title.replace(/[^a-z0-9]/gi, '_')}.json`;
+  a.download = `Gemini_對話紀錄_${session.title.replace(/[^a-z0-9]/gi, '_')}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('Session exported to JSON.', 'success');
+  showToast('對話紀錄已成功匯出至 JSON 檔案。', 'success');
 }
 
-// Lifecycle Initialization
+// 初始化
 window.addEventListener('DOMContentLoaded', () => {
   loadStore();
   renderSessionList();
   renderActiveChat();
   renderPipelineStages();
   renderApiKeyPool();
+  initChartControls();
 
-  // Navigation Switching
+  // 視圖導航切換
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -1523,17 +1742,27 @@ window.addEventListener('DOMContentLoaded', () => {
       item.classList.add('active');
       const viewId = item.dataset.view;
       document.getElementById(viewId).classList.add('active');
-      document.getElementById('stageTitle').textContent = viewId === 'chatView' ? 'Studio Chat' : 'Pipeline Orchestrator';
+      
+      const titleMap = {
+        chatView: 'Gemini 對話',
+        pipelineView: '多流水線 Matrix',
+        chartView: '圖表數據與指標'
+      };
+      document.getElementById('stageTitle').textContent = titleMap[viewId] || 'Studio';
+
+      if (viewId === 'chartView') {
+        setTimeout(renderAnalyticsChart, 50);
+      }
     });
   });
 
-  // Settings Modal Handlers
+  // 設定彈窗
   document.getElementById('btnOpenSettings').onclick = () => document.getElementById('settingsModal').classList.add('active');
   document.getElementById('btnCloseSettings').onclick = () => document.getElementById('settingsModal').classList.remove('active');
   document.getElementById('btnAddApiKey').onclick = addApiKey;
   document.getElementById('btnSyncOnlineModels').onclick = fetchOnlineModels;
 
-  // Session Toolbar
+  // 對話操作
   document.getElementById('btnNewSession').onclick = () => createNewSession();
   document.getElementById('btnExportSession').onclick = exportCurrentSession;
   document.getElementById('btnClearCurrentChat').onclick = () => {
@@ -1542,17 +1771,17 @@ window.addEventListener('DOMContentLoaded', () => {
       session.messages = [];
       saveStore();
       renderActiveChat();
-      showToast('Conversation context cleared.', 'info');
+      showToast('對話內容已清空', 'info');
     }
   };
 
-  // Pipeline Toolbar
+  // 流水線操作
   document.getElementById('btnAddPipelineStage').onclick = () => {
     Store.pipelineStages.push({
       id: 'stg_' + Date.now(),
-      title: `Phase ${Store.pipelineStages.length + 1}: Refinement Stage`,
+      title: `階段 ${Store.pipelineStages.length + 1}：新增任務節點`,
       model: Store.defaultModel,
-      systemPrompt: 'Refine and improve the previous output with precision.',
+      systemPrompt: '請對前置內容進行提煉與改進。',
       temperature: 0.3,
       lastOutput: ''
     });
@@ -1561,7 +1790,7 @@ window.addEventListener('DOMContentLoaded', () => {
   };
   document.getElementById('btnRunPipeline').onclick = executePipeline;
 
-  // Chat Input Auto-Resize & Enter to Send
+  // 輸入框監聽
   const chatInput = document.getElementById('chatInput');
   chatInput.addEventListener('input', () => {
     chatInput.style.height = 'auto';
@@ -1576,6 +1805,11 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btnSendMessage').onclick = handleSendMessage;
+  window.addEventListener('resize', () => {
+    if (document.getElementById('chartView').classList.contains('active')) {
+      renderAnalyticsChart();
+    }
+  });
 });
 </script>
 </body>
