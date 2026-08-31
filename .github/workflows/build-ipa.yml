@@ -19,30 +19,47 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: Build App with Xcode (Unsigned)
+      - name: Build App with Xcode (arm64 Device)
         run: |
           xcodebuild clean build \
             -project StockScope.xcodeproj \
             -scheme StockScope \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            ARCHS="arm64" \
+            ONLY_ACTIVE_ARCH=NO \
             CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
 
-      - name: Package Unsigned IPA
+      - name: Verify Executable & Package IPA
         run: |
-          mkdir -p Payload
-          cp -r ./build/Release-iphoneos/StockScope.app Payload/
+          APP_PATH="./build/Release-iphoneos/StockScope.app"
           
-          # Ensure index.html is directly in the app bundle
+          # 检查编译产物中是否存在可执行文件
+          if [ ! -f "$APP_PATH/StockScope" ]; then
+            echo "ERROR: StockScope binary executable not found in $APP_PATH!"
+            ls -la "$APP_PATH"
+            exit 1
+          fi
+          
+          # 检查架构是否包含 arm64
+          lipo -info "$APP_PATH/StockScope"
+          
+          # 清理旧目录并创建 Payload
+          rm -rf Payload StockScope-unsigned.ipa
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          
+          # 确保 HTML 被放入 App 根目录
           if [ -f "StockScope/index.html" ]; then
             cp "StockScope/index.html" "Payload/StockScope.app/"
           fi
           
-          # Compress to standard IPA structure
-          zip -r StockScope-unsigned.ipa Payload
+          # 严格以标准 IPA 结构压缩
+          zip -qr StockScope-unsigned.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
