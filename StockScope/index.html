@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -25,7 +25,7 @@
             -webkit-font-smoothing: antialiased;
             user-select: none;
             -webkit-user-select: none;
-            color: #ffffff; /* 强制全局文字白色穿透 */
+            color: #ffffff;
         }
 
         input, textarea {
@@ -70,7 +70,7 @@
             border-color: #0078d4 !important;
         }
 
-        /* 适配移动端/iPad 顶部刘海屏与安全区域 */
+        /* Safe area support for mobile/iPad notch and status bars */
         body {
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
@@ -101,7 +101,7 @@
                 <div id="boot-progress" class="bg-[#0078d4] h-full w-0 transition-all duration-100 ease-out"></div>
             </div>
             <button id="btn-start-os" class="hidden px-6 py-2.5 bg-[#0078d4] hover:bg-[#0067b8] text-white font-bold rounded-md shadow-lg transition duration-200 cursor-pointer" style="font-family: 'Google Sans', sans-serif;">
-                开启 Windows 体验
+                Start Windows Experience
             </button>
         </div>
     </div>
@@ -111,41 +111,41 @@
         
         <header class="hidden"><span id="top-cpu"></span></header>
 
-        <!-- 桌面图标 -->
+        <!-- Desktop Icons -->
         <main class="flex-1 w-full relative p-4 grid grid-flow-col auto-cols-[85px] grid-rows-[repeat(auto-fill,100px)] gap-y-4 gap-x-2 content-start items-start z-10 pointer-events-auto text-white" id="desktop-icons-container"></main>
 
         <div id="window-container" class="absolute inset-0 z-20 pointer-events-none"></div>
 
-        <!-- 日历和通知 -->
+        <!-- Calendar & Notification Center -->
         <div id="calendar-flyout" class="absolute bottom-14 right-3 w-80 acrylic rounded-xl border border-white/10 shadow-2xl z-50 p-4 hidden flex flex-col space-y-4 transition-all duration-200 pointer-events-auto text-white" style="background: rgba(30, 30, 30, 0.85);">
             <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                <h4 class="font-bold text-sm text-white" id="flyout-month-year">2026年5月</h4>
+                <h4 class="font-bold text-sm text-white" id="flyout-month-year">May 2026</h4>
                 <div class="flex space-x-1 text-xs">
                     <button class="p-1 hover:bg-white/10 rounded text-white">▲</button><button class="p-1 hover:bg-white/10 rounded text-white">▼</button>
                 </div>
             </div>
             <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-xs text-white"></div>
             <div class="border-t border-white/10 pt-3 space-y-2">
-                <h5 class="text-xs font-bold text-white">通知中心</h5>
+                <h5 class="text-xs font-bold text-white">Action Center</h5>
                 <div class="bg-white/5 p-2 rounded border border-white/5 text-[11px] leading-relaxed text-white">
-                    <p class="font-bold text-[#0078d4]">✨ 系统提示</p>
-                    <p class="text-white">所有的交互已重构为最底层的 pointerdown，彻底解决了点击失败、层级冲突的死锁问题！</p>
+                    <p class="font-bold text-[#0078d4]">✨ System Notice</p>
+                    <p class="text-white">All interactions refactored to low-level pointerdown events, resolving touch and layer deadlock issues.</p>
                 </div>
             </div>
         </div>
 
-        <!-- 开始菜单 -->
+        <!-- Start Menu -->
         <div id="start-menu" class="absolute bottom-14 left-1/2 -translate-x-1/2 w-[580px] max-w-[95vw] acrylic rounded-2xl border border-white/10 shadow-2xl z-50 p-6 hidden flex flex-col space-y-6 transition-all duration-200 pointer-events-auto text-white" style="height: 600px; max-height: 80vh; background: rgba(30, 30, 30, 0.85);">
             <div class="relative w-full shrink-0">
-                <input type="text" id="start-search-input" placeholder=" 搜索应用、文件和设置" class="w-full bg-black/40 border border-white/20 rounded-full py-2 px-10 text-xs text-white placeholder-white">
+                <input type="text" id="start-search-input" placeholder=" Search apps, files, and settings" class="w-full bg-black/40 border border-white/20 rounded-full py-2 px-10 text-xs text-white placeholder-white">
                 <span class="absolute left-4 top-2.5 text-white">🔍</span>
             </div>
             <div class="flex-1 overflow-y-auto">
-                <div class="flex justify-between items-center mb-4 px-1"><h4 class="font-bold text-xs text-white">已固定 (双击打开)</h4></div>
+                <div class="flex justify-between items-center mb-4 px-1"><h4 class="font-bold text-xs text-white">Pinned (Double click to open)</h4></div>
                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-y-6 gap-x-2 text-center text-white" id="start-menu-pinned-grid"></div>
             </div>
             <div class="h-32 shrink-0">
-                <div class="flex justify-between items-center mb-3 px-1"><h4 class="font-bold text-xs text-white">推荐 (双击打开)</h4></div>
+                <div class="flex justify-between items-center mb-3 px-1"><h4 class="font-bold text-xs text-white">Recommended (Double click to open)</h4></div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-white" id="start-menu-recommended-grid"></div>
             </div>
             <div class="flex items-center justify-between border-t border-white/10 pt-4 shrink-0">
@@ -153,18 +153,18 @@
                     <div class="w-8 h-8 rounded-full bg-[#0078d4] flex items-center justify-center text-white font-bold text-sm">A</div>
                     <span class="text-xs font-semibold text-white">Administrator</span>
                 </div>
-                <button id="btn-shutdown" class="p-2 hover:bg-white/10 rounded-lg text-sm text-white bg-red-600" title="关机">⏻ 关机</button>
+                <button id="btn-shutdown" class="p-2 hover:bg-white/10 rounded-lg text-sm text-white bg-red-600" title="Shut Down">⏻ Shut Down</button>
             </div>
         </div>
 
-        <!--=================== 3. 任务栏 (Taskbar) ===================-->
+        <!--=================== 3. Taskbar ===================-->
         <footer class="absolute bottom-0 left-0 right-0 h-12 acrylic border-t border-white/10 flex items-center px-3 z-50 justify-between pointer-events-auto text-white" style="background: rgba(20, 20, 20, 0.75);">
             <div class="w-24 hidden md:flex items-center space-x-2 text-xs text-white cursor-pointer hover:bg-white/5 p-1 rounded">
                 <span class="text-lg">🌤️</span> <span class="text-white">24°C</span>
             </div>
             <div class="flex-1 flex justify-center" id="taskbar-center-container">
                 <div class="flex items-center space-x-1" id="taskbar-apps-wrapper">
-                    <button id="btn-start" class="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-md transition active:scale-95" title="开始">
+                    <button id="btn-start" class="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-md transition active:scale-95" title="Start">
                         <svg class="w-5 h-5 text-[#0078d4]" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.8 1.95L24 0v11.55H10.8V1.95zM10.8 12.45H24v11.55l-13.2-1.95v-9.6z"/>
                         </svg>
@@ -180,12 +180,12 @@
                     <div class="font-bold text-white" id="taskbar-time-text">00:00</div>
                     <div class="text-[9px] text-white" id="taskbar-date-text">2026/05/20</div>
                 </div>
-                <div id="btn-show-desktop" class="w-1.5 h-10 border-l border-white/20 hover:bg-white/30 transition cursor-pointer" title="显示桌面"></div>
+                <div id="btn-show-desktop" class="w-1.5 h-10 border-l border-white/20 hover:bg-white/30 transition cursor-pointer" title="Show Desktop"></div>
             </div>
         </footer>
     </div>
 
-    <!--=================== 4. APP 模板 ===================-->
+    <!--=================== 4. APP Templates ===================-->
     <div class="hidden">
         
         <div id="template-terminal" class="h-full w-full flex flex-col font-mono-os text-xs md:text-sm p-3 overflow-hidden bg-[#0c0c0c] text-white">
@@ -198,11 +198,11 @@
 
         <div id="template-explorer" class="h-full w-full flex text-white select-none bg-[#191919]">
             <div class="w-40 bg-zinc-900 border-r border-white/20 p-2 hidden sm:flex flex-col space-y-1.5 text-xs shrink-0 text-white">
-                <div class="px-2 py-1 uppercase text-[9px] font-bold text-white">快速访问</div>
-                <button data-path="C:/Users/Admin/Desktop" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">🖥️ 桌面</button>
-                <button data-path="C:/Users/Admin/Documents" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📄 文档</button>
-                <div class="px-2 py-1 uppercase text-[9px] font-bold pt-3 text-white">此电脑</div>
-                <button data-path="C:/" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📀 本地磁盘 (C:)</button>
+                <div class="px-2 py-1 uppercase text-[9px] font-bold text-white">Quick Access</div>
+                <button data-path="C:/Users/Admin/Desktop" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">🖥️ Desktop</button>
+                <button data-path="C:/Users/Admin/Documents" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📄 Documents</button>
+                <div class="px-2 py-1 uppercase text-[9px] font-bold pt-3 text-white">This PC</div>
+                <button data-path="C:/" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📀 Local Disk (C:)</button>
             </div>
             <div class="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] text-white">
                 <div class="flex items-center justify-between p-2 border-b border-white/20 bg-black/30 gap-2">
@@ -210,7 +210,7 @@
                         <button id="exp-back-btn" class="w-8 h-8 hover:bg-white/20 rounded transition text-white font-bold">⬅️</button>
                         <span id="exp-current-path" class="font-mono-os px-3 py-1 bg-black/50 rounded text-xs overflow-hidden whitespace-nowrap flex-1 text-white">C:/</span>
                     </div>
-                    <button id="exp-new-btn" class="px-3 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] text-white text-xs font-bold rounded shadow">➕ 新建</button>
+                    <button id="exp-new-btn" class="px-3 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] text-white text-xs font-bold rounded shadow">➕ New</button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 content-start text-white" id="exp-file-grid"></div>
             </div>
@@ -218,18 +218,18 @@
 
         <div id="template-editor" class="h-full w-full flex flex-col overflow-hidden text-sm bg-[#1e1e1e] text-white">
             <div class="flex items-center px-3 py-1.5 bg-[#2d2d2d] border-b border-white/20 text-xs space-x-3 text-white">
-                <button class="hover:bg-white/20 px-2 py-1 rounded text-white" id="editor-menu-file">文件 (F)</button>
-                <button class="hover:bg-white/20 px-2 py-1 rounded text-white">编辑 (E)</button>
-                <button id="editor-save-btn" class="ml-auto px-3 py-1 bg-[#0078d4] hover:bg-[#0067b8] text-white font-bold rounded">💾 保存</button>
+                <button class="hover:bg-white/20 px-2 py-1 rounded text-white" id="editor-menu-file">File (F)</button>
+                <button class="hover:bg-white/20 px-2 py-1 rounded text-white">Edit (E)</button>
+                <button id="editor-save-btn" class="ml-auto px-3 py-1 bg-[#0078d4] hover:bg-[#0067b8] text-white font-bold rounded">💾 Save</button>
             </div>
             <div class="p-1 border-b border-white/20 bg-black/40 flex items-center px-2 text-white">
-                <span class="text-xs text-white pr-2">路径:</span>
+                <span class="text-xs text-white pr-2">Path:</span>
                 <input type="text" id="editor-file-path" class="bg-transparent border-none text-xs font-mono-os text-white flex-1">
             </div>
-            <textarea id="editor-textarea" class="flex-1 p-4 bg-[#1e1e1e] text-white font-mono-os text-sm placeholder-white" placeholder="在此处开始书写..."></textarea>
+            <textarea id="editor-textarea" class="flex-1 p-4 bg-[#1e1e1e] text-white font-mono-os text-sm placeholder-white" placeholder="Start typing here..."></textarea>
         </div>
 
-        <!-- 浏览器 -->
+        <!-- Browser -->
         <div id="template-browser" class="h-full w-full flex flex-col overflow-hidden text-sm bg-[#1e1e1e] text-white">
             <div class="flex flex-col border-b border-white/20 bg-[#2d2d2d]">
                 <div class="flex items-center p-2 gap-2 text-white">
@@ -258,23 +258,23 @@
             <div class="flex items-center gap-4 mb-4 text-white">
                 <div id="installer-icon" class="text-5xl text-white">📦</div>
                 <div>
-                    <h3 id="installer-title" class="text-lg font-bold text-white">软件安装</h3>
-                    <p id="installer-subtitle" class="text-xs text-white">来源: VFS 虚拟磁盘</p>
+                    <h3 id="installer-title" class="text-lg font-bold text-white">Software Installer</h3>
+                    <p id="installer-subtitle" class="text-xs text-white">Source: VFS Virtual Disk</p>
                 </div>
             </div>
             <div class="flex-1 bg-black/50 border border-white/20 rounded p-3 text-xs text-white">
-                <p class="font-bold text-amber-400 mb-2">警告</p>
-                <p class="text-white">该软件将获取系统完全执行权限。</p>
+                <p class="font-bold text-amber-400 mb-2">Warning</p>
+                <p class="text-white">This application will be granted full system execution privileges.</p>
             </div>
             <div id="installer-progress-section" class="hidden my-3">
-                <div class="flex justify-between text-xs mb-1 text-white"><span class="text-white">安装中...</span><span id="installer-percent-text" class="text-white">0%</span></div>
+                <div class="flex justify-between text-xs mb-1 text-white"><span class="text-white">Installing...</span><span id="installer-percent-text" class="text-white">0%</span></div>
                 <div class="w-full bg-black h-2 rounded border border-white/20 overflow-hidden">
                     <div id="installer-progress" class="bg-[#0078d4] h-full w-0"></div>
                 </div>
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <button id="installer-btn-cancel" class="px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-bold text-white">取消</button>
-                <button id="installer-btn-confirm" class="px-4 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] rounded text-xs font-bold text-white shadow">确认安装</button>
+                <button id="installer-btn-cancel" class="px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-bold text-white">Cancel</button>
+                <button id="installer-btn-confirm" class="px-4 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] rounded text-xs font-bold text-white shadow">Install</button>
             </div>
         </div>
 
@@ -290,10 +290,10 @@
                 </div>
             </div>
             <div class="flex-1 bg-black/30 rounded border border-white/20 p-3 flex flex-col text-white">
-                <h5 class="text-xs font-bold text-white mb-2">进程列表</h5>
+                <h5 class="text-xs font-bold text-white mb-2">Processes</h5>
                 <div class="flex-1 overflow-y-auto text-white">
                     <table class="w-full text-xs text-left text-white">
-                        <thead><tr class="border-b border-white/20 text-white"><th class="pb-1 text-white">PID</th><th class="pb-1 text-white">名称</th><th class="pb-1 text-white">CPU</th><th class="pb-1 text-right text-white">操作</th></tr></thead>
+                        <thead><tr class="border-b border-white/20 text-white"><th class="pb-1 text-white">PID</th><th class="pb-1 text-white">Name</th><th class="pb-1 text-white">CPU</th><th class="pb-1 text-right text-white">Action</th></tr></thead>
                         <tbody id="proc-table-body" class="text-white"></tbody>
                     </table>
                 </div>
@@ -304,7 +304,7 @@
             <div class="flex items-center gap-3 pb-2 border-b border-white/20">
                 <input type="color" id="paint-color" value="#0078d4" class="w-8 h-8 rounded border-none bg-transparent">
                 <input type="range" id="paint-size" min="1" max="20" value="4" class="w-24">
-                <button id="paint-clear-btn" class="ml-auto px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold">清空</button>
+                <button id="paint-clear-btn" class="ml-auto px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold">Clear</button>
             </div>
             <div class="flex-1 bg-white rounded mt-2 relative border border-white/20">
                 <canvas id="paint-canvas" class="absolute w-full h-full cursor-crosshair"></canvas>
@@ -313,10 +313,10 @@
 
         <div id="template-synth" class="h-full w-full flex flex-col p-4 gap-4 bg-[#1e1e1e] text-white">
             <div class="bg-black/40 p-4 rounded border border-white/20 flex justify-between items-center">
-                <h4 class="font-bold text-sm text-white">16-Bit 音频发生器</h4>
+                <h4 class="font-bold text-sm text-white">16-Bit Audio Synthesizer</h4>
                 <div class="flex gap-2">
-                    <button id="synth-play-btn" class="px-4 py-2 bg-[#0078d4] hover:bg-[#0067b8] text-white rounded text-xs font-bold">播放</button>
-                    <button id="synth-stop-btn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold" disabled>停止</button>
+                    <button id="synth-play-btn" class="px-4 py-2 bg-[#0078d4] hover:bg-[#0067b8] text-white rounded text-xs font-bold">Play</button>
+                    <button id="synth-stop-btn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold" disabled>Stop</button>
                 </div>
             </div>
             <div class="flex-1 bg-black rounded relative border border-white/20">
@@ -326,8 +326,8 @@
 
         <div id="template-game" class="h-full w-full flex flex-col p-2 bg-[#1e1e1e] text-white">
             <div class="flex justify-between items-center pb-2 border-b border-white/20 text-xs px-2 text-white">
-                <div class="text-white">分数: <span id="game-score" class="font-bold text-white">0</span></div>
-                <button id="game-restart" class="px-3 py-1 bg-[#0078d4] text-white rounded font-bold">重置</button>
+                <div class="text-white">Score: <span id="game-score" class="font-bold text-white">0</span></div>
+                <button id="game-restart" class="px-3 py-1 bg-[#0078d4] text-white rounded font-bold">Restart</button>
             </div>
             <div class="flex-1 bg-black rounded mt-2 relative overflow-hidden border border-white/20">
                 <canvas id="game-canvas" class="absolute w-full h-full"></canvas>
@@ -337,29 +337,29 @@
                     <button id="game-btn-left" class="w-14 h-12 bg-white/20 text-white rounded-xl text-xl">◀</button>
                     <button id="game-btn-right" class="w-14 h-12 bg-white/20 text-white rounded-xl text-xl">▶</button>
                 </div>
-                <button id="game-btn-fire" class="w-24 h-12 bg-red-600 text-white font-bold rounded-xl shadow text-sm">🔥 发射</button>
+                <button id="game-btn-fire" class="w-24 h-12 bg-red-600 text-white font-bold rounded-xl shadow text-sm">🔥 Fire</button>
             </div>
         </div>
 
         <div id="template-settings" class="h-full w-full overflow-y-auto p-5 bg-[#1e1e1e] text-white text-sm">
             <div class="bg-black/40 p-4 rounded border border-white/20 text-xs leading-relaxed space-y-2 text-white">
-                <h3 class="text-sm font-bold text-white border-b border-white/20 pb-2 mb-2">Windows 11 系统信息</h3>
-                <p class="text-white">核心版本：v1.3.0 Ultimate Touch-Stable Edition</p>
-                <p class="text-white">修复说明：所有按钮绑定了最高优先级的 pointerdown 并阻断冒泡，绝对消除层级死锁。</p>
+                <h3 class="text-sm font-bold text-white border-b border-white/20 pb-2 mb-2">Windows 11 System Information</h3>
+                <p class="text-white">Core Version: v1.3.0 Ultimate Touch-Stable Edition</p>
+                <p class="text-white">Patch Notes: All buttons bound to high-priority pointerdown handlers to eliminate interaction deadlocks.</p>
             </div>
             <div class="mt-4 text-white">
-                <h4 class="font-bold text-white border-b border-white/20 pb-2 mb-3">动态壁纸</h4>
+                <h4 class="font-bold text-white border-b border-white/20 pb-2 mb-3">Live Wallpapers</h4>
                 <label class="flex items-center gap-3 p-2 hover:bg-white/10 rounded cursor-pointer text-white">
-                    <input type="radio" name="wallpaper-type" value="stars" checked> 星际穿越
+                    <input type="radio" name="wallpaper-type" value="stars" checked> Interstellar
                 </label>
                 <label class="flex items-center gap-3 p-2 hover:bg-white/10 rounded cursor-pointer text-white">
-                    <input type="radio" name="wallpaper-type" value="rain"> 帝国代码雨
+                    <input type="radio" name="wallpaper-type" value="rain"> Matrix Digital Rain
                 </label>
             </div>
         </div>
     </div>
 
-    <!--=================== 5. 核心引擎 JavaScript ===================-->
+    <!--=================== 5. Core Engine JavaScript ===================-->
     <script>
         const PROXY_SERVER = "https://jr-os-proxy.zhangzhanhang855.workers.dev/proxy";
 
@@ -370,12 +370,11 @@
             installedApps: {}
         };
 
-        // 【最稳定的防误触双击监听器】
+        // Stable double-tap / double-click event handler
         function addDoubleTapListener(element, callback) {
             if (!element) return;
             let lastTap = 0;
             element.addEventListener('pointerdown', (e) => {
-                // 不阻断冒泡，以防干扰系统的触控体验，但阻止选中
                 e.preventDefault(); 
                 const currentTime = Date.now();
                 const tapLength = currentTime - lastTap;
@@ -388,15 +387,15 @@
             });
         }
 
-        // VFS 系统
+        // Virtual File System
         class VirtualFileSystem {
             constructor() {
                 const calcExeConfig = {
-                    appName: "calc", appTitle: "极客计算器", icon: "🧮", width: 320, height: 400,
+                    appName: "calc", appTitle: "Calculator", icon: "🧮", width: 320, height: 400,
                     script: "const content=document.getElementById('win-content-'+winObj.id); content.innerHTML='<div class=\"p-4 flex flex-col h-full bg-slate-900 text-white select-text\"><div id=\"calc-screen\" class=\"bg-black p-3 text-right text-2xl font-mono mb-4 rounded border border-slate-800 h-14 overflow-hidden text-white\">0</div><div class=\"grid grid-cols-4 gap-2 flex-1\"><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-c\">C</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-div\">/</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-mul\">*</button><button class=\"bg-red-600 p-2 rounded font-bold text-white\" id=\"calc-del\">Del</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-7\">7</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-8\">8</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-9\">9</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-sub\">-</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-4\">4</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-5\">5</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-6\">6</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-add\">+</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-1\">1</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-2\">2</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-3\">3</button><button class=\"bg-[#0078d4] p-2 row-span-2 rounded font-bold text-white\" id=\"calc-eq\">=</button><button class=\"bg-slate-700 p-2 col-span-2 rounded font-bold text-white\" id=\"calc-0\">0</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-dot\">.</button></div></div>'; const s=content.querySelector('#calc-screen'); let c=''; const press=(val)=>{if(val==='C')c=''; else if(val==='Del')c=c.slice(0,-1); else if(val==='='){try{c=String(eval(c))}catch(e){c='Err'}} else c+=val; s.innerText=c||'0'; playSystemSound(1000,'sine',0.05);}; content.querySelectorAll('button').forEach(b=>{ b.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); press(b.innerText==='Del'?'Del':(b.id==='calc-div'?'/':(b.id==='calc-mul'?'*':(b.id==='calc-sub'?'-':(b.id==='calc-add'?'+':b.innerText))))); }); });"
                 };
                 const matrixConfig = {
-                    appName: "matrix", appTitle: "代码雨", icon: "📟", width: 500, height: 400,
+                    appName: "matrix", appTitle: "Matrix Rain", icon: "📟", width: 500, height: 400,
                     script: "const content=document.getElementById('win-content-'+winObj.id); content.innerHTML='<canvas id=\"matrix-cvs-\"+winObj.id+\"' class=\"w-full h-full bg-black\"></canvas>'; const cvs=document.getElementById('matrix-cvs-'+winObj.id); const ctx=cvs.getContext('2d'); cvs.width=500; cvs.height=360; const cols=Math.floor(cvs.width/12); const drops=new Array(cols).fill(0); const iv=setInterval(()=>{ctx.fillStyle=\"rgba(0,0,0,0.05)\"; ctx.fillRect(0,0,cvs.width,cvs.height); ctx.fillStyle=\"#ffffff\"; ctx.font=\"10px monospace\"; for(let i=0;i<drops.length;i++){ctx.fillText(Math.floor(Math.random()*10),i*12,drops[i]*12); if(drops[i]*12>cvs.height&&Math.random()>0.975)drops[i]=0; drops[i]++;}},30); winObj.onDestroy=()=>clearInterval(iv);"
                 };
 
@@ -410,7 +409,7 @@
                                         "matrix.exe": { name: "matrix.exe", type: "file", content: JSON.stringify(matrixConfig) }
                                     }},
                                     "Documents": { name: "Documents", type: "dir", children: {
-                                        "sys_test.txt": { name: "sys_test.txt", type: "file", content: "祝贺！所有的文字已被全局强制覆盖为纯白色！\n文件资源管理器的侧边栏已经修复！\n输入框现在完全可以完美唤起 iOS 键盘了！" }
+                                        "sys_test.txt": { name: "sys_test.txt", type: "file", content: "System ready!\nAll typography set to Google Sans.\nFull support for safe-area insets and touch events." }
                                     }}
                                 }}
                             }}
@@ -507,14 +506,12 @@
                     winEl.querySelector(`#win-content-${id}`).appendChild(clone);
                 }
 
-                // 【核心修复：分离按钮与拖拽逻辑，使用 pointerdown 并终止冒泡】
                 winEl.querySelector('.win-min-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.minimizeWindow(id); });
                 winEl.querySelector('.win-max-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.maximizeWindow(id); });
                 winEl.querySelector('.win-close-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.closeWindow(id); });
 
                 const header = winEl.querySelector('.win-header');
                 header.addEventListener('pointerdown', (e) => {
-                    // 如果点的是按钮，直接忽略，避免触发拖拽
                     if (e.target.closest('button')) return; 
                     
                     this.focusWindow(id);
@@ -607,7 +604,6 @@
             const input = container.querySelector('#term-input');
             const output = container.querySelector('#term-output');
             
-            // 确保输入框获得焦点时不被拦截
             input.addEventListener('pointerdown', (e) => { e.stopPropagation(); input.focus(); });
 
             const print = (t) => { output.innerHTML += `<div class="text-white">${t}</div>`; output.scrollTop = output.scrollHeight; };
@@ -631,7 +627,7 @@
                 const node = VFS.resolvePath(path);
                 
                 if (!node || !node.node) {
-                    grid.innerHTML = '<div class="p-4 text-red-400 text-xs text-white">无法访问此路径。</div>';
+                    grid.innerHTML = '<div class="p-4 text-red-400 text-xs text-white">Cannot access path.</div>';
                     return;
                 }
                 
@@ -677,7 +673,7 @@
         }
 
         function openEditor(path) {
-            windowManager.createWindow('editor', '记事本', 'template-editor', 500, 400, (win) => {
+            windowManager.createWindow('editor', 'Notepad', 'template-editor', 500, 400, (win) => {
                 const c = document.getElementById("app-content-" + win.id);
                 const pathInput = c.querySelector('#editor-file-path');
                 const ta = c.querySelector('#editor-textarea');
@@ -686,7 +682,6 @@
                 pathInput.value = path;
                 ta.value = VFS.readFile(path) || '';
                 
-                // 确保 iPad 文本框点击后能弹出键盘
                 ta.addEventListener('pointerdown', (e) => { e.stopPropagation(); ta.focus(); });
                 pathInput.addEventListener('pointerdown', (e) => { e.stopPropagation(); pathInput.focus(); });
 
@@ -713,7 +708,7 @@
                 if (url.startsWith('jros')) {
                     iframe.classList.add('hidden');
                     c.querySelector('#browser-sandbox').classList.remove('hidden');
-                    c.querySelector('#browser-sandbox').innerHTML = `<h2 class="text-2xl font-bold text-white">欢迎使用 Edge</h2><p class="mt-4 text-white">请输入外部网址进行反向代理加载。</p>`;
+                    c.querySelector('#browser-sandbox').innerHTML = `<h2 class="text-2xl font-bold text-white">Welcome to Edge</h2><p class="mt-4 text-white">Enter an external URL to load via reverse proxy.</p>`;
                 } else {
                     iframe.classList.remove('hidden');
                     c.querySelector('#browser-sandbox').classList.add('hidden');
@@ -731,9 +726,9 @@
             const data = VFS.readFile(path);
             if (!data) return;
             const config = JSON.parse(data);
-            windowManager.createWindow('installer', '安装程序', 'template-installer', 400, 300, (win) => {
+            windowManager.createWindow('installer', 'Installer', 'template-installer', 400, 300, (win) => {
                 const c = document.getElementById("app-content-" + win.id);
-                c.querySelector('#installer-title').innerText = "安装 " + config.appTitle;
+                c.querySelector('#installer-title').innerText = "Install " + config.appTitle;
                 
                 c.querySelector('#installer-btn-cancel').addEventListener('pointerdown', (e) => {
                     e.stopPropagation();
@@ -845,10 +840,10 @@
         };
 
         const APPS = [
-            { id: 'explorer', label: '此电脑', icon: '📂' }, { id: 'browser', label: 'Edge', icon: '🌐' },
-            { id: 'editor', label: '记事本', icon: '📝' }, { id: 'monitor', label: '任务管理器', icon: '⚙️' },
-            { id: 'paint', label: '画图', icon: '🎨' }, { id: 'synth', label: '音乐', icon: '🎵' },
-            { id: 'game', label: '游戏', icon: '🚀' }, { id: 'settings', label: '设置', icon: '🎛️' }
+            { id: 'explorer', label: 'This PC', icon: '📂' }, { id: 'browser', label: 'Edge', icon: '🌐' },
+            { id: 'editor', label: 'Notepad', icon: '📝' }, { id: 'monitor', label: 'Task Manager', icon: '⚙️' },
+            { id: 'paint', label: 'Paint', icon: '🎨' }, { id: 'synth', label: 'Music', icon: '🎵' },
+            { id: 'game', label: 'Game', icon: '🚀' }, { id: 'settings', label: 'Settings', icon: '🎛️' }
         ];
 
         function openApp(id) {
@@ -859,14 +854,14 @@
                 return;
             }
             switch (id) {
-                case 'terminal': windowManager.createWindow('terminal', '终端', 'template-terminal', 500, 350, initTerminalApp); break;
-                case 'explorer': windowManager.createWindow('explorer', '资源管理器', 'template-explorer', 600, 400, initExplorerApp); break;
+                case 'terminal': windowManager.createWindow('terminal', 'Terminal', 'template-terminal', 500, 350, initTerminalApp); break;
+                case 'explorer': windowManager.createWindow('explorer', 'File Explorer', 'template-explorer', 600, 400, initExplorerApp); break;
                 case 'browser': windowManager.createWindow('browser', 'Edge', 'template-browser', 700, 500, initBrowserApp); break;
-                case 'monitor': windowManager.createWindow('monitor', '任务管理器', 'template-monitor', 500, 400, initMonitorApp); break;
-                case 'paint': windowManager.createWindow('paint', '画板', 'template-paint', 500, 400, initPaintApp); break;
-                case 'synth': windowManager.createWindow('synth', '播放器', 'template-synth', 400, 300, initSynthApp); break;
-                case 'game': windowManager.createWindow('game', '游戏', 'template-game', 400, 400, initGameApp); break;
-                case 'settings': windowManager.createWindow('settings', '设置', 'template-settings', 400, 350); break;
+                case 'monitor': windowManager.createWindow('monitor', 'Task Manager', 'template-monitor', 500, 400, initMonitorApp); break;
+                case 'paint': windowManager.createWindow('paint', 'Paint', 'template-paint', 500, 400, initPaintApp); break;
+                case 'synth': windowManager.createWindow('synth', 'Player', 'template-synth', 400, 300, initSynthApp); break;
+                case 'game': windowManager.createWindow('game', 'Game', 'template-game', 400, 400, initGameApp); break;
+                case 'settings': windowManager.createWindow('settings', 'Settings', 'template-settings', 400, 350); break;
             }
         }
 
@@ -874,7 +869,7 @@
             setInterval(() => {
                 const d = new Date();
                 document.getElementById('taskbar-time-text').innerText = d.toTimeString().substring(0, 5);
-                document.getElementById('taskbar-date-text').innerText = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+                document.getElementById('taskbar-date-text').innerText = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
             }, 1000);
 
             const desk = document.getElementById('desktop-icons-container');
@@ -909,7 +904,7 @@
             document.getElementById('btn-shutdown').addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
                 document.getElementById('desktop-workspace').classList.add('crt-shutdown');
-                setTimeout(() => document.body.innerHTML = '<div class="text-center mt-40 font-bold text-white">已关机，请刷新。</div>', 400);
+                setTimeout(() => document.body.innerHTML = '<div class="text-center mt-40 font-bold text-white">System shut down. Please refresh to restart.</div>', 400);
             });
 
             const cg = document.getElementById('calendar-grid');
