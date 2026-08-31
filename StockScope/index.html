@@ -1,1541 +1,2291 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Universal AI Studio — Apple HIG Multi-Platform Orchestrator</title>
-<style>
-/* ==========================================================================
-   1. APPLE HIG THEME SYSTEM (Vibrancy, Frosted Glass, Typography)
-   ========================================================================== */
-:root {
-  --system-bg: #000000;
-  --surface-translucent: rgba(28, 28, 30, 0.65);
-  --surface-card: rgba(44, 44, 46, 0.55);
-  --surface-card-hover: rgba(58, 58, 60, 0.7);
-  --surface-elevated: rgba(36, 36, 38, 0.85);
-  --surface-border: rgba(255, 255, 255, 0.12);
-  --surface-highlight: rgba(255, 255, 255, 0.18);
-  --surface-separator: rgba(255, 255, 255, 0.08);
-
-  --apple-blue: #0A84FF;
-  --apple-blue-rgb: 10, 132, 255;
-  --apple-cyan: #64D2FF;
-  --apple-green: #30D158;
-  --apple-yellow: #FFD60A;
-  --apple-orange: #FF9F0A;
-  --apple-red: #FF453A;
-  --apple-purple: #BF5AF2;
-  --apple-indigo: #5E5CE6;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Windows 10 OS Simulator</title>
   
-  --vendor-gemini: #4285F4;
-  --vendor-openai: #10A37F;
-  --vendor-claude: #D97706;
-  --vendor-grok: #EA580C;
-
-  --text-primary: #FFFFFF;
-  --text-secondary: rgba(235, 235, 245, 0.6);
-  --text-tertiary: rgba(235, 235, 245, 0.38);
-  --text-quaternary: rgba(235, 235, 245, 0.2);
-
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --radius-pill: 9999px;
-
-  --spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
-  --sidebar-w: 280px;
-  --header-h: 56px;
-  --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "SF Mono", Monaco, Menlo, Consolas, "Cascadia Code", monospace;
-  
-  --shadow-window: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--surface-border);
-  --shadow-popup: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: var(--system-bg);
-  font-family: var(--font-stack);
-  color: var(--text-primary);
-  user-select: none;
-}
-
-.ambient-canvas {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  background:
-    radial-gradient(1000px 600px at 10% 10%, rgba(var(--apple-blue-rgb), 0.15), transparent 70%),
-    radial-gradient(900px 500px at 90% 20%, rgba(191, 90, 242, 0.12), transparent 60%),
-    radial-gradient(800px 800px at 50% 90%, rgba(48, 209, 88, 0.08), transparent 70%),
-    linear-gradient(180deg, #090A0F 0%, #030407 100%);
-}
-
-.ambient-canvas::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-#app {
-  position: relative;
-  z-index: 1;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
-}
-
-/* Sidebar */
-.sidebar {
-  width: var(--sidebar-w);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--surface-separator);
-  background: rgba(20, 20, 22, 0.6);
-  backdrop-filter: blur(35px);
-  flex-shrink: 0;
-  z-index: 10;
-}
-
-.sidebar-header {
-  height: var(--header-h);
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--surface-separator);
-}
-
-.window-traffic-lights {
-  display: flex;
-  gap: 8px;
-}
-
-.traffic-light {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.traffic-close { background: #FF5F56; border: 0.5px solid #E0443E; }
-.traffic-min { background: #FFBD2E; border: 0.5px solid #DEA123; }
-.traffic-max { background: #27C93F; border: 0.5px solid #1AAB29; }
-
-.sidebar-nav {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: 13.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-}
-
-.nav-item.active {
-  background: rgba(var(--apple-blue-rgb), 0.18);
-  color: var(--apple-blue);
-  box-shadow: inset 0 0 0 1px rgba(var(--apple-blue-rgb), 0.3);
-}
-
-.session-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  margin-top: 10px;
-  padding: 0 12px 12px;
-}
-
-.section-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  padding: 6px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.session-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.session-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.session-row:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-primary);
-}
-
-.session-row.active {
-  background: rgba(255, 255, 255, 0.09);
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.session-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.session-delete-btn {
-  opacity: 0;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  padding: 2px 4px;
-}
-.session-row:hover .session-delete-btn { opacity: 1; }
-.session-delete-btn:hover { color: var(--apple-red); }
-
-/* Main Stage */
-.main-stage {
-  flex: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  background: rgba(14, 14, 16, 0.4);
-}
-
-.stage-header {
-  height: var(--header-h);
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--surface-separator);
-  z-index: 5;
-}
-
-.header-meta {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.header-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* 4廠模型選擇膠囊 */
-.header-picker-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--surface-border);
-  padding: 3px 10px;
-  border-radius: var(--radius-pill);
-}
-
-.header-picker-group select {
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 12.5px;
-  font-weight: 600;
-  font-family: inherit;
-  outline: none;
-  cursor: pointer;
-}
-
-.header-picker-group select option {
-  background: #1C1C1E;
-  color: #FFF;
-}
-
-.vendor-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: var(--radius-pill);
-  text-transform: uppercase;
-}
-.vendor-gemini { background: rgba(66, 133, 244, 0.2); color: var(--vendor-gemini); }
-.vendor-openai { background: rgba(16, 163, 127, 0.2); color: var(--vendor-openai); }
-.vendor-claude { background: rgba(217, 119, 6, 0.2); color: var(--vendor-claude); }
-.vendor-grok { background: rgba(234, 88, 12, 0.2); color: var(--vendor-grok); }
-
-.status-capsule {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--surface-border);
-  font-size: 11.5px;
-  color: var(--text-secondary);
-}
-
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--apple-green);
-  box-shadow: 0 0 8px var(--apple-green);
-}
-
-.status-dot.idle { background: var(--apple-green); box-shadow: 0 0 8px var(--apple-green); }
-.status-dot.busy { background: var(--apple-yellow); box-shadow: 0 0 8px var(--apple-yellow); animation: pulse 1s infinite; }
-.status-dot.error { background: var(--apple-red); box-shadow: 0 0 8px var(--apple-red); }
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 7px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.15s var(--spring-smooth);
-}
-
-.btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.btn-primary {
-  background: var(--apple-blue);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #FFFFFF;
-}
-
-.btn-primary:hover {
-  background: #2591FF;
-}
-
-.btn-danger {
-  background: rgba(255, 69, 58, 0.15);
-  border-color: rgba(255, 69, 58, 0.3);
-  color: var(--apple-red);
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border-radius: var(--radius-sm);
-}
-
-.view-viewport {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-}
-
-.view-panel {
-  position: absolute;
-  inset: 0;
-  display: none;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.view-panel.active {
-  display: flex;
-}
-
-/* Chat Layout */
-.chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.messages-scrollable {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.chat-bubble-wrap {
-  display: flex;
-  flex-direction: column;
-  max-width: 82%;
-  animation: bubblePop 0.25s var(--spring-smooth) forwards;
-}
-
-.chat-bubble-wrap.user {
-  align-self: flex-end;
-  align-items: flex-end;
-}
-
-.chat-bubble-wrap.model {
-  align-self: flex-start;
-  align-items: flex-start;
-}
-
-.chat-bubble-meta {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 4px;
-}
-
-.chat-bubble {
-  padding: 14px 18px;
-  border-radius: var(--radius-lg);
-  font-size: 14px;
-  line-height: 1.6;
-  position: relative;
-  word-break: break-word;
-  user-select: text;
-}
-
-.chat-bubble-wrap.user .chat-bubble {
-  background: var(--apple-blue);
-  color: #FFFFFF;
-  border-bottom-right-radius: var(--radius-xs);
-}
-
-.chat-bubble-wrap.model .chat-bubble {
-  background: var(--surface-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--surface-border);
-  color: var(--text-primary);
-  border-bottom-left-radius: var(--radius-xs);
-}
-
-.chat-dock {
-  padding: 16px 24px 20px;
-  background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 12, 0.9) 100%);
-}
-
-.chat-input-wrapper {
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-xl);
-  padding: 8px 12px 8px 18px;
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  box-shadow: var(--shadow-popup);
-}
-
-.chat-textarea {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 14.5px;
-  line-height: 1.4;
-  resize: none;
-  max-height: 160px;
-  min-height: 24px;
-  padding: 4px 0;
-}
-
-/* Pipeline UI */
-.pipeline-view {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.pipeline-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--surface-card);
-  padding: 18px 24px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--surface-border);
-}
-
-.pipeline-stages-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.pipeline-node {
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.pipeline-node.running {
-  border-color: var(--apple-blue);
-  box-shadow: 0 0 20px rgba(var(--apple-blue-rgb), 0.25);
-}
-
-.pipeline-node.done {
-  border-color: var(--apple-green);
-}
-
-.pipeline-node-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.node-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.node-idx {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-}
-
-.pipeline-node-body {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 14px;
-}
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field-label {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.input-text, .input-select, .input-textarea {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 13px;
-  outline: none;
-}
-
-.input-select option {
-  background: #1C1C1E;
-  color: #FFF;
-}
-
-.input-textarea {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  resize: vertical;
-  min-height: 60px;
-}
-
-.node-output-preview {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px dashed var(--surface-border);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  max-height: 120px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  font-family: var(--font-mono);
-}
-
-.pipeline-connector {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  color: var(--text-tertiary);
-  font-size: 16px;
-}
-
-/* Modal Settings */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(20px);
-  z-index: 100;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.modal-overlay.active { display: flex; animation: fadeIn 0.2s ease forwards; }
-
-.modal-sheet {
-  width: 100%;
-  max-width: 680px;
-  max-height: 88vh;
-  background: var(--surface-elevated);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-window);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.modal-header {
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--surface-separator);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-body {
-  padding: 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.vendor-config-card {
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.vendor-config-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.toast-manager {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  pointer-events: none;
-}
-
-.toast {
-  pointer-events: auto;
-  background: var(--surface-elevated);
-  border: 1px solid var(--surface-border);
-  box-shadow: var(--shadow-popup);
-  border-radius: var(--radius-md);
-  padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  animation: toastIn 0.3s var(--spring-smooth) forwards;
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes bubblePop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
-</style>
+  <!-- Typography: Google Sans & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Product+Sans:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    /* ==========================================================================
+       WINDOWS 10 FLUID DESIGN SYSTEM & CSS RESET
+       ========================================================================== */
+    :root {
+      --font-main: 'Product Sans', 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'Roboto Mono', monospace;
+      --accent-color: #0078d7;
+      --accent-hover: #1084df;
+      --accent-glow: rgba(0, 120, 215, 0.4);
+      --taskbar-bg: rgba(16, 16, 16, 0.82);
+      --taskbar-blur: blur(28px);
+      --acrylic-bg: rgba(32, 32, 32, 0.88);
+      --acrylic-blur: blur(35px) saturate(140%);
+      --window-border: rgba(255, 255, 255, 0.12);
+      --window-active-border: var(--accent-color);
+      --text-main: #f3f3f3;
+      --text-muted: #a0a0a0;
+      --bg-dark: #1f1f1f;
+      --bg-light: #2d2d2d;
+      --taskbar-height: 40px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: var(--font-main);
+      color: var(--text-main);
+      background-color: #000;
+    }
+
+    input, textarea, button {
+      font-family: inherit;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    /* Desktop Viewport */
+    #desktop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: calc(100vh - var(--taskbar-height));
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+      transition: background-image 0.3s ease;
+    }
+
+    /* Desktop Selection Box */
+    #selection-box {
+      position: absolute;
+      border: 1px solid rgba(0, 120, 215, 0.85);
+      background: rgba(0, 120, 215, 0.22);
+      pointer-events: none;
+      display: none;
+      z-index: 5;
+    }
+
+    /* Desktop Icons Grid */
+    #desktop-icons-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .desktop-icon {
+      width: 78px;
+      height: 86px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 4px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .desktop-icon:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .desktop-icon.selected {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .desktop-icon i, .desktop-icon img {
+      font-size: 32px;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
+
+    .desktop-icon span {
+      font-size: 11.5px;
+      line-height: 1.25;
+      color: #ffffff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    /* ==========================================================================
+       TASKBAR COMPONENT
+       ========================================================================== */
+    #taskbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      height: var(--taskbar-height);
+      background: var(--taskbar-bg);
+      backdrop-filter: var(--taskbar-blur);
+      -webkit-backdrop-filter: var(--taskbar-blur);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 99999;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #taskbar-left, #taskbar-tray {
+      display: flex;
+      height: 100%;
+      align-items: center;
+    }
+
+    .taskbar-btn {
+      width: 48px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #ffffff;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s ease;
+    }
+
+    .taskbar-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .taskbar-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    #start-btn:hover i {
+      color: var(--accent-hover);
+    }
+
+    /* Taskbar App Items */
+    #taskbar-apps {
+      display: flex;
+      height: 100%;
+      gap: 2px;
+    }
+
+    .taskbar-app-item {
+      width: 46px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s;
+    }
+
+    .taskbar-app-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .taskbar-app-item.active {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .taskbar-app-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 6px;
+      right: 6px;
+      height: 2px;
+      background: var(--accent-color);
+      box-shadow: 0 0 6px var(--accent-color);
+    }
+
+    .taskbar-app-item.running:not(.active)::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 18px;
+      right: 18px;
+      height: 2px;
+      background: #888;
+    }
+
+    .taskbar-app-item i, .taskbar-app-item img {
+      font-size: 18px;
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+
+    /* System Tray */
+    .tray-item {
+      padding: 0 8px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .tray-item:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    #clock-widget {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+      padding: 0 10px;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    #show-desktop-btn {
+      width: 6px;
+      height: 100%;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+    }
+
+    #show-desktop-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ==========================================================================
+       START MENU & ACTION CENTER (ACRYLIC GLASS)
+       ========================================================================== */
+    #start-menu {
+      position: absolute;
+      bottom: var(--taskbar-height);
+      left: 0;
+      width: 640px;
+      height: 540px;
+      background: var(--acrylic-bg);
+      backdrop-filter: var(--acrylic-blur);
+      -webkit-backdrop-filter: var(--acrylic-blur);
+      border: 1px solid var(--window-border);
+      display: none;
+      flex-direction: row;
+      z-index: 99998;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+      animation: startMenuSlide 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    @keyframes startMenuSlide {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    #start-left-bar {
+      width: 48px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .start-bar-btn {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .start-bar-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    #start-apps-list {
+      width: 240px;
+      height: 100%;
+      overflow-y: auto;
+      padding: 12px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .start-app-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+
+    .start-app-row:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .start-app-row i, .start-app-row img {
+      font-size: 18px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      object-fit: contain;
+    }
+
+    #start-tiles-view {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 95px;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .live-tile {
+      background: var(--accent-color);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.15s ease, filter 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .live-tile:hover {
+      transform: scale(0.98);
+      filter: brightness(1.15);
+    }
+
+    .live-tile i, .live-tile img {
+      font-size: 26px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .live-tile span {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    /* Action Center */
+    #action-center {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 360px;
+      height: calc(100vh - var(--taskbar-height));
+      background: var(--acrylic-bg);
+      backdrop-filter: var(--acrylic-blur);
+      -webkit-backdrop-filter: var(--acrylic-blur);
+      border-left: 1px solid var(--window-border);
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px;
+      z-index: 99998;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+      animation: actionCenterSlide 0.22s ease-out;
+    }
+
+    @keyframes actionCenterSlide {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    .action-tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .action-tile {
+      height: 60px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 10.5px;
+      color: #ddd;
+      border-radius: 2px;
+      transition: background 0.15s;
+    }
+
+    .action-tile.active {
+      background: var(--accent-color);
+      color: #fff;
+    }
+
+    .action-tile i {
+      font-size: 16px;
+    }
+
+    /* ==========================================================================
+       WINDOW MANAGER ARCHITECTURE
+       ========================================================================== */
+    .win10-window {
+      position: absolute;
+      background: var(--bg-dark);
+      border: 1px solid var(--window-border);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65);
+      border-radius: 4px 4px 0 0;
+      display: flex;
+      flex-direction: column;
+      min-width: 280px;
+      min-height: 180px;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .win10-window.active {
+      border-color: var(--window-active-border);
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85);
+    }
+
+    .window-titlebar {
+      height: 32px;
+      background: #181818;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: default;
+    }
+
+    .win10-window.active .window-titlebar {
+      background: #202020;
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #e0e0e0;
+      pointer-events: none;
+    }
+
+    .window-title i, .window-title img {
+      width: 16px;
+      height: 16px;
+      font-size: 14px;
+      object-fit: contain;
+    }
+
+    .window-controls {
+      display: flex;
+      height: 100%;
+    }
+
+    .win-control-btn {
+      width: 44px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #ccc;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .win-control-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .win-control-btn.btn-close:hover {
+      background: #e81123;
+      color: #fff;
+    }
+
+    .window-content {
+      flex: 1;
+      width: 100%;
+      height: calc(100% - 32px);
+      overflow: auto;
+      background: #252525;
+      position: relative;
+    }
+
+    /* Resize Handles */
+    .resize-handle {
+      position: absolute;
+      z-index: 100;
+    }
+    .resize-right { right: 0; top: 0; width: 6px; height: 100%; cursor: ew-resize; }
+    .resize-bottom { bottom: 0; left: 0; height: 6px; width: 100%; cursor: ns-resize; }
+    .resize-corner { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+
+    /* ==========================================================================
+       AUTHENTIC BUILT-IN APPLICATIONS
+       ========================================================================== */
+    
+    /* File Explorer */
+    .explorer-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: #1e1e1e;
+      color: #eee;
+    }
+    .explorer-ribbon {
+      padding: 6px 12px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3a3a3a;
+      display: flex;
+      gap: 8px;
+    }
+    .explorer-btn {
+      background: #3a3a3a;
+      border: 1px solid #4a4a4a;
+      color: #fff;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .explorer-btn:hover {
+      background: #484848;
+    }
+    .explorer-address-bar {
+      padding: 4px 8px;
+      background: #252525;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .address-box {
+      flex: 1;
+      background: #181818;
+      border: 1px solid #3c3c3c;
+      padding: 3px 8px;
+      color: #ddd;
+      font-size: 11.5px;
+      border-radius: 2px;
+    }
+    .explorer-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    .explorer-sidebar {
+      width: 180px;
+      background: #181818;
+      border-right: 1px solid #2d2d2d;
+      padding: 8px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+    .sidebar-folder {
+      padding: 6px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar-folder:hover, .sidebar-folder.active {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .explorer-file-view {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      grid-auto-rows: 90px;
+      gap: 10px;
+    }
+    .file-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      text-align: center;
+      border: 1px solid transparent;
+    }
+    .file-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .file-item i, .file-item img {
+      font-size: 30px;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 4px;
+      object-fit: contain;
+    }
+    .file-item span {
+      font-size: 11px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Notepad App */
+    .notepad-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: #1e1e1e;
+    }
+    .notepad-menubar {
+      background: #252525;
+      padding: 2px 8px;
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #333;
+    }
+    .notepad-menubar span {
+      padding: 3px 6px;
+      cursor: pointer;
+    }
+    .notepad-menubar span:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .notepad-textarea {
+      flex: 1;
+      background: #1e1e1e;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      resize: none;
+      outline: none;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Calculator App */
+    .calc-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: #202020;
+      padding: 8px;
+    }
+    .calc-display {
+      height: 70px;
+      background: transparent;
+      color: #fff;
+      text-align: right;
+      padding: 10px;
+      font-size: 32px;
+      font-weight: 300;
+      overflow: hidden;
+    }
+    .calc-history {
+      font-size: 12px;
+      color: #888;
+      height: 16px;
+    }
+    .calc-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+    }
+    .calc-btn {
+      background: #323232;
+      border: 1px solid rgba(255,255,255,0.03);
+      color: #fff;
+      font-size: 15px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .calc-btn:hover {
+      background: #3e3e3e;
+    }
+    .calc-btn.op-btn {
+      background: #282828;
+      font-weight: 500;
+    }
+    .calc-btn.equals-btn {
+      background: var(--accent-color);
+    }
+    .calc-btn.equals-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Command Prompt / Terminal */
+    .cmd-container {
+      height: 100%;
+      background: #0c0c0c;
+      color: #cccccc;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .cmd-output {
+      white-space: pre-wrap;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    .cmd-input-line {
+      display: flex;
+      align-items: center;
+    }
+    .cmd-prompt-text {
+      color: #00ff66;
+      margin-right: 6px;
+    }
+    .cmd-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    /* Settings App */
+    .settings-container {
+      display: flex;
+      height: 100%;
+      background: #1f1f1f;
+      color: #fff;
+    }
+    .settings-sidebar {
+      width: 220px;
+      background: #181818;
+      border-right: 1px solid #2e2e2e;
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .settings-nav-item {
+      padding: 10px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-nav-item:hover, .settings-nav-item.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-color);
+    }
+    .settings-page {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .settings-group {
+      margin-bottom: 24px;
+    }
+    .settings-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #2d2d2d;
+    }
+    .setting-btn {
+      background: var(--accent-color);
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    /* JREX Sandbox Container */
+    .jrex-sandbox-container {
+      width: 100%;
+      height: 100%;
+      background: #181818;
+      display: flex;
+      flex-direction: column;
+    }
+    .jrex-sandbox-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+    }
+
+    /* Context Menu */
+    #context-menu {
+      position: absolute;
+      width: 210px;
+      background: #252525;
+      border: 1px solid #3c3c3c;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+      padding: 4px 0;
+      display: none;
+      flex-direction: column;
+      z-index: 100000;
+    }
+    .context-menu-item {
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #eee;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .context-menu-item:hover {
+      background: var(--accent-color);
+      color: #fff;
+    }
+    .context-divider {
+      height: 1px;
+      background: #3a3a3a;
+      margin: 4px 0;
+    }
+
+    /* Hidden File Input for .jrex Import */
+    #jrex-file-input {
+      display: none;
+    }
+  </style>
 </head>
 <body>
 
-<div class="ambient-canvas"></div>
+  <!-- DESKTOP WORKSPACE -->
+  <div id="desktop">
+    <div id="desktop-icons-container"></div>
+    <div id="selection-box"></div>
+  </div>
 
-<div id="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="window-traffic-lights">
-        <span class="traffic-light traffic-close" title="Close"></span>
-        <span class="traffic-light traffic-min" title="Minimize"></span>
-        <span class="traffic-light traffic-max" title="Maximize"></span>
+  <!-- CONTEXT MENU -->
+  <div id="context-menu">
+    <div class="context-menu-item" onclick="Sys.openApp('explorer')"><i class="fa-solid fa-folder-open"></i> Open File Explorer</div>
+    <div class="context-menu-item" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-cloud-arrow-up"></i> Install .jrex Application</div>
+    <div class="context-menu-item" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-file-export"></i> Sync & Save to iOS Files</div>
+    <div class="context-divider"></div>
+    <div class="context-menu-item" onclick="Sys.openApp('notepad')"><i class="fa-solid fa-file-lines"></i> New Text Document</div>
+    <div class="context-menu-item" onclick="Sys.openApp('settings')"><i class="fa-solid fa-gear"></i> Personalize & Display</div>
+    <div class="context-divider"></div>
+    <div class="context-menu-item" onclick="Sys.refreshDesktop()"><i class="fa-solid fa-rotate-right"></i> Refresh</div>
+  </div>
+
+  <!-- START MENU -->
+  <div id="start-menu">
+    <div id="start-left-bar">
+      <div class="start-bar-top">
+        <div class="start-bar-btn" title="User Account"><i class="fa-solid fa-circle-user"></i></div>
       </div>
-      <button class="btn btn-icon" id="btnNewSession" title="新建對話 (⌘N)">＋</button>
+      <div class="start-bar-bottom">
+        <div class="start-bar-btn" onclick="Sys.openApp('explorer')" title="Documents"><i class="fa-solid fa-file"></i></div>
+        <div class="start-bar-btn" onclick="Sys.openApp('settings')" title="Settings"><i class="fa-solid fa-gear"></i></div>
+        <div class="start-bar-btn" onclick="Sys.reboot()" title="Power"><i class="fa-solid fa-power-off"></i></div>
+      </div>
+    </div>
+    
+    <div id="start-apps-list">
+      <!-- Dynamically populated app list -->
     </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-item active" data-view="chatView">
-        <span class="icon">💬</span>
-        <span>多平台 AI 對話</span>
+    <div id="start-tiles-view">
+      <div class="live-tile" onclick="Sys.openApp('edge')">
+        <i class="fa-brands fa-edge" style="color: #4edaff;"></i>
+        <span>Microsoft Edge</span>
       </div>
-      <div class="nav-item" data-view="pipelineView">
-        <span class="icon">⚡️</span>
-        <span>多廠商工作流水線</span>
+      <div class="live-tile" onclick="Sys.openApp('jrex_installer')" style="background:#5c2d91;">
+        <i class="fa-solid fa-box-open" style="color:#ffb900;"></i>
+        <span>JR App Store</span>
       </div>
-    </nav>
-
-    <div class="session-section">
-      <div class="section-label">
-        <span>對話列表</span>
-        <span id="sessionCount">0</span>
+      <div class="live-tile" onclick="Sys.openApp('explorer')" style="background:#d13438;">
+        <i class="fa-solid fa-folder"></i>
+        <span>File Explorer</span>
       </div>
-      <div class="session-list" id="sessionList"></div>
-    </div>
-
-    <div style="padding: 12px; border-top: 1px solid var(--surface-separator);">
-      <button class="btn" style="width: 100%; justify-content: flex-start;" id="btnOpenSettings">
-        <span class="icon">⚙️</span>
-        <span>4 廠 API 設定 & 模型</span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- MAIN STAGE -->
-  <main class="main-stage">
-    <header class="stage-header">
-      <div class="header-meta">
-        <span class="header-title" id="stageTitle">多平台 AI 對話</span>
-        
-        <!-- 頂欄 4 廠模型快速切換 -->
-        <div class="header-picker-group">
-          <select id="chatVendorSelect">
-            <option value="gemini">Google Gemini</option>
-            <option value="openai">OpenAI (ChatGPT)</option>
-            <option value="claude">Anthropic (Claude)</option>
-            <option value="grok">xAI (Grok)</option>
-          </select>
-          <span style="color: var(--text-tertiary);">/</span>
-          <select id="chatModelSelect"></select>
-        </div>
-
-        <div class="status-capsule">
-          <span class="status-dot idle" id="globalStatusDot"></span>
-          <span id="globalStatusText">就緒</span>
-        </div>
+      <div class="live-tile" onclick="Sys.openApp('calc')" style="background:#008272;">
+        <i class="fa-solid fa-calculator"></i>
+        <span>Calculator</span>
       </div>
-      <div class="header-actions">
-        <button class="btn" id="btnExportSession" title="匯出對話">📤 匯出</button>
-        <button class="btn btn-danger" id="btnClearCurrentChat" title="清空對話">清空</button>
+      <div class="live-tile" onclick="Sys.openApp('cmd')" style="background:#107c10;">
+        <i class="fa-solid fa-terminal"></i>
+        <span>Command Prompt</span>
       </div>
-    </header>
-
-    <!-- VIEWPORT -->
-    <div class="view-viewport">
-      <!-- 1. CHAT VIEW -->
-      <section class="view-panel active" id="chatView">
-        <div class="chat-container">
-          <div class="messages-scrollable" id="messagesContainer"></div>
-          <div class="chat-dock">
-            <div class="chat-input-wrapper">
-              <textarea class="chat-textarea" id="chatInput" placeholder="輸入訊息至當前選定的 AI 模型 (Shift+Enter 換行)..." rows="1"></textarea>
-              <button class="btn btn-primary" id="btnSendMessage">發送</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2. PIPELINE VIEW -->
-      <section class="view-panel" id="pipelineView">
-        <div class="pipeline-view">
-          <div class="pipeline-hero">
-            <div>
-              <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">多廠商 AI 串行工作流水線</h2>
-              <p style="font-size: 12.5px; color: var(--text-secondary);">自由組合 Gemini、Claude、GPT 與 Grok，自動流轉多階段推論。</p>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn" id="btnAddPipelineStage">＋ 新增步驟</button>
-              <button class="btn btn-primary" id="btnRunPipeline">🚀 執行流水線</button>
-            </div>
-          </div>
-
-          <div class="field-group" style="background: var(--surface-card); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--surface-border);">
-            <label class="field-label">流水線初始輸入數據 / Payload</label>
-            <textarea class="input-textarea" id="pipelineInitialPayload" placeholder="輸入要交給步驟一處理的原始題目、代碼或文字數據..." style="min-height: 80px;"></textarea>
-          </div>
-
-          <div class="pipeline-stages-container" id="pipelineStagesList"></div>
-        </div>
-      </section>
-    </div>
-  </main>
-</div>
-
-<!-- SETTINGS MODAL -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <h3>4 廠 API Key 配置與模型動態拉取</h3>
-      <button class="btn btn-icon" id="btnCloseSettings">✕</button>
-    </div>
-    <div class="modal-body">
-      <!-- Gemini -->
-      <div class="vendor-config-card">
-        <div class="vendor-config-header">
-          <span class="vendor-badge vendor-gemini">Google Gemini</span>
-          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('gemini')">🔄 同步模型</button>
-        </div>
-        <input type="password" class="input-text" id="key_gemini" placeholder="AIzaSy... (Gemini API Key)">
-      </div>
-
-      <!-- OpenAI -->
-      <div class="vendor-config-card">
-        <div class="vendor-config-header">
-          <span class="vendor-badge vendor-openai">OpenAI (ChatGPT)</span>
-          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('openai')">🔄 同步模型</button>
-        </div>
-        <input type="password" class="input-text" id="key_openai" placeholder="sk-... (OpenAI API Key)">
-      </div>
-
-      <!-- Claude -->
-      <div class="vendor-config-card">
-        <div class="vendor-config-header">
-          <span class="vendor-badge vendor-claude">Anthropic (Claude)</span>
-          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('claude')">🔄 同步模型</button>
-        </div>
-        <input type="password" class="input-text" id="key_claude" placeholder="sk-ant-... (Claude API Key)">
-      </div>
-
-      <!-- Grok -->
-      <div class="vendor-config-card">
-        <div class="vendor-config-header">
-          <span class="vendor-badge vendor-grok">xAI (Grok)</span>
-          <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="fetchRemoteModels('grok')">🔄 同步模型</button>
-        </div>
-        <input type="password" class="input-text" id="key_grok" placeholder="xai-... (Grok API Key)">
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-        <button class="btn btn-primary" id="btnSaveKeys">💾 保存所有配置</button>
+      <div class="live-tile" onclick="Sys.openApp('settings')" style="background:#0078d7;">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Settings</span>
       </div>
     </div>
   </div>
-</div>
 
-<div class="toast-manager" id="toastContainer"></div>
+  <!-- ACTION CENTER -->
+  <div id="action-center">
+    <div style="flex:1;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:14px; font-weight:600;">Notifications</span>
+        <span style="font-size:11.5px; color:var(--accent-color); cursor:pointer;" onclick="Sys.clearNotifications()">Clear all</span>
+      </div>
+      <div id="notification-feed" style="font-size:12px; color:#aaa; line-height:1.5;">
+        No new notifications.
+      </div>
+    </div>
 
-<!-- 4 VENDORS CLIENT & APPLICATION SCRIPT -->
-<script>
-'use strict';
+    <div class="action-tiles-grid">
+      <div class="action-tile active" onclick="this.classList.toggle('active')"><i class="fa-solid fa-wifi"></i> Wi-Fi</div>
+      <div class="action-tile active" onclick="this.classList.toggle('active')"><i class="fa-brands fa-bluetooth-b"></i> Bluetooth</div>
+      <div class="action-tile" onclick="this.classList.toggle('active')"><i class="fa-solid fa-moon"></i> Night light</div>
+      <div class="action-tile active" onclick="Sys.openApp('settings')"><i class="fa-solid fa-gear"></i> All settings</div>
+      <div class="action-tile" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-floppy-disk"></i> Save iOS</div>
+      <div class="action-tile" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-file-import"></i> .JREX App</div>
+      <div class="action-tile" onclick="this.classList.toggle('active')"><i class="fa-solid fa-battery-half"></i> Saver</div>
+      <div class="action-tile" onclick="Sys.toggleFullscreen()"><i class="fa-solid fa-expand"></i> Fullscreen</div>
+    </div>
+  </div>
 
-// 預設模型清單
-const DEFAULT_MODELS = {
-  gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'],
-  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.5-preview', 'o3-mini'],
-  claude: ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022'],
-  grok:   ['grok-2-1212', 'grok-2-vision-1212', 'grok-beta']
-};
+  <!-- TASKBAR -->
+  <div id="taskbar">
+    <div id="taskbar-left">
+      <div id="start-btn" class="taskbar-btn" title="Start" onclick="Sys.toggleStartMenu()">
+        <i class="fa-brands fa-windows" style="font-size:18px;"></i>
+      </div>
+      <div class="taskbar-btn" title="Type here to search" onclick="Sys.openApp('cmd')">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </div>
+      <div class="taskbar-btn" title="Task View" onclick="Sys.arrangeWindows()">
+        <i class="fa-solid fa-table-cells-large"></i>
+      </div>
+      <div id="taskbar-apps"></div>
+    </div>
 
-const Store = {
-  activeSessionId: null,
-  sessions: [],
-  keys: { gemini: '', openai: '', claude: '', grok: '' },
-  modelsRegistry: JSON.parse(JSON.stringify(DEFAULT_MODELS)),
-  chatSelection: { vendor: 'gemini', model: 'gemini-2.5-flash' },
-  pipelineStages: [
-    {
-      id: 'stg_1',
-      title: '第一階段：Gemini 題意識別與考點解析',
-      vendor: 'gemini',
-      model: 'gemini-2.5-flash',
-      systemPrompt: '請詳細識別問題類型、關鍵已知條件及解題方向。',
-      temperature: 0.2,
-      lastOutput: ''
-    },
-    {
-      id: 'stg_2',
-      title: '第二階段：Claude 邏輯推演與二次複核',
-      vendor: 'claude',
-      model: 'claude-3-7-sonnet-20250219',
-      systemPrompt: '請以獨立視角檢查前置步驟，指出潛在的計算或邏輯漏洞並給出完整步驟。',
-      temperature: 0.2,
-      lastOutput: ''
-    },
-    {
-      id: 'stg_3',
-      title: '第三階段：OpenAI 交叉總結與最終決策',
-      vendor: 'openai',
-      model: 'gpt-4o',
-      systemPrompt: '請融合所有分析，給出標準答案及最終推薦路徑。',
-      temperature: 0.1,
-      lastOutput: ''
-    }
-  ]
-};
+    <div id="taskbar-tray">
+      <div class="tray-item" title="Import .jrex app" onclick="Sys.promptImportJREX()">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+      </div>
+      <div class="tray-item" title="Audio / Volume">
+        <i class="fa-solid fa-volume-high"></i>
+      </div>
+      <div class="tray-item" title="Network Internet Access">
+        <i class="fa-solid fa-wifi"></i>
+      </div>
+      <div id="clock-widget" class="tray-item" title="Date and Time Settings" onclick="Sys.openApp('settings')">
+        <span id="tray-time">12:00 PM</span>
+        <span id="tray-date">2026/8/31</span>
+      </div>
+      <div class="tray-item" title="Action Center" onclick="Sys.toggleActionCenter()">
+        <i class="fa-regular fa-message"></i>
+      </div>
+      <div id="show-desktop-btn" title="Show Desktop" onclick="Sys.minimizeAllWindows()"></div>
+    </div>
+  </div>
 
-// 本地存儲
-function saveStore() {
-  localStorage.setItem('UNIVERSAL_AI_STORE_V1', JSON.stringify({
-    sessions: Store.sessions,
-    activeSessionId: Store.activeSessionId,
-    keys: Store.keys,
-    modelsRegistry: Store.modelsRegistry,
-    chatSelection: Store.chatSelection,
-    pipelineStages: Store.pipelineStages
-  }));
-}
+  <!-- Hidden File Input for iOS/Desktop .jrex and system files -->
+  <input type="file" id="jrex-file-input" accept=".jrex,.json" />
 
-function loadStore() {
-  try {
-    const raw = localStorage.getItem('UNIVERSAL_AI_STORE_V1');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      Store.sessions = parsed.sessions || [];
-      Store.activeSessionId = parsed.activeSessionId || null;
-      Store.keys = parsed.keys || Store.keys;
-      Store.modelsRegistry = parsed.modelsRegistry || Store.modelsRegistry;
-      Store.chatSelection = parsed.chatSelection || Store.chatSelection;
-      Store.pipelineStages = parsed.pipelineStages || Store.pipelineStages;
-    }
-  } catch (err) {
-    console.error(err);
-  }
+  <!-- ==========================================================================
+       CORE OPERATING SYSTEM RUNTIME & JREX ENGINE
+       ========================================================================== -->
+  <script>
+    /**
+     * @typedef {Object} JREXPackage
+     * @property {string} id - Unique identifier
+     * @property {string} name - Display title
+     * @property {string} icon - FontAwesome class or Data URL / Image URL
+     * @property {string} version - App semantic version
+     * @property {string} author - Author name
+     * @property {number} [width] - Default window width
+     * @property {number} [height] - Default window height
+     * @property {string} html - HTML markup for the UI
+     * @property {string} [css] - Custom styling
+     * @property {string} [js] - Custom executable scripts
+     */
 
-  if (Store.sessions.length === 0) {
-    createNewSession('新對話');
-  } else if (!Store.activeSessionId || !Store.sessions.find(s => s.id === Store.activeSessionId)) {
-    Store.activeSessionId = Store.sessions[0].id;
-  }
-}
+    class OperatingSystem {
+      constructor() {
+        this.storageKey = 'WIN10_SIMULATOR_STATE_V1';
+        this.windows = new Map();
+        this.installedApps = new Map();
+        this.activeWindowId = null;
+        this.zIndexCounter = 100;
+        this.state = {
+          wallpaper: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=2850&q=80',
+          accentColor: '#0078d7',
+          installedJREX: [],
+          documents: [
+            { name: 'Welcome.txt', content: 'Welcome to Windows 10 OS Simulator!\n\nFeatures:\n- Install any .jrex app package.\n- Add custom app shortcuts to the desktop.\n- Automatic state sync to iOS Files / LocalStorage.\n- Native window manager with drag & resize.' }
+          ]
+        };
 
-function showToast(msg, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-  toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// ==========================================================================
-// 4 廠 API 核心請求調用引擎
-// ==========================================================================
-async function callVendorAPI({ vendor, model, prompt, messages = [], system = '', temperature = 0.7 }) {
-  const key = (Store.keys[vendor] || '').trim();
-  if (!key) throw new Error(`未配置 ${vendor.toUpperCase()} 的 API Key，請至設定中填寫。`);
-
-  // 1. Google Gemini
-  if (vendor === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
-    const contents = messages.length > 0 
-      ? messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }))
-      : [{ role: 'user', parts: [{ text: prompt }] }];
-    
-    const body = {
-      contents,
-      generationConfig: { temperature: parseFloat(temperature), maxOutputTokens: 8192 }
-    };
-    if (system) body.systemInstruction = { parts: [{ text: system }] };
-
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(`Gemini HTTP ${res.status}: ${await res.text()}`);
-    const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
-  }
-
-  // 2. OpenAI (ChatGPT)
-  if (vendor === 'openai') {
-    const url = 'https://api.openai.com/v1/chat/completions';
-    const reqMsgs = [];
-    if (system) reqMsgs.push({ role: 'system', content: system });
-    if (messages.length > 0) {
-      messages.forEach(m => reqMsgs.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
-    } else {
-      reqMsgs.push({ role: 'user', content: prompt });
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model, messages: reqMsgs, temperature: parseFloat(temperature) })
-    });
-    if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}: ${await res.text()}`);
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content || '';
-  }
-
-  // 3. Anthropic (Claude)
-  if (vendor === 'claude') {
-    const url = 'https://api.anthropic.com/v1/messages';
-    const reqMsgs = messages.length > 0
-      ? messages.map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }))
-      : [{ role: 'user', content: prompt }];
-
-    const body = {
-      model,
-      max_tokens: 4096,
-      messages: reqMsgs,
-      temperature: parseFloat(temperature)
-    };
-    if (system) body.system = system;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'dangerously-allow-browser': 'true'
-      },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error(`Claude HTTP ${res.status}: ${await res.text()}`);
-    const data = await res.json();
-    return data?.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
-  }
-
-  // 4. xAI (Grok)
-  if (vendor === 'grok') {
-    const url = 'https://api.x.ai/v1/chat/completions';
-    const reqMsgs = [];
-    if (system) reqMsgs.push({ role: 'system', content: system });
-    if (messages.length > 0) {
-      messages.forEach(m => reqMsgs.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
-    } else {
-      reqMsgs.push({ role: 'user', content: prompt });
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model, messages: reqMsgs, temperature: parseFloat(temperature) })
-    });
-    if (!res.ok) throw new Error(`Grok HTTP ${res.status}: ${await res.text()}`);
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content || '';
-  }
-
-  throw new Error(`未知廠商: ${vendor}`);
-}
-
-// 動態拉取遠端模型清單
-async function fetchRemoteModels(vendor) {
-  const key = (Store.keys[vendor] || '').trim();
-  if (!key) return showToast(`請先輸入 ${vendor.toUpperCase()} 的 API Key`, 'warn');
-  showToast(`正在拉取 ${vendor.toUpperCase()} 模型清單...`, 'info');
-
-  try {
-    let models = [];
-    if (vendor === 'gemini') {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      models = (data.models || [])
-        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-        .map(m => m.name.replace(/^models\//, ''));
-    } else if (vendor === 'openai') {
-      const res = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${key}` } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      models = (data.data || []).map(m => m.id).filter(id => /^(gpt-|o1|o3|o4|chatgpt-)/i.test(id));
-    } else if (vendor === 'claude') {
-      const res = await fetch('https://api.anthropic.com/v1/models', {
-        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'dangerously-allow-browser': 'true' }
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      models = (data.data || []).map(m => m.id);
-    } else if (vendor === 'grok') {
-      const res = await fetch('https://api.x.ai/v1/models', { headers: { Authorization: `Bearer ${key}` } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      models = (data.data || []).map(m => m.id);
-    }
-
-    if (models.length > 0) {
-      Store.modelsRegistry[vendor] = models;
-      saveStore();
-      updateChatModelPicker();
-      renderPipelineStages();
-      showToast(`成功同步 ${models.length} 個 ${vendor.toUpperCase()} 模型！`, 'success');
-    } else {
-      showToast('未獲取到有效模型', 'warn');
-    }
-  } catch (err) {
-    showToast(`獲取失敗: ${err.message}`, 'error');
-  }
-}
-
-// ==========================================================================
-// 對話與 UI 渲染
-// ==========================================================================
-function updateChatModelPicker() {
-  const vendorSelect = document.getElementById('chatVendorSelect');
-  const modelSelect = document.getElementById('chatModelSelect');
-  vendorSelect.value = Store.chatSelection.vendor;
-
-  const models = Store.modelsRegistry[Store.chatSelection.vendor] || [];
-  modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
-
-  if (!models.includes(Store.chatSelection.model)) {
-    Store.chatSelection.model = models[0] || '';
-  }
-  modelSelect.value = Store.chatSelection.model;
-}
-
-function createNewSession(title = '新對話') {
-  const newSession = {
-    id: 'ses_' + Date.now(),
-    title,
-    messages: [
-      {
-        role: 'model',
-        vendor: 'gemini',
-        model: 'gemini-2.5-flash',
-        text: '您好！已連接四大廠商 (Gemini, ChatGPT, Claude, Grok) 引擎，請在頂部隨意切換模型開始對話。',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        this.init();
       }
-    ]
-  };
-  Store.sessions.unshift(newSession);
-  Store.activeSessionId = newSession.id;
-  saveStore();
-  renderSessionList();
-  renderActiveChat();
-}
 
-function getActiveSession() {
-  return Store.sessions.find(s => s.id === Store.activeSessionId);
-}
-
-function renderSessionList() {
-  const container = document.getElementById('sessionList');
-  container.innerHTML = '';
-  document.getElementById('sessionCount').textContent = Store.sessions.length;
-
-  Store.sessions.forEach(session => {
-    const row = document.createElement('div');
-    row.className = `session-row ${session.id === Store.activeSessionId ? 'active' : ''}`;
-    row.onclick = () => {
-      Store.activeSessionId = session.id;
-      saveStore();
-      renderSessionList();
-      renderActiveChat();
-    };
-
-    row.innerHTML = `
-      <div class="session-title-wrap">
-        <span>💬</span>
-        <span>${session.title}</span>
-      </div>
-      <button class="session-delete-btn" title="刪除">✕</button>
-    `;
-    row.querySelector('.session-delete-btn').onclick = (e) => {
-      e.stopPropagation();
-      if (Store.sessions.length <= 1) return showToast('至少需保留一個對話', 'warn');
-      Store.sessions = Store.sessions.filter(s => s.id !== session.id);
-      if (Store.activeSessionId === session.id) Store.activeSessionId = Store.sessions[0].id;
-      saveStore();
-      renderSessionList();
-      renderActiveChat();
-    };
-    container.appendChild(row);
-  });
-}
-
-function renderActiveChat() {
-  const session = getActiveSession();
-  const container = document.getElementById('messagesContainer');
-  container.innerHTML = '';
-  if (!session) return;
-
-  session.messages.forEach(msg => {
-    const wrap = document.createElement('div');
-    wrap.className = `chat-bubble-wrap ${msg.role}`;
-    
-    wrap.innerHTML = `
-      <div class="chat-bubble-meta">
-        <span>${msg.role === 'user' ? '您' : (msg.vendor ? msg.vendor.toUpperCase() : 'AI')}</span>
-        ${msg.model ? `<span class="vendor-badge vendor-${msg.vendor || 'gemini'}">${msg.model}</span>` : ''}
-        <span>•</span>
-        <span>${msg.timestamp || ''}</span>
-      </div>
-      <div class="chat-bubble">${formatMarkdownToHtml(msg.text)}</div>
-    `;
-    container.appendChild(wrap);
-  });
-  container.scrollTop = container.scrollHeight;
-}
-
-function formatMarkdownToHtml(text) {
-  if (!text) return '';
-  let esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  esc = esc.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-  esc = esc.replace(/`([^`]+)`/g, '<code>$1</code>');
-  esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  return esc.replace(/\n/g, '<br>');
-}
-
-async function handleSendMessage() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text) return;
-
-  const session = getActiveSession();
-  if (!session) return;
-
-  session.messages.push({
-    role: 'user',
-    text,
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  });
-
-  if (session.messages.length === 2) {
-    session.title = text.slice(0, 18) + (text.length > 18 ? '...' : '');
-    renderSessionList();
-  }
-
-  input.value = '';
-  renderActiveChat();
-
-  const currentVendor = Store.chatSelection.vendor;
-  const currentModel = Store.chatSelection.model;
-
-  setGlobalStatus('busy', `${currentVendor.toUpperCase()} (${currentModel}) 正在生成...`);
-
-  try {
-    const reply = await callVendorAPI({
-      vendor: currentVendor,
-      model: currentModel,
-      messages: session.messages
-    });
-
-    session.messages.push({
-      role: 'model',
-      vendor: currentVendor,
-      model: currentModel,
-      text: reply,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    });
-
-    saveStore();
-    renderActiveChat();
-    setGlobalStatus('idle', '就緒');
-  } catch (err) {
-    setGlobalStatus('error', '請求失敗');
-    showToast(err.message, 'error');
-    session.messages.push({
-      role: 'model',
-      vendor: currentVendor,
-      model: currentModel,
-      text: `⚠️ **調用失敗:** ${err.message}`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    });
-    renderActiveChat();
-  }
-}
-
-// ==========================================================================
-// 多廠商流水線 Orchestrator
-// ==========================================================================
-function renderPipelineStages() {
-  const container = document.getElementById('pipelineStagesList');
-  container.innerHTML = '';
-
-  Store.pipelineStages.forEach((stage, idx) => {
-    if (idx > 0) {
-      const conn = document.createElement('div');
-      conn.className = 'pipeline-connector';
-      conn.textContent = '↓';
-      container.appendChild(conn);
-    }
-
-    const node = document.createElement('div');
-    node.className = 'pipeline-node';
-    node.id = `node_${stage.id}`;
-
-    const vendorModels = Store.modelsRegistry[stage.vendor] || [];
-
-    node.innerHTML = `
-      <div class="pipeline-node-header">
-        <div class="node-badge">
-          <span class="node-idx">${idx + 1}</span>
-          <span>${stage.title}</span>
-        </div>
-        <button class="btn btn-danger btn-icon" onclick="deletePipelineStage(${idx})">✕</button>
-      </div>
-      <div class="pipeline-node-body">
-        <div class="field-group">
-          <label class="field-label">執行廠商 & 模型</label>
-          <select class="input-select" onchange="updateStageVendor(${idx}, this.value)">
-            <option value="gemini" ${stage.vendor === 'gemini' ? 'selected' : ''}>Google Gemini</option>
-            <option value="openai" ${stage.vendor === 'openai' ? 'selected' : ''}>OpenAI (ChatGPT)</option>
-            <option value="claude" ${stage.vendor === 'claude' ? 'selected' : ''}>Anthropic (Claude)</option>
-            <option value="grok" ${stage.vendor === 'grok' ? 'selected' : ''}>xAI (Grok)</option>
-          </select>
-
-          <select class="input-select" style="margin-top: 6px;" onchange="updateStageModel(${idx}, this.value)">
-            ${vendorModels.map(m => `<option value="${m}" ${m === stage.model ? 'selected' : ''}>${m}</option>`).join('')}
-          </select>
-
-          <label class="field-label" style="margin-top: 6px;">溫度 (Temperature)</label>
-          <input type="number" step="0.1" min="0" max="1" class="input-text" value="${stage.temperature}" onchange="updateStageTemp(${idx}, this.value)">
-        </div>
-
-        <div class="field-group">
-          <label class="field-label">系統指令 (System Instruction)</label>
-          <textarea class="input-textarea" onchange="updateStagePrompt(${idx}, this.value)">${stage.systemPrompt}</textarea>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">節點輸出結果</label>
-        <div class="node-output-preview">${stage.lastOutput || '尚未執行該節點。'}</div>
-      </div>
-    `;
-    container.appendChild(node);
-  });
-}
-
-function updateStageVendor(idx, v) {
-  Store.pipelineStages[idx].vendor = v;
-  Store.pipelineStages[idx].model = (Store.modelsRegistry[v] || [])[0] || '';
-  saveStore();
-  renderPipelineStages();
-}
-function updateStageModel(idx, m) { Store.pipelineStages[idx].model = m; saveStore(); }
-function updateStageTemp(idx, t) { Store.pipelineStages[idx].temperature = parseFloat(t); saveStore(); }
-function updateStagePrompt(idx, p) { Store.pipelineStages[idx].systemPrompt = p; saveStore(); }
-
-function deletePipelineStage(idx) {
-  if (Store.pipelineStages.length <= 1) return showToast('至少需保留一個步驟', 'warn');
-  Store.pipelineStages.splice(idx, 1);
-  saveStore();
-  renderPipelineStages();
-}
-
-async function executePipeline() {
-  const rootInput = document.getElementById('pipelineInitialPayload').value.trim();
-  if (!rootInput) return showToast('請提供流水線初始輸入數據', 'warn');
-
-  setGlobalStatus('busy', '流水線執行中...');
-  let rollingPayload = rootInput;
-
-  for (let i = 0; i < Store.pipelineStages.length; i++) {
-    const stage = Store.pipelineStages[i];
-    const nodeElem = document.getElementById(`node_${stage.id}`);
-    if (nodeElem) nodeElem.classList.add('running');
-
-    try {
-      const output = await callVendorAPI({
-        vendor: stage.vendor,
-        model: stage.model,
-        prompt: `【前置步驟輸出數據】：\n\n${rollingPayload}`,
-        system: stage.systemPrompt,
-        temperature: stage.temperature
-      });
-
-      stage.lastOutput = output;
-      rollingPayload = output;
-
-      if (nodeElem) {
-        nodeElem.classList.remove('running');
-        nodeElem.classList.add('done');
-        nodeElem.querySelector('.node-output-preview').textContent = output;
+      async init() {
+        this.loadPersistentState();
+        this.setupSystemApps();
+        this.setupEventListeners();
+        this.renderDesktop();
+        this.renderTaskbar();
+        this.startClock();
+        this.applyPersonalization();
       }
-    } catch (err) {
-      if (nodeElem) nodeElem.classList.remove('running');
-      setGlobalStatus('error', '流水線中斷');
-      return showToast(`步驟 ${i + 1} (${stage.vendor.toUpperCase()}) 失敗: ${err.message}`, 'error');
+
+      // ========================================================================
+      // PERSISTENCE & IOS FILES COMPATIBILITY
+      // ========================================================================
+      loadPersistentState() {
+        try {
+          const raw = localStorage.getItem(this.storageKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            this.state = { ...this.state, ...parsed };
+          }
+        } catch (e) {
+          console.warn('Could not read state from localStorage', e);
+        }
+      }
+
+      savePersistentState() {
+        try {
+          localStorage.setItem(this.storageKey, JSON.stringify(this.state));
+        } catch (e) {
+          console.error('Failed to save state to localStorage', e);
+        }
+      }
+
+      /**
+       * Exports entire system image to a .json/.jrex format readable and 
+       * downloadable directly into the iOS "Files" application.
+       */
+      exportToIOSFiles() {
+        this.savePersistentState();
+        const exportData = {
+          system: 'Windows 10 Simulator (iOS Edition)',
+          exportDate: new Date().toISOString(),
+          version: '1.0.0',
+          data: this.state
+        };
+
+        const jsonString = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        const filename = `Win10_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+        
+        downloadAnchor.setAttribute('href', jsonString);
+        downloadAnchor.setAttribute('download', filename);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+
+        this.pushNotification('Backup Saved', `System state exported to iOS Files (${filename})`);
+      }
+
+      // ========================================================================
+      // BUILT-IN SYSTEM APPLICATIONS
+      // ========================================================================
+      setupSystemApps() {
+        // 1. File Explorer
+        this.registerApp({
+          id: 'explorer',
+          name: 'File Explorer',
+          icon: 'fa-solid fa-folder',
+          width: 750,
+          height: 480,
+          render: (win) => this.renderFileExplorer(win)
+        });
+
+        // 2. Notepad
+        this.registerApp({
+          id: 'notepad',
+          name: 'Notepad',
+          icon: 'fa-solid fa-file-lines',
+          width: 600,
+          height: 420,
+          render: (win, args) => this.renderNotepad(win, args)
+        });
+
+        // 3. Calculator
+        this.registerApp({
+          id: 'calc',
+          name: 'Calculator',
+          icon: 'fa-solid fa-calculator',
+          width: 320,
+          height: 460,
+          render: (win) => this.renderCalculator(win)
+        });
+
+        // 4. Command Prompt
+        this.registerApp({
+          id: 'cmd',
+          name: 'Command Prompt',
+          icon: 'fa-solid fa-terminal',
+          width: 620,
+          height: 380,
+          render: (win) => this.renderCmd(win)
+        });
+
+        // 5. Settings
+        this.registerApp({
+          id: 'settings',
+          name: 'Settings',
+          icon: 'fa-solid fa-gear',
+          width: 720,
+          height: 500,
+          render: (win) => this.renderSettings(win)
+        });
+
+        // 6. Microsoft Edge
+        this.registerApp({
+          id: 'edge',
+          name: 'Microsoft Edge',
+          icon: 'fa-brands fa-edge',
+          width: 800,
+          height: 520,
+          render: (win) => {
+            win.content.innerHTML = `
+              <div style="display:flex; flex-direction:column; height:100%; background:#252525;">
+                <div style="display:flex; gap:8px; padding:6px; background:#1e1e1e; border-bottom:1px solid #333;">
+                  <input type="text" id="edge-url-input" value="https://bing.com" style="flex:1; background:#121212; border:1px solid #444; color:#fff; padding:4px 10px; font-size:12px; border-radius:3px;">
+                  <button class="explorer-btn" onclick="const url = document.getElementById('edge-url-input').value; this.parentElement.nextElementSibling.src = url;"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+                </div>
+                <iframe src="https://bing.com" style="flex:1; width:100%; border:none; background:#fff;"></iframe>
+              </div>
+            `;
+          }
+        });
+
+        // 7. JREX App Installer
+        this.registerApp({
+          id: 'jrex_installer',
+          name: 'JR App Store & Installer',
+          icon: 'fa-solid fa-box-open',
+          width: 640,
+          height: 480,
+          render: (win) => this.renderJREXInstaller(win)
+        });
+
+        // Register Installed JREX Packages from State
+        this.state.installedJREX.forEach(pkg => {
+          this.registerJREXPackage(pkg, false);
+        });
+      }
+
+      registerApp(appConfig) {
+        this.installedApps.set(appConfig.id, appConfig);
+      }
+
+      // ========================================================================
+      // .JREX PACKAGE RUNTIME & COMPILER
+      // ========================================================================
+      /**
+       * Installs and executes custom .jrex JSON packages
+       * @param {JREXPackage} pkg 
+       * @param {boolean} persist 
+       */
+      registerJREXPackage(pkg, persist = true) {
+        if (!pkg.id || !pkg.name) {
+          throw new Error('Invalid .jrex package format: missing id or name.');
+        }
+
+        this.installedApps.set(pkg.id, {
+          id: pkg.id,
+          name: pkg.name,
+          icon: pkg.icon || 'fa-solid fa-cube',
+          width: pkg.width || 640,
+          height: pkg.height || 480,
+          isJREX: true,
+          render: (win) => {
+            const container = document.createElement('div');
+            container.className = 'jrex-sandbox-container';
+            const iframe = document.createElement('iframe');
+            iframe.className = 'jrex-sandbox-iframe';
+            iframe.sandbox = 'allow-scripts allow-modals allow-forms allow-same-origin';
+
+            const bundleHtml = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="utf-8">
+                <style>
+                  body { font-family: 'Product Sans', -apple-system, sans-serif; margin: 0; padding: 14px; box-sizing: border-box; }
+                  ${pkg.css || ''}
+                </style>
+              </head>
+              <body>
+                ${pkg.html || '<div style="padding:20px;">No interface provided.</div>'}
+                <script>
+                  try {
+                    ${pkg.js || ''}
+                  } catch(err) {
+                    console.error('JREX Runtime Error:', err);
+                  }
+                <\/script>
+              </body>
+              </html>
+            `;
+
+            container.appendChild(iframe);
+            win.content.innerHTML = '';
+            win.content.appendChild(container);
+            iframe.srcdoc = bundleHtml;
+          }
+        });
+
+        if (persist) {
+          const exists = this.state.installedJREX.findIndex(item => item.id === pkg.id);
+          if (exists >= 0) {
+            this.state.installedJREX[exists] = pkg;
+          } else {
+            this.state.installedJREX.push(pkg);
+          }
+          this.savePersistentState();
+          this.renderDesktop();
+          this.renderStartMenuApps();
+          this.pushNotification('App Installed', `${pkg.name} is now available on Desktop.`);
+        }
+      }
+
+      promptImportJREX() {
+        const fileInput = document.getElementById('jrex-file-input');
+        fileInput.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const parsed = JSON.parse(event.target.result);
+              
+              // Handle whole system backup recovery
+              if (parsed.system && parsed.data) {
+                this.state = parsed.data;
+                this.savePersistentState();
+                alert('System image restored successfully! Reloading...');
+                location.reload();
+                return;
+              }
+
+              // Handle individual .jrex package
+              this.registerJREXPackage(parsed, true);
+              alert(`Successfully installed: ${parsed.name}`);
+            } catch (err) {
+              alert('Error reading .jrex package. Please make sure the JSON format is valid.');
+            }
+          };
+          reader.readAsText(file);
+        };
+        fileInput.click();
+      }
+
+      // ========================================================================
+      // WINDOW MANAGEMENT ENGINE (DRAG, RESIZE, Z-INDEX, SNAP)
+      // ========================================================================
+      openApp(appId, args = {}) {
+        const app = this.installedApps.get(appId);
+        if (!app) return;
+
+        // If window already exists, bring it to focus
+        for (const [winId, win] of this.windows) {
+          if (win.appId === appId) {
+            if (win.isMinimized) {
+              this.restoreWindow(winId);
+            }
+            this.focusWindow(winId);
+            return;
+          }
+        }
+
+        const winId = `win_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        const winElem = document.createElement('div');
+        winElem.className = 'win10-window';
+        winElem.id = winId;
+
+        // Default bounds
+        const startX = Math.max(40, 80 + (this.windows.size * 25) % (window.innerWidth - app.width - 80));
+        const startY = Math.max(30, 40 + (this.windows.size * 25) % (window.innerHeight - app.height - 100));
+
+        winElem.style.width = `${app.width}px`;
+        winElem.style.height = `${app.height}px`;
+        winElem.style.left = `${startX}px`;
+        winElem.style.top = `${startY}px`;
+        winElem.style.zIndex = ++this.zIndexCounter;
+
+        // Titlebar markup
+        winElem.innerHTML = `
+          <div class="window-titlebar">
+            <div class="window-title">
+              <i class="${app.icon}"></i>
+              <span>${app.name}</span>
+            </div>
+            <div class="window-controls">
+              <div class="win-control-btn btn-min" onclick="Sys.minimizeWindow('${winId}')"><i class="fa-solid fa-minus"></i></div>
+              <div class="win-control-btn btn-max" onclick="Sys.maximizeWindow('${winId}')"><i class="fa-regular fa-square"></i></div>
+              <div class="win-control-btn btn-close" onclick="Sys.closeWindow('${winId}')"><i class="fa-solid fa-xmark"></i></div>
+            </div>
+          </div>
+          <div class="window-content"></div>
+          <div class="resize-handle resize-right"></div>
+          <div class="resize-handle resize-bottom"></div>
+          <div class="resize-handle resize-corner"></div>
+        `;
+
+        document.getElementById('desktop').appendChild(winElem);
+
+        const winObj = {
+          id: winId,
+          appId: appId,
+          elem: winElem,
+          content: winElem.querySelector('.window-content'),
+          isMaximized: false,
+          isMinimized: false,
+          prevRect: null
+        };
+
+        this.windows.set(winId, winObj);
+        this.setupWindowInteractions(winObj);
+        this.focusWindow(winId);
+
+        // Render application UI
+        app.render(winObj, args);
+        this.renderTaskbar();
+        this.closeStartMenu();
+      }
+
+      setupWindowInteractions(winObj) {
+        const { elem } = winObj;
+        const titlebar = elem.querySelector('.window-titlebar');
+
+        // Focus window on mousedown / touch
+        elem.addEventListener('mousedown', () => this.focusWindow(winObj.id));
+        elem.addEventListener('touchstart', () => this.focusWindow(winObj.id), { passive: true });
+
+        // Titlebar Dragging
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        const onDragStart = (clientX, clientY) => {
+          if (winObj.isMaximized) return;
+          isDragging = true;
+          dragOffset.x = clientX - elem.offsetLeft;
+          dragOffset.y = clientY - elem.offsetTop;
+          this.focusWindow(winObj.id);
+        };
+
+        const onDragMove = (clientX, clientY) => {
+          if (!isDragging) return;
+          let newX = clientX - dragOffset.x;
+          let newY = clientY - dragOffset.y;
+          
+          // Constrain within desktop boundaries
+          newY = Math.max(0, Math.min(newY, window.innerHeight - 80));
+          elem.style.left = `${newX}px`;
+          elem.style.top = `${newY}px`;
+        };
+
+        const onDragEnd = () => { isDragging = false; };
+
+        titlebar.addEventListener('mousedown', (e) => {
+          if (e.target.closest('.window-controls')) return;
+          onDragStart(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mousemove', (e) => onDragMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', onDragEnd);
+
+        // Touch Dragging Support
+        titlebar.addEventListener('touchstart', (e) => {
+          if (e.target.closest('.window-controls')) return;
+          const touch = e.touches[0];
+          onDragStart(touch.clientX, touch.clientY);
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+          if (!isDragging) return;
+          const touch = e.touches[0];
+          onDragMove(touch.clientX, touch.clientY);
+        }, { passive: true });
+
+        window.addEventListener('touchend', onDragEnd);
+
+        // Resizing Logic
+        this.setupWindowResizing(winObj);
+      }
+
+      setupWindowResizing(winObj) {
+        const { elem } = winObj;
+        const handles = {
+          right: elem.querySelector('.resize-right'),
+          bottom: elem.querySelector('.resize-bottom'),
+          corner: elem.querySelector('.resize-corner')
+        };
+
+        let isResizing = false;
+        let currentHandle = null;
+        let startWidth, startHeight, startMouseX, startMouseY;
+
+        const startResize = (handle, clientX, clientY) => {
+          if (winObj.isMaximized) return;
+          isResizing = true;
+          currentHandle = handle;
+          startWidth = elem.offsetWidth;
+          startHeight = elem.offsetHeight;
+          startMouseX = clientX;
+          startMouseY = clientY;
+        };
+
+        const performResize = (clientX, clientY) => {
+          if (!isResizing) return;
+          const dx = clientX - startMouseX;
+          const dy = clientY - startMouseY;
+
+          if (currentHandle === 'right' || currentHandle === 'corner') {
+            elem.style.width = `${Math.max(280, startWidth + dx)}px`;
+          }
+          if (currentHandle === 'bottom' || currentHandle === 'corner') {
+            elem.style.height = `${Math.max(180, startHeight + dy)}px`;
+          }
+        };
+
+        const endResize = () => { isResizing = false; };
+
+        handles.right.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('right', e.clientX, e.clientY); });
+        handles.bottom.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('bottom', e.clientX, e.clientY); });
+        handles.corner.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('corner', e.clientX, e.clientY); });
+
+        window.addEventListener('mousemove', (e) => performResize(e.clientX, e.clientY));
+        window.addEventListener('mouseup', endResize);
+      }
+
+      focusWindow(winId) {
+        const win = this.windows.get(winId);
+        if (!win) return;
+
+        this.activeWindowId = winId;
+        this.windows.forEach(w => {
+          w.elem.classList.remove('active');
+        });
+
+        win.elem.classList.add('active');
+        win.elem.style.zIndex = ++this.zIndexCounter;
+        this.renderTaskbar();
+      }
+
+      minimizeWindow(winId) {
+        const win = this.windows.get(winId);
+        if (!win) return;
+        win.isMinimized = true;
+        win.elem.style.display = 'none';
+        this.renderTaskbar();
+      }
+
+      restoreWindow(winId) {
+        const win = this.windows.get(winId);
+        if (!win) return;
+        win.isMinimized = false;
+        win.elem.style.display = 'flex';
+        this.focusWindow(winId);
+      }
+
+      maximizeWindow(winId) {
+        const win = this.windows.get(winId);
+        if (!win) return;
+
+        if (!win.isMaximized) {
+          win.prevRect = {
+            width: win.elem.style.width,
+            height: win.elem.style.height,
+            left: win.elem.style.left,
+            top: win.elem.style.top
+          };
+          win.elem.style.width = '100vw';
+          win.elem.style.height = `calc(100vh - var(--taskbar-height))`;
+          win.elem.style.left = '0px';
+          win.elem.style.top = '0px';
+          win.isMaximized = true;
+        } else {
+          win.elem.style.width = win.prevRect.width;
+          win.elem.style.height = win.prevRect.height;
+          win.elem.style.left = win.prevRect.left;
+          win.elem.style.top = win.prevRect.top;
+          win.isMaximized = false;
+        }
+      }
+
+      closeWindow(winId) {
+        const win = this.windows.get(winId);
+        if (!win) return;
+
+        win.elem.remove();
+        this.windows.delete(winId);
+        this.renderTaskbar();
+      }
+
+      minimizeAllWindows() {
+        this.windows.forEach((win, id) => {
+          this.minimizeWindow(id);
+        });
+      }
+
+      arrangeWindows() {
+        let i = 0;
+        const total = this.windows.size;
+        if (total === 0) return;
+
+        const cols = total > 2 ? 2 : 1;
+        const rows = Math.ceil(total / cols);
+        const w = window.innerWidth / cols;
+        const h = (window.innerHeight - 40) / rows;
+
+        this.windows.forEach((win) => {
+          win.isMinimized = false;
+          win.elem.style.display = 'flex';
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          win.elem.style.left = `${c * w}px`;
+          win.elem.style.top = `${r * h}px`;
+          win.elem.style.width = `${w}px`;
+          win.elem.style.height = `${h}px`;
+          i++;
+        });
+      }
+
+      // ========================================================================
+      // DESKTOP & TASKBAR RENDERING
+      // ========================================================================
+      renderDesktop() {
+        const container = document.getElementById('desktop-icons-container');
+        container.innerHTML = '';
+
+        // Default System Shortcuts
+        const shortcuts = [
+          { id: 'explorer', name: 'This PC', icon: 'fa-solid fa-desktop' },
+          { id: 'notepad', name: 'Notepad', icon: 'fa-solid fa-file-lines' },
+          { id: 'calc', name: 'Calculator', icon: 'fa-solid fa-calculator' },
+          { id: 'cmd', name: 'Terminal', icon: 'fa-solid fa-terminal' },
+          { id: 'jrex_installer', name: 'JR Store', icon: 'fa-solid fa-box-open' },
+          { id: 'settings', name: 'Settings', icon: 'fa-solid fa-gear' },
+          { id: 'edge', name: 'Edge', icon: 'fa-brands fa-edge' }
+        ];
+
+        // Add custom installed .jrex apps to desktop
+        this.state.installedJREX.forEach(pkg => {
+          shortcuts.push({ id: pkg.id, name: pkg.name, icon: pkg.icon || 'fa-solid fa-cube' });
+        });
+
+        shortcuts.forEach(item => {
+          const iconElem = document.createElement('div');
+          iconElem.className = 'desktop-icon';
+          iconElem.innerHTML = `
+            <i class="${item.icon}"></i>
+            <span>${item.name}</span>
+          `;
+          iconElem.addEventListener('dblclick', () => this.openApp(item.id));
+          iconElem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
+            iconElem.classList.add('selected');
+          });
+          container.appendChild(iconElem);
+        });
+
+        this.renderStartMenuApps();
+      }
+
+      renderStartMenuApps() {
+        const list = document.getElementById('start-apps-list');
+        list.innerHTML = '';
+
+        this.installedApps.forEach(app => {
+          const row = document.createElement('div');
+          row.className = 'start-app-row';
+          row.innerHTML = `<i class="${app.icon}"></i><span>${app.name}</span>`;
+          row.onclick = () => this.openApp(app.id);
+          list.appendChild(row);
+        });
+      }
+
+      renderTaskbar() {
+        const container = document.getElementById('taskbar-apps');
+        container.innerHTML = '';
+
+        this.installedApps.forEach((app, appId) => {
+          let runningWin = null;
+          for (const [, win] of this.windows) {
+            if (win.appId === appId) {
+              runningWin = win;
+              break;
+            }
+          }
+
+          const item = document.createElement('div');
+          item.className = `taskbar-app-item ${runningWin ? 'running' : ''} ${runningWin && this.activeWindowId === runningWin.id ? 'active' : ''}`;
+          item.innerHTML = `<i class="${app.icon}"></i>`;
+          item.title = app.name;
+
+          item.onclick = () => {
+            if (!runningWin) {
+              this.openApp(appId);
+            } else if (runningWin.isMinimized) {
+              this.restoreWindow(runningWin.id);
+            } else if (this.activeWindowId === runningWin.id) {
+              this.minimizeWindow(runningWin.id);
+            } else {
+              this.focusWindow(runningWin.id);
+            }
+          };
+
+          container.appendChild(item);
+        });
+      }
+
+      // ========================================================================
+      // BUILT-IN APPLICATIONS IMPLEMENTATION
+      // ========================================================================
+      renderFileExplorer(win) {
+        win.content.innerHTML = `
+          <div class="explorer-container">
+            <div class="explorer-ribbon">
+              <button class="explorer-btn" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-file-import"></i> Import .jrex</button>
+              <button class="explorer-btn" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-floppy-disk"></i> Backup to iOS Files</button>
+              <button class="explorer-btn" onclick="Sys.openApp('notepad')"><i class="fa-solid fa-plus"></i> New Text Document</button>
+            </div>
+            <div class="explorer-address-bar">
+              <i class="fa-solid fa-arrow-left" style="cursor:pointer;"></i>
+              <i class="fa-solid fa-arrow-right" style="cursor:pointer;"></i>
+              <i class="fa-solid fa-arrow-up" style="cursor:pointer;"></i>
+              <input class="address-box" value="This PC > Local Storage (C:) > Documents" readonly />
+            </div>
+            <div class="explorer-body">
+              <div class="explorer-sidebar">
+                <div class="sidebar-folder active"><i class="fa-solid fa-desktop"></i> Desktop</div>
+                <div class="sidebar-folder"><i class="fa-solid fa-file"></i> Documents</div>
+                <div class="sidebar-folder"><i class="fa-solid fa-box-archive"></i> Installed JREX</div>
+                <div class="sidebar-folder"><i class="fa-solid fa-hard-drive"></i> Local Disk (C:)</div>
+              </div>
+              <div class="explorer-file-view" id="explorer-files-grid"></div>
+            </div>
+          </div>
+        `;
+
+        const grid = win.content.querySelector('#explorer-files-grid');
+        
+        // Populate system documents
+        this.state.documents.forEach((doc, idx) => {
+          const item = document.createElement('div');
+          item.className = 'file-item';
+          item.innerHTML = `<i class="fa-solid fa-file-lines" style="color:#0078d7;"></i><span>${doc.name}</span>`;
+          item.ondblclick = () => this.openApp('notepad', { docIndex: idx });
+          grid.appendChild(item);
+        });
+
+        // Populate installed .jrex applications
+        this.state.installedJREX.forEach(pkg => {
+          const item = document.createElement('div');
+          item.className = 'file-item';
+          item.innerHTML = `<i class="${pkg.icon || 'fa-solid fa-cube'}" style="color:#ffb900;"></i><span>${pkg.name}.jrex</span>`;
+          item.ondblclick = () => this.openApp(pkg.id);
+          grid.appendChild(item);
+        });
+      }
+
+      renderNotepad(win, args = {}) {
+        let currentDoc = { name: 'Untitled.txt', content: '' };
+        if (args.docIndex !== undefined && this.state.documents[args.docIndex]) {
+          currentDoc = this.state.documents[args.docIndex];
+        }
+
+        win.content.innerHTML = `
+          <div class="notepad-container">
+            <div class="notepad-menubar">
+              <span id="notepad-save-btn"><i class="fa-solid fa-floppy-disk"></i> Save</span>
+              <span id="notepad-export-btn"><i class="fa-solid fa-file-export"></i> Export .txt</span>
+            </div>
+            <textarea class="notepad-textarea" placeholder="Type your text here...">${currentDoc.content}</textarea>
+          </div>
+        `;
+
+        const textarea = win.content.querySelector('.notepad-textarea');
+        win.content.querySelector('#notepad-save-btn').onclick = () => {
+          currentDoc.content = textarea.value;
+          if (args.docIndex === undefined) {
+            const docName = prompt('Enter document name:', 'Document.txt') || 'Untitled.txt';
+            currentDoc.name = docName;
+            this.state.documents.push(currentDoc);
+          }
+          this.savePersistentState();
+          this.pushNotification('Notepad', `Saved ${currentDoc.name}`);
+        };
+
+        win.content.querySelector('#notepad-export-btn').onclick = () => {
+          const blob = new Blob([textarea.value], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = currentDoc.name;
+          a.click();
+        };
+      }
+
+      renderCalculator(win) {
+        win.content.innerHTML = `
+          <div class="calc-container">
+            <div class="calc-display">
+              <div class="calc-history" id="calc-hist"></div>
+              <div id="calc-val">0</div>
+            </div>
+            <div class="calc-grid">
+              <button class="calc-btn op-btn" onclick="Sys.calcInput('C')">C</button>
+              <button class="calc-btn op-btn" onclick="Sys.calcInput('CE')">CE</button>
+              <button class="calc-btn op-btn" onclick="Sys.calcInput('%')">%</button>
+              <button class="calc-btn op-btn" onclick="Sys.calcInput('/')">÷</button>
+              
+              <button class="calc-btn" onclick="Sys.calcInput('7')">7</button>
+              <button class="calc-btn" onclick="Sys.calcInput('8')">8</button>
+              <button class="calc-btn" onclick="Sys.calcInput('9')">9</button>
+              <button class="calc-btn op-btn" onclick="Sys.calcInput('*')">×</button>
+              
+              <button class="calc-btn" onclick="Sys.calcInput('4')">4</button>
+              <button class="calc-btn" onclick="Sys.calcInput('5')">5</button>
+              <button class="calc-btn" onclick="Sys.calcInput('6')">6</button>
+              <button class="calc-btn op-btn" onclick="Sys.calcInput('-')">-</button>
+              
+              <button class="calc-btn" onclick="Sys.calcInput('1')">1</button>
+              <button class="calc-btn" onclick="Sys.calcInput('2')">2</button>
+              <button class="calc-btn" onclick="Sys.calcInput('3')">3</button>
+              <button class="calc-btn op-btn" onclick="Sys.calcInput('+')">+</button>
+              
+              <button class="calc-btn" onclick="Sys.calcInput('±')">±</button>
+              <button class="calc-btn" onclick="Sys.calcInput('0')">0</button>
+              <button class="calc-btn" onclick="Sys.calcInput('.')">.</button>
+              <button class="calc-btn equals-btn" onclick="Sys.calcInput('=')">=</button>
+            </div>
+          </div>
+        `;
+        this.calcState = { current: '0', expr: '' };
+      }
+
+      calcInput(val) {
+        const valElem = document.getElementById('calc-val');
+        const histElem = document.getElementById('calc-hist');
+        if (!valElem) return;
+
+        if (val === 'C') {
+          this.calcState = { current: '0', expr: '' };
+        } else if (val === 'CE') {
+          this.calcState.current = '0';
+        } else if (val === '=') {
+          try {
+            const sanitized = (this.calcState.expr + this.calcState.current).replace(/×/g, '*').replace(/÷/g, '/');
+            this.calcState.current = String(eval(sanitized));
+            this.calcState.expr = '';
+          } catch (e) {
+            this.calcState.current = 'Error';
+          }
+        } else if (['+', '-', '*', '/'].includes(val)) {
+          this.calcState.expr = `${this.calcState.current} ${val} `;
+          this.calcState.current = '0';
+        } else {
+          if (this.calcState.current === '0' && val !== '.') {
+            this.calcState.current = val;
+          } else {
+            this.calcState.current += val;
+          }
+        }
+
+        valElem.innerText = this.calcState.current;
+        histElem.innerText = this.calcState.expr;
+      }
+
+      renderCmd(win) {
+        win.content.innerHTML = `
+          <div class="cmd-container">
+            <div class="cmd-output" id="cmd-history">Microsoft Windows [Version 10.0.19045.2965]\n(c) Microsoft Corporation. All rights reserved.\n\nType 'help' for available commands.</div>
+            <div class="cmd-input-line">
+              <span class="cmd-prompt-text">C:\\Users\\Administrator&gt;</span>
+              <input type="text" class="cmd-input" id="cmd-cli" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            </div>
+          </div>
+        `;
+
+        const cli = win.content.querySelector('#cmd-cli');
+        const history = win.content.querySelector('#cmd-history');
+
+        cli.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const command = cli.value.trim();
+            history.innerText += `\nC:\\Users\\Administrator> ${command}\n`;
+            this.executeCommand(command, history);
+            cli.value = '';
+            win.content.querySelector('.cmd-container').scrollTop = win.content.querySelector('.cmd-container').scrollHeight;
+          }
+        });
+      }
+
+      executeCommand(cmd, outputElem) {
+        const parts = cmd.split(' ');
+        const main = parts[0].toLowerCase();
+
+        switch (main) {
+          case 'help':
+            outputElem.innerText += `\nSupported commands:\n  help        Display available terminal commands\n  dir         List all files, apps and directories\n  cls         Clear console output\n  backup      Export system data state for iOS Files\n  install     Trigger .jrex package installer\n  ver         Display Windows kernel version\n  reboot      Restart Windows Simulator session\n`;
+            break;
+          case 'dir':
+            outputElem.innerText += `\n Directory of C:\\Users\\Administrator\n\n`;
+            this.state.documents.forEach(d => outputElem.innerText += `08/31/2026  05:30 PM    <DOC>   ${d.name}\n`);
+            this.state.installedJREX.forEach(p => outputElem.innerText += `08/31/2026  05:30 PM    <JREX>  ${p.name}.jrex\n`);
+            break;
+          case 'cls':
+            outputElem.innerText = '';
+            break;
+          case 'backup':
+            this.exportToIOSFiles();
+            outputElem.innerText += `[SUCCESS] Snapshot initiated. File dispatched to iOS browser sandbox.\n`;
+            break;
+          case 'install':
+            this.promptImportJREX();
+            outputElem.innerText += `[INFO] File selector opened. Select a .jrex package.\n`;
+            break;
+          case 'ver':
+            outputElem.innerText += `\nMicrosoft Windows [Version 10.0.19045.2965 - JR AI Edition]\n`;
+            break;
+          case 'reboot':
+            this.reboot();
+            break;
+          case '':
+            break;
+          default:
+            outputElem.innerText += `'${main}' is not recognized as an internal or external command, operable program or batch file.\n`;
+        }
+      }
+
+      renderSettings(win) {
+        win.content.innerHTML = `
+          <div class="settings-container">
+            <div class="settings-sidebar">
+              <div class="settings-nav-item active"><i class="fa-solid fa-palette"></i> Personalization</div>
+              <div class="settings-nav-item"><i class="fa-solid fa-hard-drive"></i> Storage & Backup</div>
+              <div class="settings-nav-item"><i class="fa-solid fa-circle-info"></i> About Windows</div>
+            </div>
+            <div class="settings-page">
+              <div class="settings-group">
+                <div class="settings-title">Personalization</div>
+                <div class="settings-row">
+                  <div>
+                    <div style="font-size:13px; font-weight:500;">Desktop Wallpaper URL</div>
+                    <div style="font-size:11.5px; color:#999;">Set a custom image background for your workspace</div>
+                  </div>
+                  <input type="text" id="setting-wallpaper-input" value="${this.state.wallpaper}" style="background:#111; border:1px solid #444; color:#fff; padding:6px; font-size:12px; width:220px; border-radius:3px;">
+                </div>
+                <button class="setting-btn" onclick="Sys.updateWallpaper()">Apply Wallpaper</button>
+              </div>
+
+              <div class="settings-group">
+                <div class="settings-title">iOS Files Sync & Snapshot</div>
+                <div class="settings-row">
+                  <div>
+                    <div style="font-size:13px; font-weight:500;">Persistent Data Engine</div>
+                    <div style="font-size:11.5px; color:#999;">Sync all apps, desktop layout, and files directly to iOS Files app</div>
+                  </div>
+                  <button class="setting-btn" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-download"></i> Save to iOS Files</button>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div style="font-size:13px; font-weight:500;">Import .jrex Package</div>
+                    <div style="font-size:11.5px; color:#999;">Install third-party applications into the system</div>
+                  </div>
+                  <button class="setting-btn" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-box-open"></i> Install JREX</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      renderJREXInstaller(win) {
+        win.content.innerHTML = `
+          <div style="padding:24px; color:#fff; height:100%; overflow-y:auto;">
+            <h2>JR Application Package Manager (.jrex)</h2>
+            <p style="font-size:12.5px; color:#aaa; margin:8px 0 20px 0;">
+              .jrex packages are sandboxed standalone applications containing HTML5, JavaScript logic, and styling.
+            </p>
+
+            <div style="border: 2px dashed #444; border-radius:6px; padding:30px; text-align:center; margin-bottom:20px; cursor:pointer;" onclick="Sys.promptImportJREX()">
+              <i class="fa-solid fa-cloud-arrow-up" style="font-size:36px; color:var(--accent-color); margin-bottom:12px;"></i>
+              <div style="font-weight:600; font-size:14px;">Click to Browse or Drop .jrex File</div>
+              <div style="font-size:11px; color:#888; margin-top:4px;">Supports all standard .jrex / .json application archives</div>
+            </div>
+
+            <h3>Sample Quick Install Packages</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+              <div style="background:#252525; padding:12px; border:1px solid #333; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:600; font-size:13px;"><i class="fa-solid fa-palette"></i> Canvas Paint</div>
+                  <div style="font-size:11px; color:#888;">Drawing tool built for JREX</div>
+                </div>
+                <button class="setting-btn" onclick="Sys.installSamplePaint()">Install</button>
+              </div>
+
+              <div style="background:#252525; padding:12px; border:1px solid #333; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:600; font-size:13px;"><i class="fa-solid fa-clock"></i> Stopwatch Pro</div>
+                  <div style="font-size:11px; color:#888;">Precision timer app</div>
+                </div>
+                <button class="setting-btn" onclick="Sys.installSampleStopwatch()">Install</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      installSamplePaint() {
+        const paintPkg = {
+          id: 'jrex_paint',
+          name: 'Paint Studio',
+          icon: 'fa-solid fa-palette',
+          width: 640,
+          height: 460,
+          html: `
+            <div style="display:flex; flex-direction:column; height:100vh; background:#222; color:#fff;">
+              <div style="padding:8px; background:#333; display:flex; gap:10px; align-items:center;">
+                <input type="color" id="colorPicker" value="#0078d7">
+                <input type="range" id="brushSize" min="1" max="40" value="4">
+                <button id="clearBtn" style="background:#555; color:#fff; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Clear Canvas</button>
+              </div>
+              <canvas id="paintCanvas" style="flex:1; background:#fff; cursor:crosshair;"></canvas>
+            </div>
+          `,
+          js: `
+            const canvas = document.getElementById('paintCanvas');
+            const ctx = canvas.getContext('2d');
+            const colorPicker = document.getElementById('colorPicker');
+            const brushSize = document.getElementById('brushSize');
+            const clearBtn = document.getElementById('clearBtn');
+
+            function resize() {
+              canvas.width = canvas.parentElement.clientWidth;
+              canvas.height = canvas.parentElement.clientHeight - 45;
+            }
+            window.addEventListener('resize', resize);
+            setTimeout(resize, 50);
+
+            let painting = false;
+            canvas.addEventListener('mousedown', () => painting = true);
+            window.addEventListener('mouseup', () => { painting = false; ctx.beginPath(); });
+            canvas.addEventListener('mousemove', draw);
+
+            function draw(e) {
+              if (!painting) return;
+              ctx.lineWidth = brushSize.value;
+              ctx.lineCap = 'round';
+              ctx.strokeStyle = colorPicker.value;
+              const rect = canvas.getBoundingClientRect();
+              ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            }
+
+            clearBtn.addEventListener('click', () => {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+          `
+        };
+        this.registerJREXPackage(paintPkg, true);
+      }
+
+      installSampleStopwatch() {
+        const timerPkg = {
+          id: 'jrex_stopwatch',
+          name: 'Stopwatch Pro',
+          icon: 'fa-solid fa-stopwatch',
+          width: 400,
+          height: 320,
+          html: `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#181818; color:#fff; font-family:'Product Sans', sans-serif;">
+              <h1 id="time-display" style="font-size:48px; font-weight:300; margin-bottom:24px; font-variant-numeric:tabular-nums;">00:00.00</h1>
+              <div style="display:flex; gap:12px;">
+                <button id="start-btn" style="background:#0078d7; color:#fff; border:none; padding:8px 24px; font-size:14px; border-radius:3px; cursor:pointer;">Start</button>
+                <button id="reset-btn" style="background:#333; color:#fff; border:none; padding:8px 24px; font-size:14px; border-radius:3px; cursor:pointer;">Reset</button>
+              </div>
+            </div>
+          `,
+          js: `
+            let startTime, interval;
+            let running = false;
+            let elapsed = 0;
+
+            const display = document.getElementById('time-display');
+            const startBtn = document.getElementById('start-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            function formatTime(ms) {
+              const totalSec = Math.floor(ms / 1000);
+              const m = Math.floor(totalSec / 60);
+              const s = totalSec % 60;
+              const cs = Math.floor((ms % 1000) / 10);
+              return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(cs).padStart(2,'0');
+            }
+
+            startBtn.addEventListener('click', () => {
+              if (!running) {
+                startTime = Date.now() - elapsed;
+                interval = setInterval(() => {
+                  elapsed = Date.now() - startTime;
+                  display.innerText = formatTime(elapsed);
+                }, 10);
+                startBtn.innerText = 'Pause';
+                startBtn.style.background = '#d13438';
+                running = true;
+              } else {
+                clearInterval(interval);
+                startBtn.innerText = 'Start';
+                startBtn.style.background = '#0078d7';
+                running = false;
+              }
+            });
+
+            resetBtn.addEventListener('click', () => {
+              clearInterval(interval);
+              elapsed = 0;
+              running = false;
+              display.innerText = '00:00.00';
+              startBtn.innerText = 'Start';
+              startBtn.style.background = '#0078d7';
+            });
+          `
+        };
+        this.registerJREXPackage(timerPkg, true);
+      }
+
+      // ========================================================================
+      // SYSTEM UTILITIES & SHELL CONTROLS
+      // ========================================================================
+      toggleStartMenu() {
+        const menu = document.getElementById('start-menu');
+        const isVisible = menu.style.display === 'flex';
+        menu.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) document.getElementById('action-center').style.display = 'none';
+      }
+
+      closeStartMenu() {
+        document.getElementById('start-menu').style.display = 'none';
+      }
+
+      toggleActionCenter() {
+        const ac = document.getElementById('action-center');
+        const isVisible = ac.style.display === 'flex';
+        ac.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) this.closeStartMenu();
+      }
+
+      pushNotification(title, msg) {
+        const feed = document.getElementById('notification-feed');
+        if (!feed) return;
+        if (feed.innerText.includes('No new notifications.')) {
+          feed.innerHTML = '';
+        }
+        const notif = document.createElement('div');
+        notif.style.cssText = 'background:rgba(255,255,255,0.06); padding:10px; border-radius:3px; margin-bottom:8px; border-left:3px solid var(--accent-color);';
+        notif.innerHTML = `<strong>${title}</strong><div style="margin-top:2px; font-size:11.5px; color:#ccc;">${msg}</div>`;
+        feed.prepend(notif);
+      }
+
+      clearNotifications() {
+        const feed = document.getElementById('notification-feed');
+        if (feed) feed.innerHTML = 'No new notifications.';
+      }
+
+      updateWallpaper() {
+        const input = document.getElementById('setting-wallpaper-input');
+        if (input && input.value) {
+          this.state.wallpaper = input.value;
+          this.savePersistentState();
+          this.applyPersonalization();
+          this.pushNotification('Wallpaper', 'Personalization settings updated.');
+        }
+      }
+
+      applyPersonalization() {
+        document.getElementById('desktop').style.backgroundImage = `url("${this.state.wallpaper}")`;
+      }
+
+      refreshDesktop() {
+        this.renderDesktop();
+        this.renderTaskbar();
+        this.pushNotification('System', 'Desktop refreshed.');
+      }
+
+      toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+
+      reboot() {
+        location.reload();
+      }
+
+      startClock() {
+        const update = () => {
+          const now = new Date();
+          let hours = now.getHours();
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12 || 12;
+
+          const timeStr = `${hours}:${minutes} ${ampm}`;
+          const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+
+          const tElem = document.getElementById('tray-time');
+          const dElem = document.getElementById('tray-date');
+          if (tElem) tElem.innerText = timeStr;
+          if (dElem) dElem.innerText = dateStr;
+        };
+        update();
+        setInterval(update, 1000);
+      }
+
+      setupEventListeners() {
+        // Close menus when clicking outside
+        window.addEventListener('click', (e) => {
+          const startMenu = document.getElementById('start-menu');
+          const startBtn = document.getElementById('start-btn');
+          if (startMenu && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
+            startMenu.style.display = 'none';
+          }
+
+          const actionCenter = document.getElementById('action-center');
+          if (actionCenter && !actionCenter.contains(e.target) && !e.target.closest('.tray-item')) {
+            actionCenter.style.display = 'none';
+          }
+
+          // Close context menu
+          document.getElementById('context-menu').style.display = 'none';
+          
+          // Deselect desktop icons
+          if (!e.target.closest('.desktop-icon')) {
+            document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
+          }
+        });
+
+        // Desktop Context Menu
+        const desktop = document.getElementById('desktop');
+        desktop.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          const menu = document.getElementById('context-menu');
+          menu.style.display = 'flex';
+          menu.style.left = `${Math.min(e.clientX, window.innerWidth - 220)}px`;
+          menu.style.top = `${Math.min(e.clientY, window.innerHeight - 200)}px`;
+        });
+
+        // Desktop Selection Box drag
+        let isSelecting = false;
+        let selectStart = { x: 0, y: 0 };
+        const selBox = document.getElementById('selection-box');
+
+        desktop.addEventListener('mousedown', (e) => {
+          if (e.target !== desktop && e.target !== document.getElementById('desktop-icons-container')) return;
+          isSelecting = true;
+          selectStart = { x: e.clientX, y: e.clientY };
+          selBox.style.left = `${e.clientX}px`;
+          selBox.style.top = `${e.clientY}px`;
+          selBox.style.width = '0px';
+          selBox.style.height = '0px';
+          selBox.style.display = 'block';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!isSelecting) return;
+          const currentX = e.clientX;
+          const currentY = e.clientY;
+          const x = Math.min(selectStart.x, currentX);
+          const y = Math.min(selectStart.y, currentY);
+          const w = Math.abs(currentX - selectStart.x);
+          const h = Math.abs(currentY - selectStart.y);
+
+          selBox.style.left = `${x}px`;
+          selBox.style.top = `${y}px`;
+          selBox.style.width = `${w}px`;
+          selBox.style.height = `${h}px`;
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (isSelecting) {
+            isSelecting = false;
+            selBox.style.display = 'none';
+          }
+        });
+      }
     }
-  }
 
-  saveStore();
-  setGlobalStatus('idle', '流水線完成');
-  showToast('流水線全部節點處理完成！', 'success');
-}
-
-function setGlobalStatus(state, label) {
-  document.getElementById('globalStatusDot').className = `status-dot ${state}`;
-  document.getElementById('globalStatusText').textContent = label;
-}
-
-// ==========================================================================
-// 初始化與事件綁定
-// ==========================================================================
-window.addEventListener('DOMContentLoaded', () => {
-  loadStore();
-  updateChatModelPicker();
-  renderSessionList();
-  renderActiveChat();
-  renderPipelineStages();
-
-  // 頂欄下拉選單聯動
-  document.getElementById('chatVendorSelect').onchange = (e) => {
-    Store.chatSelection.vendor = e.target.value;
-    updateChatModelPicker();
-    saveStore();
-  };
-  document.getElementById('chatModelSelect').onchange = (e) => {
-    Store.chatSelection.model = e.target.value;
-    saveStore();
-  };
-
-  // 導航切換
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-      item.classList.add('active');
-      const viewId = item.dataset.view;
-      document.getElementById(viewId).classList.add('active');
-      document.getElementById('stageTitle').textContent = viewId === 'chatView' ? '多平台 AI 對話' : '多廠商工作流水線';
-    });
-  });
-
-  // 設定 Modal
-  document.getElementById('btnOpenSettings').onclick = () => {
-    document.getElementById('key_gemini').value = Store.keys.gemini || '';
-    document.getElementById('key_openai').value = Store.keys.openai || '';
-    document.getElementById('key_claude').value = Store.keys.claude || '';
-    document.getElementById('key_grok').value = Store.keys.grok || '';
-    document.getElementById('settingsModal').classList.add('active');
-  };
-  document.getElementById('btnCloseSettings').onclick = () => document.getElementById('settingsModal').classList.remove('active');
-
-  document.getElementById('btnSaveKeys').onclick = () => {
-    Store.keys.gemini = document.getElementById('key_gemini').value.trim();
-    Store.keys.openai = document.getElementById('key_openai').value.trim();
-    Store.keys.claude = document.getElementById('key_claude').value.trim();
-    Store.keys.grok = document.getElementById('key_grok').value.trim();
-    saveStore();
-    document.getElementById('settingsModal').classList.remove('active');
-    showToast('4 廠 API 設定已全部保存！', 'success');
-  };
-
-  // 對話操作
-  document.getElementById('btnNewSession').onclick = () => createNewSession();
-  document.getElementById('btnExportSession').onclick = () => {
-    const session = getActiveSession();
-    if (!session) return;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' }));
-    a.download = `Universal_Chat_${session.title}.json`;
-    a.click();
-  };
-  document.getElementById('btnClearCurrentChat').onclick = () => {
-    const session = getActiveSession();
-    if (session) {
-      session.messages = [];
-      saveStore();
-      renderActiveChat();
-      showToast('對話內容已清空', 'info');
-    }
-  };
-
-  // 流水線操作
-  document.getElementById('btnAddPipelineStage').onclick = () => {
-    Store.pipelineStages.push({
-      id: 'stg_' + Date.now(),
-      title: `階段 ${Store.pipelineStages.length + 1}：新增任務節點`,
-      vendor: 'gemini',
-      model: 'gemini-2.5-flash',
-      systemPrompt: '請對前置內容進行提煉與改進。',
-      temperature: 0.3,
-      lastOutput: ''
-    });
-    saveStore();
-    renderPipelineStages();
-  };
-  document.getElementById('btnRunPipeline').onclick = executePipeline;
-
-  // 輸入框
-  const chatInput = document.getElementById('chatInput');
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  });
-  document.getElementById('btnSendMessage').onclick = handleSendMessage;
-});
-</script>
+    // Launch Operating System Instance
+    const Sys = new OperatingSystem();
+    window.Sys = Sys;
+  </script>
 </body>
 </html>
