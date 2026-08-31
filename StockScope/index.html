@@ -1,717 +1,939 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Music Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Windows 11 - JR OS Professional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['"Google Sans"', 'sans-serif'],
+                    colors: {
+                        winblue: { DEFAULT: '#0078d4', hover: '#0067b8', light: '#e6f2fc' },
+                        winbg: { dark: '#1c1c1c', light: '#f3f3f3' }
                     }
                 }
             }
         }
     </script>
-    
-    <!-- Load Google Sans Webfonts -->
     <style>
-        @font-face {
-            font-family: 'Google Sans';
-            font-style: normal;
-            font-weight: 400;
-            font-display: swap;
-            src: url('https://fonts.gstatic.com/s/googlesans/v58/4UaGrENHsxJlGDuGo1OIlL3Owp4.woff2') format('woff2');
-        }
-        @font-face {
-            font-family: 'Google Sans';
-            font-style: normal;
-            font-weight: 500;
-            font-display: swap;
-            src: url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLU94YtzCwM.woff2') format('woff2');
-        }
-        @font-face {
-            font-family: 'Google Sans';
-            font-style: normal;
-            font-weight: 700;
-            font-display: swap;
-            src: url('https://fonts.gstatic.com/s/googlesans/v58/4UabrENHsxJlGDuGo1OIlLV14YtzCwM.woff2') format('woff2');
-        }
-
-        /* Enforce Google Sans everywhere */
-        *, *::before, *::after, html, body, div, span, applet, object, iframe,
-        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-        a, abbr, acronym, address, big, cite, code,
-        del, dfn, em, img, ins, kbd, q, s, samp,
-        small, strike, strong, sub, sup, tt, var,
-        b, u, i, center,
-        dl, dt, dd, ol, ul, li,
-        fieldset, form, label, legend,
-        table, caption, tbody, tfoot, thead, tr, th, td,
-        article, aside, canvas, details, embed, 
-        figure, figcaption, footer, header, hgroup, 
-        menu, nav, output, ruby, section, summary,
-        time, mark, audio, video, input, button, select, textarea {
-            font-family: 'Google Sans', sans-serif !important;
-        }
-
-        body { 
-            background: #000; 
-            color: #fff; 
-            min-height: 100vh; 
-            margin: 0; 
-            overflow: hidden; 
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400;1,700&family=Fira+Code:wght@400;500&display=swap');
+        
+        * {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
+            user-select: none;
+            -webkit-user-select: none;
+            color: #ffffff; /* 强制全局文字白色穿透 */
         }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        #app-container { width: 100vw; height: 100vh; box-sizing: border-box; }
-        #win-content-main { width: 100%; height: 100%; position: relative; }
+
+        input, textarea {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
+            outline: none;
+            color: #ffffff !important;
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif !important;
+        }
+
+        button, .cursor-pointer {
+            touch-action: manipulation !important;
+            color: #ffffff;
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif !important;
+        }
+
+        .font-mono-os { font-family: 'Fira Code', Consolas, Monaco, monospace !important; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+
+        .acrylic {
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+        }
+
+        .window-animate { animation: winOpen 0.15s cubic-bezier(0.1, 0.9, 0.2, 1); }
+        @keyframes winOpen { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .start-animate { animation: startPop 0.2s cubic-bezier(0.1, 0.9, 0.2, 1); }
+        @keyframes startPop { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .crt-shutdown { animation: crtSec 0.4s ease-out forwards; }
+        @keyframes crtSec { 0% { transform: scaleY(1) scaleX(1); filter: brightness(1); } 50% { transform: scaleY(0.01) scaleX(1.1); filter: brightness(3); } 100% { transform: scaleY(0) scaleX(0); filter: brightness(5); opacity: 0; } }
+
+        .active-window-shadow {
+            box-shadow: 0 15px 50px rgba(0, 120, 212, 0.3);
+            border-color: #0078d4 !important;
+        }
+
+        /* 适配移动端/iPad 顶部刘海屏与安全区域 */
+        body {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        #desktop-workspace {
+            top: env(safe-area-inset-top);
+            height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+        }
     </style>
 </head>
-<body>
+<body class="overflow-hidden w-screen h-screen select-none bg-cover bg-center transition-all duration-300 text-white" style="background-image: url('https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2560'); background-color: #000;">
 
-    <div id="app-container">
-        <div id="win-content-main"></div>
+    <div id="desktop-wallpaper-trigger" class="absolute inset-0 z-0 pointer-events-auto"></div>
+    <canvas id="wallpaper-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+
+    <!--=================== 1. Boot Screen ===================-->
+    <div id="boot-screen" class="absolute inset-0 bg-black z-[9999] flex flex-col justify-between items-center py-20 font-mono-os text-white">
+        <div class="flex flex-col items-center mt-20">
+            <div class="w-16 h-16 rounded-full border-4 border-zinc-800 border-t-[#0078d4] animate-spin mb-8"></div>
+            <div id="boot-log" class="text-xs text-white max-w-lg h-32 overflow-y-auto space-y-1 text-center font-mono-os"></div>
+        </div>
+        <div class="flex flex-col items-center space-y-4 w-full max-w-xs">
+            <div class="text-lg font-semibold tracking-wider text-white" style="font-family: 'Google Sans', sans-serif;">Windows 11 Pro</div>
+            <div class="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden border border-zinc-800">
+                <div id="boot-progress" class="bg-[#0078d4] h-full w-0 transition-all duration-100 ease-out"></div>
+            </div>
+            <button id="btn-start-os" class="hidden px-6 py-2.5 bg-[#0078d4] hover:bg-[#0067b8] text-white font-bold rounded-md shadow-lg transition duration-200 cursor-pointer" style="font-family: 'Google Sans', sans-serif;">
+                开启 Windows 体验
+            </button>
+        </div>
     </div>
 
-    <script>
-        const winObj = { id: 'main', onDestroy: () => {} };
-        const content = document.getElementById('win-content-' + winObj.id);
-
-        // ==========================================
-        // 1. Dynamic Stylesheet Injection
-        // ==========================================
-        const styleEl = document.createElement('style');
-        styleEl.innerHTML = `
-            #win-content-${winObj.id} {
-                --am-red: #fa233b;
-                --am-bg: rgba(0, 0, 0, 0.4);
-                height: 100%; 
-                font-family: 'Google Sans', sans-serif !important;
-            }
-            
-            /* Dynamic Gaussian Blur Background */
-            .am-bg-blur {
-                position: absolute;
-                inset: -10%;
-                background-size: cover;
-                background-position: center;
-                filter: blur(60px) brightness(0.4) saturate(1.5);
-                z-index: 0;
-                transition: background-image 0.8s ease-in-out;
-            }
-
-            /* Main Layout */
-            .am-layout {
-                position: relative;
-                z-index: 10;
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-                width: 100%;
-                overflow-y: auto;
-                overflow-x: hidden;
-                scroll-snap-type: y proximity;
-                font-family: 'Google Sans', sans-serif !important;
-            }
-            @media (min-width: 768px) {
-                .am-layout { 
-                    flex-direction: row; 
-                    overflow-y: hidden; 
-                    scroll-snap-type: none;
-                }
-            }
-
-            .am-player-panel, .am-lyrics-panel {
-                scroll-snap-align: start;
-            }
-
-            .am-player-panel {
-                background: var(--am-bg);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                border-right: 1px solid rgba(255,255,255,0.05);
-                display: flex;
-                flex-direction: column;
-            }
-
-            /* Album Artwork */
-            .am-cover-art {
-                width: 100%;
-                aspect-ratio: 1/1;
-                border-radius: 12px;
-                background-color: #1a1a1a;
-                background-size: cover;
-                background-position: center;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-                transition: opacity 0.5s ease, transform 0.3s ease;
-                position: relative;
-                overflow: hidden;
-            }
-            .am-cover-art.playing {
-                transform: scale(1.02);
-            }
-
-            /* Lyric Gradient Mask */
-            .lyrics-mask { 
-                -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%); 
-                mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%); 
-            }
-
-            /* Immersive Lyrics Typography */
-            .lyric-line { 
-                font-family: 'Google Sans', sans-serif !important;
-                transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); 
-                color: rgba(255, 255, 255, 0.4); 
-                padding: 10px 0; 
-                font-size: 20px; 
-                font-weight: 700;
-                line-height: 1.4; 
-                cursor: pointer; 
-                transform-origin: left center;
-                filter: blur(0.5px);
-                text-align: left;
-                width: 100%;
-            }
-            @media (min-width: 768px) {
-                .lyric-line { font-size: 32px; padding: 12px 0; line-height: 1.3; }
-            }
-            
-            .lyric-line:hover { 
-                color: rgba(255, 255, 255, 0.8); 
-            }
-            
-            .lyric-line.active { 
-                color: #ffffff; 
-                font-size: 26px; 
-                transform: scale(1.02); 
-                filter: blur(0px);
-                text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-            }
-            @media (min-width: 768px) {
-                .lyric-line.active { font-size: 44px; transform: scale(1.05); }
-            }
-            
-            .hidden-ui { display: none !important; }
-            
-            .track-active {
-                background: rgba(250, 35, 59, 0.15);
-                color: var(--am-red);
-                font-weight: 600;
-            }
-        `;
-        content.appendChild(styleEl);
-
-        // ==========================================
-        // 2. HTML Structure
-        // ==========================================
-        content.innerHTML += `
-        <div id="dynamic-bg" class="am-bg-blur"></div>
+    <!--=================== 2. Main Desktop ===================-->
+    <div id="desktop-workspace" class="absolute inset-0 z-10 hidden flex flex-col h-full w-full justify-between pb-12 overflow-hidden pointer-events-none">
         
-        <div class="am-layout no-scrollbar">
-            <!-- Left Panel: Controls & Library -->
-            <section class="am-player-panel w-full md:w-[380px] lg:w-[420px] flex-shrink-0 p-5 md:p-8 flex flex-col min-h-[100dvh] md:min-h-0 md:h-full z-10">
-                
-                <!-- Album Artwork -->
-                <div class="relative w-[55%] sm:w-[60%] md:w-full max-w-[260px] md:max-w-[300px] mx-auto mb-5 md:mb-6">
-                    <div id="cover-art-${winObj.id}" class="am-cover-art opacity-0"></div>
-                    <span class="absolute inset-0 flex items-center justify-center text-5xl md:text-6xl pointer-events-none" id="cover-emoji">🎵</span>
-                </div>
+        <header class="hidden"><span id="top-cpu"></span></header>
 
-                <!-- Track Info -->
-                <div class="mb-4 md:mb-6 text-center md:text-left">
-                    <h2 class="text-xl md:text-2xl font-bold text-white truncate tracking-tight font-sans" id="title">Not Playing</h2>
-                    <div class="flex items-center justify-center md:justify-start gap-2 mt-1 md:mt-2">
-                        <span class="text-[10px] md:text-sm font-semibold text-white/50 bg-white/10 px-2 py-0.5 rounded font-sans" id="lcd-mode">LIST</span>
-                        <span class="text-[10px] md:text-sm font-medium text-white/60 font-sans">JRmusic Engine</span>
-                    </div>
-                </div>
+        <!-- 桌面图标 -->
+        <main class="flex-1 w-full relative p-4 grid grid-flow-col auto-cols-[85px] grid-rows-[repeat(auto-fill,100px)] gap-y-4 gap-x-2 content-start items-start z-10 pointer-events-auto text-white" id="desktop-icons-container"></main>
 
-                <!-- Controls -->
-                <div class="flex flex-col mb-4 md:mb-6">
-                    <div class="flex justify-between text-[10px] md:text-xs text-white/50 font-medium mb-3 md:mb-4 px-2 font-sans">
-                        <span id="cur-time">00:00</span>
-                        <button id="mode-btn" class="hover:text-white transition-colors font-sans">MODE</button>
-                    </div>
-                    
-                    <div class="flex justify-center items-center gap-6 md:gap-8">
-                        <button class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/50 hover:text-white transition-colors font-sans" onclick="btnMode.click()">
-                            <svg width="20" height="20" class="md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                        </button>
-                        
-                        <button class="w-14 h-14 md:w-16 md:h-16 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg font-sans" id="btn-play">
-                            <div class="w-0 h-0 border-y-[8px] border-y-transparent border-l-[14px] border-l-black ml-1" id="play-icon"></div>
-                        </button>
-                        
-                        <button class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white hover:text-white/70 transition-colors font-sans" id="btn-next">
-                            <svg width="20" height="20" class="md:w-6 md:h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4z"/><path d="M15 4h4v16h-4z"/></svg>
-                        </button>
-                    </div>
-                </div>
+        <div id="window-container" class="absolute inset-0 z-20 pointer-events-none"></div>
 
-                <!-- Playlist Section -->
-                <div class="flex-1 flex flex-col min-h-[300px] md:min-h-0 bg-black/20 rounded-xl overflow-hidden border border-white/5">
-                    <div class="p-2 md:p-3 border-b border-white/5 bg-black/20">
-                        <div class="flex gap-2">
-                            <input class="flex-1 min-w-0 bg-white/10 border border-transparent rounded px-2 py-1.5 text-[10px] md:text-xs outline-none focus:border-white/20 text-white transition-colors placeholder-white/30 font-sans" id="gh-user" placeholder="GitHub User" type="text">
-                            <input class="flex-1 min-w-0 bg-white/10 border border-transparent rounded px-2 py-1.5 text-[10px] md:text-xs outline-none focus:border-white/20 text-white transition-colors placeholder-white/30 font-sans" id="gh-repo" placeholder="Repository" type="text">
-                            <button class="px-2 md:px-3 bg-[#fa233b] text-white rounded text-[10px] md:text-xs font-semibold hover:bg-rose-600 transition-colors shrink-0 font-sans" id="btn-sync">SYNC</button>
-                        </div>
-                    </div>
-                    
-                    <div class="px-2 md:px-3 pt-2 md:pt-3">
-                        <input class="w-full bg-white/5 border border-transparent rounded-lg p-2 text-xs outline-none focus:bg-white/10 text-white placeholder-white/30 transition-colors font-sans" id="search-input" placeholder="Search tracks..." type="text">
-                        <div class="flex gap-2 overflow-x-auto no-scrollbar mt-2 md:mt-3 pb-1" id="playlist-nav"></div>
-                    </div>
-                    
-                    <div class="flex-1 overflow-y-auto no-scrollbar p-2">
-                        <ul id="track-list" class="space-y-1 font-sans"></ul>
-                    </div>
-                    
-                    <div class="p-2 text-center bg-black/40">
-                        <p class="text-[10px] text-white/40 font-medium flex justify-center items-center gap-1 font-sans" id="net-status">System Standby</p>
-                    </div>
+        <!-- 日历和通知 -->
+        <div id="calendar-flyout" class="absolute bottom-14 right-3 w-80 acrylic rounded-xl border border-white/10 shadow-2xl z-50 p-4 hidden flex flex-col space-y-4 transition-all duration-200 pointer-events-auto text-white" style="background: rgba(30, 30, 30, 0.85);">
+            <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                <h4 class="font-bold text-sm text-white" id="flyout-month-year">2026年5月</h4>
+                <div class="flex space-x-1 text-xs">
+                    <button class="p-1 hover:bg-white/10 rounded text-white">▲</button><button class="p-1 hover:bg-white/10 rounded text-white">▼</button>
                 </div>
-            </section>
-
-            <!-- Right Panel: Immersive Lyrics -->
-            <section class="am-lyrics-panel flex-1 flex flex-col min-h-[100dvh] md:min-h-0 md:h-full relative z-10 p-5 md:pl-12 md:pr-12 md:pt-8">
-                <div class="absolute top-6 right-5 md:top-8 md:right-12 z-20">
-                    <span class="text-[9px] md:text-xs font-bold text-white/30 uppercase tracking-widest bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm font-sans" id="lyrics-status">LYRICS SYSTEM</span>
+            </div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-xs text-white"></div>
+            <div class="border-t border-white/10 pt-3 space-y-2">
+                <h5 class="text-xs font-bold text-white">通知中心</h5>
+                <div class="bg-white/5 p-2 rounded border border-white/5 text-[11px] leading-relaxed text-white">
+                    <p class="font-bold text-[#0078d4]">✨ 系统提示</p>
+                    <p class="text-white">所有的交互已重构为最底层的 pointerdown，彻底解决了点击失败、层级冲突的死锁问题！</p>
                 </div>
-                
-                <div class="flex-1 relative w-full overflow-hidden lyrics-mask">
-                    <div id="lyrics-container-${winObj.id}" class="absolute inset-0 overflow-y-auto no-scrollbar" style="scroll-behavior: smooth;">
-                        <div id="lyrics-content-${winObj.id}" class="w-full max-w-3xl mx-auto pb-[60vh] pt-[40vh] flex flex-col px-0 md:px-4">
-                            <div class="text-left text-white/30 text-lg md:text-xl font-medium mt-10 tracking-widest font-sans">
-                                Loading Lyrics...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </div>
         </div>
-        <audio id="player-audio-${winObj.id}" playsinline></audio>`;
 
-        // ==========================================
-        // 3. State & References Initialization
-        // ==========================================
-        const audio = content.querySelector('#player-audio-' + winObj.id);
-        const titleEl = content.querySelector('#title');
-        const curTimeEl = content.querySelector('#cur-time');
-        const playIcon = content.querySelector('#play-icon');
-        const btnPlay = content.querySelector('#btn-play');
-        const btnNext = content.querySelector('#btn-next');
-        const btnMode = content.querySelector('#mode-btn');
-        const lcdMode = content.querySelector('#lcd-mode');
-        const navContainer = content.querySelector('#playlist-nav');
-        const listContainer = content.querySelector('#track-list');
-        const searchInput = content.querySelector('#search-input');
-        const artEl = content.querySelector('#cover-art-' + winObj.id);
-        const dynBgEl = content.querySelector('#dynamic-bg');
-        const emjEl = content.querySelector('#cover-emoji');
-        const netStatus = content.querySelector('#net-status');
-        const ghUserInp = content.querySelector('#gh-user');
-        const ghRepoInp = content.querySelector('#gh-repo');
-        const btnSync = content.querySelector('#btn-sync');
+        <!-- 开始菜单 -->
+        <div id="start-menu" class="absolute bottom-14 left-1/2 -translate-x-1/2 w-[580px] max-w-[95vw] acrylic rounded-2xl border border-white/10 shadow-2xl z-50 p-6 hidden flex flex-col space-y-6 transition-all duration-200 pointer-events-auto text-white" style="height: 600px; max-height: 80vh; background: rgba(30, 30, 30, 0.85);">
+            <div class="relative w-full shrink-0">
+                <input type="text" id="start-search-input" placeholder=" 搜索应用、文件和设置" class="w-full bg-black/40 border border-white/20 rounded-full py-2 px-10 text-xs text-white placeholder-white">
+                <span class="absolute left-4 top-2.5 text-white">🔍</span>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4 px-1"><h4 class="font-bold text-xs text-white">已固定 (双击打开)</h4></div>
+                <div class="grid grid-cols-4 sm:grid-cols-6 gap-y-6 gap-x-2 text-center text-white" id="start-menu-pinned-grid"></div>
+            </div>
+            <div class="h-32 shrink-0">
+                <div class="flex justify-between items-center mb-3 px-1"><h4 class="font-bold text-xs text-white">推荐 (双击打开)</h4></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-white" id="start-menu-recommended-grid"></div>
+            </div>
+            <div class="flex items-center justify-between border-t border-white/10 pt-4 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-[#0078d4] flex items-center justify-center text-white font-bold text-sm">A</div>
+                    <span class="text-xs font-semibold text-white">Administrator</span>
+                </div>
+                <button id="btn-shutdown" class="p-2 hover:bg-white/10 rounded-lg text-sm text-white bg-red-600" title="关机">⏻ 关机</button>
+            </div>
+        </div>
+
+        <!--=================== 3. 任务栏 (Taskbar) ===================-->
+        <footer class="absolute bottom-0 left-0 right-0 h-12 acrylic border-t border-white/10 flex items-center px-3 z-50 justify-between pointer-events-auto text-white" style="background: rgba(20, 20, 20, 0.75);">
+            <div class="w-24 hidden md:flex items-center space-x-2 text-xs text-white cursor-pointer hover:bg-white/5 p-1 rounded">
+                <span class="text-lg">🌤️</span> <span class="text-white">24°C</span>
+            </div>
+            <div class="flex-1 flex justify-center" id="taskbar-center-container">
+                <div class="flex items-center space-x-1" id="taskbar-apps-wrapper">
+                    <button id="btn-start" class="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-md transition active:scale-95" title="开始">
+                        <svg class="w-5 h-5 text-[#0078d4]" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.8 1.95L24 0v11.55H10.8V1.95zM10.8 12.45H24v11.55l-13.2-1.95v-9.6z"/>
+                        </svg>
+                    </button>
+                    <div class="flex items-center space-x-1 text-white" id="taskbar-running-apps"></div>
+                </div>
+            </div>
+            <div class="w-auto flex items-center space-x-2">
+                <div class="flex items-center space-x-2 text-xs text-white hover:bg-white/10 p-1 px-2 rounded cursor-pointer">
+                    <span class="text-white">📶</span><span class="text-white">🔊</span><span class="text-white hidden sm:inline">🔋</span>
+                </div>
+                <div id="btn-clock" class="text-right text-[11px] text-white hover:bg-white/10 p-1 px-2 rounded cursor-pointer font-mono-os">
+                    <div class="font-bold text-white" id="taskbar-time-text">00:00</div>
+                    <div class="text-[9px] text-white" id="taskbar-date-text">2026/05/20</div>
+                </div>
+                <div id="btn-show-desktop" class="w-1.5 h-10 border-l border-white/20 hover:bg-white/30 transition cursor-pointer" title="显示桌面"></div>
+            </div>
+        </footer>
+    </div>
+
+    <!--=================== 4. APP 模板 ===================-->
+    <div class="hidden">
         
-        const lyricsContainerEl = content.querySelector(`#lyrics-container-${winObj.id}`);
-        const lyricsContentEl = content.querySelector(`#lyrics-content-${winObj.id}`);
-        const lyricsStatusEl = content.querySelector('#lyrics-status');
+        <div id="template-terminal" class="h-full w-full flex flex-col font-mono-os text-xs md:text-sm p-3 overflow-hidden bg-[#0c0c0c] text-white">
+            <div class="flex-1 overflow-y-auto mb-2 space-y-1 text-white" id="term-output"></div>
+            <div class="flex items-center">
+                <span class="text-white mr-2 shrink-0">C:\\Users\\Admin&gt;</span>
+                <input type="text" id="term-input" class="bg-transparent border-none outline-none text-white flex-1 font-mono-os">
+            </div>
+        </div>
 
-        let playlists = {};
-        let currentPlaylist = 'Root';
-        let filteredTracks = [];
-        let curIdx = 0;
-        let loopMode = 'list';
-        let currentCoverObjectURL = null;
-        
-        let parsedLyrics = [];
-        let currentLyricIndex = -1;
-        let isSyncedLyrics = false;
+        <div id="template-explorer" class="h-full w-full flex text-white select-none bg-[#191919]">
+            <div class="w-40 bg-zinc-900 border-r border-white/20 p-2 hidden sm:flex flex-col space-y-1.5 text-xs shrink-0 text-white">
+                <div class="px-2 py-1 uppercase text-[9px] font-bold text-white">快速访问</div>
+                <button data-path="C:/Users/Admin/Desktop" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">🖥️ 桌面</button>
+                <button data-path="C:/Users/Admin/Documents" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📄 文档</button>
+                <div class="px-2 py-1 uppercase text-[9px] font-bold pt-3 text-white">此电脑</div>
+                <button data-path="C:/" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📀 本地磁盘 (C:)</button>
+            </div>
+            <div class="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] text-white">
+                <div class="flex items-center justify-between p-2 border-b border-white/20 bg-black/30 gap-2">
+                    <div class="flex items-center space-x-1 flex-1 min-w-0">
+                        <button id="exp-back-btn" class="w-8 h-8 hover:bg-white/20 rounded transition text-white font-bold">⬅️</button>
+                        <span id="exp-current-path" class="font-mono-os px-3 py-1 bg-black/50 rounded text-xs overflow-hidden whitespace-nowrap flex-1 text-white">C:/</span>
+                    </div>
+                    <button id="exp-new-btn" class="px-3 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] text-white text-xs font-bold rounded shadow">➕ 新建</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 content-start text-white" id="exp-file-grid"></div>
+            </div>
+        </div>
 
-        let currentTrackMeta = { title: '', artist: 'JRmusic', album: 'Local Music', coverUrl: null };
+        <div id="template-editor" class="h-full w-full flex flex-col overflow-hidden text-sm bg-[#1e1e1e] text-white">
+            <div class="flex items-center px-3 py-1.5 bg-[#2d2d2d] border-b border-white/20 text-xs space-x-3 text-white">
+                <button class="hover:bg-white/20 px-2 py-1 rounded text-white" id="editor-menu-file">文件 (F)</button>
+                <button class="hover:bg-white/20 px-2 py-1 rounded text-white">编辑 (E)</button>
+                <button id="editor-save-btn" class="ml-auto px-3 py-1 bg-[#0078d4] hover:bg-[#0067b8] text-white font-bold rounded">💾 保存</button>
+            </div>
+            <div class="p-1 border-b border-white/20 bg-black/40 flex items-center px-2 text-white">
+                <span class="text-xs text-white pr-2">路径:</span>
+                <input type="text" id="editor-file-path" class="bg-transparent border-none text-xs font-mono-os text-white flex-1">
+            </div>
+            <textarea id="editor-textarea" class="flex-1 p-4 bg-[#1e1e1e] text-white font-mono-os text-sm placeholder-white" placeholder="在此处开始书写..."></textarea>
+        </div>
 
-        const savedUser = localStorage.getItem('jrmusic_gh_user') || 'zhangzhanhang855';
-        const savedRepo = localStorage.getItem('jrmusic_gh_repo') || 'musiconly';
-        ghUserInp.value = savedUser;
-        ghRepoInp.value = savedRepo;
+        <!-- 浏览器 -->
+        <div id="template-browser" class="h-full w-full flex flex-col overflow-hidden text-sm bg-[#1e1e1e] text-white">
+            <div class="flex flex-col border-b border-white/20 bg-[#2d2d2d]">
+                <div class="flex items-center p-2 gap-2 text-white">
+                    <div class="flex gap-1">
+                        <button id="browser-back-btn" class="w-8 h-8 rounded hover:bg-white/20 text-white font-bold">⬅️</button>
+                        <button id="browser-forward-btn" class="w-8 h-8 rounded hover:bg-white/20 text-white font-bold">➡️</button>
+                        <button id="browser-home-btn" class="w-8 h-8 rounded hover:bg-white/20 text-white font-bold">🏠</button>
+                    </div>
+                    <div class="flex-1 flex items-center bg-black/40 border border-white/20 rounded-full px-3 py-1 shadow-inner text-white">
+                        <span class="text-emerald-500 mr-2">🔒</span>
+                        <input type="text" id="browser-url-input" class="bg-transparent border-none w-full outline-none font-mono-os text-xs text-white" value="jros://welcome">
+                        <button id="browser-go-btn" class="ml-2 px-3 py-1 bg-[#0078d4] hover:bg-[#0067b8] text-white text-xs font-bold rounded-full">GO</button>
+                    </div>
+                </div>
+                <div class="w-full bg-black h-[2px] relative">
+                    <div id="browser-progress-bar" class="absolute left-0 top-0 h-full bg-[#0078d4] w-full transition-all" style="transform: translateX(-100%);"></div>
+                </div>
+            </div>
+            <div class="flex-1 relative bg-[#1e1e1e]" id="browser-view-container">
+                <div id="browser-sandbox" class="absolute inset-0 overflow-y-auto p-6 bg-[#1e1e1e] text-white hidden"></div>
+                <iframe id="browser-iframe" class="absolute inset-0 w-full h-full border-none hidden"></iframe>
+            </div>
+        </div>
 
-        if (!window.jsmediatags) {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js';
-            document.head.appendChild(script);
+        <div id="template-installer" class="h-full w-full flex flex-col justify-between p-4 bg-[#1e1e1e] text-white">
+            <div class="flex items-center gap-4 mb-4 text-white">
+                <div id="installer-icon" class="text-5xl text-white">📦</div>
+                <div>
+                    <h3 id="installer-title" class="text-lg font-bold text-white">软件安装</h3>
+                    <p id="installer-subtitle" class="text-xs text-white">来源: VFS 虚拟磁盘</p>
+                </div>
+            </div>
+            <div class="flex-1 bg-black/50 border border-white/20 rounded p-3 text-xs text-white">
+                <p class="font-bold text-amber-400 mb-2">警告</p>
+                <p class="text-white">该软件将获取系统完全执行权限。</p>
+            </div>
+            <div id="installer-progress-section" class="hidden my-3">
+                <div class="flex justify-between text-xs mb-1 text-white"><span class="text-white">安装中...</span><span id="installer-percent-text" class="text-white">0%</span></div>
+                <div class="w-full bg-black h-2 rounded border border-white/20 overflow-hidden">
+                    <div id="installer-progress" class="bg-[#0078d4] h-full w-0"></div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-2">
+                <button id="installer-btn-cancel" class="px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-bold text-white">取消</button>
+                <button id="installer-btn-confirm" class="px-4 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] rounded text-xs font-bold text-white shadow">确认安装</button>
+            </div>
+        </div>
+
+        <div id="template-monitor" class="h-full w-full flex flex-col p-3 gap-4 bg-[#1e1e1e] text-white">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-black/30 p-3 rounded border border-white/20 text-white">
+                    <h5 class="text-xs font-bold text-white mb-2">CPU (%)</h5>
+                    <canvas id="canvas-cpu-chart" class="w-full h-24"></canvas>
+                </div>
+                <div class="bg-black/30 p-3 rounded border border-white/20 text-white">
+                    <h5 class="text-xs font-bold text-white mb-2">RAM (KB)</h5>
+                    <canvas id="canvas-ram-chart" class="w-full h-24"></canvas>
+                </div>
+            </div>
+            <div class="flex-1 bg-black/30 rounded border border-white/20 p-3 flex flex-col text-white">
+                <h5 class="text-xs font-bold text-white mb-2">进程列表</h5>
+                <div class="flex-1 overflow-y-auto text-white">
+                    <table class="w-full text-xs text-left text-white">
+                        <thead><tr class="border-b border-white/20 text-white"><th class="pb-1 text-white">PID</th><th class="pb-1 text-white">名称</th><th class="pb-1 text-white">CPU</th><th class="pb-1 text-right text-white">操作</th></tr></thead>
+                        <tbody id="proc-table-body" class="text-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="template-paint" class="h-full w-full flex flex-col p-2 bg-[#1e1e1e] text-white">
+            <div class="flex items-center gap-3 pb-2 border-b border-white/20">
+                <input type="color" id="paint-color" value="#0078d4" class="w-8 h-8 rounded border-none bg-transparent">
+                <input type="range" id="paint-size" min="1" max="20" value="4" class="w-24">
+                <button id="paint-clear-btn" class="ml-auto px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold">清空</button>
+            </div>
+            <div class="flex-1 bg-white rounded mt-2 relative border border-white/20">
+                <canvas id="paint-canvas" class="absolute w-full h-full cursor-crosshair"></canvas>
+            </div>
+        </div>
+
+        <div id="template-synth" class="h-full w-full flex flex-col p-4 gap-4 bg-[#1e1e1e] text-white">
+            <div class="bg-black/40 p-4 rounded border border-white/20 flex justify-between items-center">
+                <h4 class="font-bold text-sm text-white">16-Bit 音频发生器</h4>
+                <div class="flex gap-2">
+                    <button id="synth-play-btn" class="px-4 py-2 bg-[#0078d4] hover:bg-[#0067b8] text-white rounded text-xs font-bold">播放</button>
+                    <button id="synth-stop-btn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold" disabled>停止</button>
+                </div>
+            </div>
+            <div class="flex-1 bg-black rounded relative border border-white/20">
+                <canvas id="synth-visualizer" class="absolute w-full h-full"></canvas>
+            </div>
+        </div>
+
+        <div id="template-game" class="h-full w-full flex flex-col p-2 bg-[#1e1e1e] text-white">
+            <div class="flex justify-between items-center pb-2 border-b border-white/20 text-xs px-2 text-white">
+                <div class="text-white">分数: <span id="game-score" class="font-bold text-white">0</span></div>
+                <button id="game-restart" class="px-3 py-1 bg-[#0078d4] text-white rounded font-bold">重置</button>
+            </div>
+            <div class="flex-1 bg-black rounded mt-2 relative overflow-hidden border border-white/20">
+                <canvas id="game-canvas" class="absolute w-full h-full"></canvas>
+            </div>
+            <div class="h-16 flex justify-between items-center mt-2 px-2 md:hidden">
+                <div class="flex gap-2">
+                    <button id="game-btn-left" class="w-14 h-12 bg-white/20 text-white rounded-xl text-xl">◀</button>
+                    <button id="game-btn-right" class="w-14 h-12 bg-white/20 text-white rounded-xl text-xl">▶</button>
+                </div>
+                <button id="game-btn-fire" class="w-24 h-12 bg-red-600 text-white font-bold rounded-xl shadow text-sm">🔥 发射</button>
+            </div>
+        </div>
+
+        <div id="template-settings" class="h-full w-full overflow-y-auto p-5 bg-[#1e1e1e] text-white text-sm">
+            <div class="bg-black/40 p-4 rounded border border-white/20 text-xs leading-relaxed space-y-2 text-white">
+                <h3 class="text-sm font-bold text-white border-b border-white/20 pb-2 mb-2">Windows 11 系统信息</h3>
+                <p class="text-white">核心版本：v1.3.0 Ultimate Touch-Stable Edition</p>
+                <p class="text-white">修复说明：所有按钮绑定了最高优先级的 pointerdown 并阻断冒泡，绝对消除层级死锁。</p>
+            </div>
+            <div class="mt-4 text-white">
+                <h4 class="font-bold text-white border-b border-white/20 pb-2 mb-3">动态壁纸</h4>
+                <label class="flex items-center gap-3 p-2 hover:bg-white/10 rounded cursor-pointer text-white">
+                    <input type="radio" name="wallpaper-type" value="stars" checked> 星际穿越
+                </label>
+                <label class="flex items-center gap-3 p-2 hover:bg-white/10 rounded cursor-pointer text-white">
+                    <input type="radio" name="wallpaper-type" value="rain"> 帝国代码雨
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!--=================== 5. 核心引擎 JavaScript ===================-->
+    <script>
+        const PROXY_SERVER = "https://jr-os-proxy.zhangzhanhang855.workers.dev/proxy";
+
+        const SYSTEM_STATE = {
+            wallpaper: 'stars',
+            activeWindow: null,
+            cpuLoad: 0, ramLoad: 35,
+            installedApps: {}
+        };
+
+        // 【最稳定的防误触双击监听器】
+        function addDoubleTapListener(element, callback) {
+            if (!element) return;
+            let lastTap = 0;
+            element.addEventListener('pointerdown', (e) => {
+                // 不阻断冒泡，以防干扰系统的触控体验，但阻止选中
+                e.preventDefault(); 
+                const currentTime = Date.now();
+                const tapLength = currentTime - lastTap;
+                if (tapLength > 0 && tapLength < 500) {
+                    callback(e);
+                    lastTap = 0;
+                } else {
+                    lastTap = currentTime;
+                }
+            });
         }
 
-        // ==========================================
-        // 4. ID3 Lyric Parser
-        // ==========================================
-        function aggressivelyFindLyrics(tags) {
-            if (!tags) return "";
+        // VFS 系统
+        class VirtualFileSystem {
+            constructor() {
+                const calcExeConfig = {
+                    appName: "calc", appTitle: "极客计算器", icon: "🧮", width: 320, height: 400,
+                    script: "const content=document.getElementById('win-content-'+winObj.id); content.innerHTML='<div class=\"p-4 flex flex-col h-full bg-slate-900 text-white select-text\"><div id=\"calc-screen\" class=\"bg-black p-3 text-right text-2xl font-mono mb-4 rounded border border-slate-800 h-14 overflow-hidden text-white\">0</div><div class=\"grid grid-cols-4 gap-2 flex-1\"><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-c\">C</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-div\">/</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-mul\">*</button><button class=\"bg-red-600 p-2 rounded font-bold text-white\" id=\"calc-del\">Del</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-7\">7</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-8\">8</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-9\">9</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-sub\">-</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-4\">4</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-5\">5</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-6\">6</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-add\">+</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-1\">1</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-2\">2</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-3\">3</button><button class=\"bg-[#0078d4] p-2 row-span-2 rounded font-bold text-white\" id=\"calc-eq\">=</button><button class=\"bg-slate-700 p-2 col-span-2 rounded font-bold text-white\" id=\"calc-0\">0</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-dot\">.</button></div></div>'; const s=content.querySelector('#calc-screen'); let c=''; const press=(val)=>{if(val==='C')c=''; else if(val==='Del')c=c.slice(0,-1); else if(val==='='){try{c=String(eval(c))}catch(e){c='Err'}} else c+=val; s.innerText=c||'0'; playSystemSound(1000,'sine',0.05);}; content.querySelectorAll('button').forEach(b=>{ b.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); press(b.innerText==='Del'?'Del':(b.id==='calc-div'?'/':(b.id==='calc-mul'?'*':(b.id==='calc-sub'?'-':(b.id==='calc-add'?'+':b.innerText))))); }); });"
+                };
+                const matrixConfig = {
+                    appName: "matrix", appTitle: "代码雨", icon: "📟", width: 500, height: 400,
+                    script: "const content=document.getElementById('win-content-'+winObj.id); content.innerHTML='<canvas id=\"matrix-cvs-\"+winObj.id+\"' class=\"w-full h-full bg-black\"></canvas>'; const cvs=document.getElementById('matrix-cvs-'+winObj.id); const ctx=cvs.getContext('2d'); cvs.width=500; cvs.height=360; const cols=Math.floor(cvs.width/12); const drops=new Array(cols).fill(0); const iv=setInterval(()=>{ctx.fillStyle=\"rgba(0,0,0,0.05)\"; ctx.fillRect(0,0,cvs.width,cvs.height); ctx.fillStyle=\"#ffffff\"; ctx.font=\"10px monospace\"; for(let i=0;i<drops.length;i++){ctx.fillText(Math.floor(Math.random()*10),i*12,drops[i]*12); if(drops[i]*12>cvs.height&&Math.random()>0.975)drops[i]=0; drops[i]++;}},30); winObj.onDestroy=()=>clearInterval(iv);"
+                };
 
-            const extract = (obj) => {
-                if (!obj) return "";
-                if (typeof obj === 'string') return obj;
-                if (typeof obj.text === 'string') return obj.text;
-                if (typeof obj.lyrics === 'string') return obj.lyrics;
-                if (obj.data) {
-                    if (typeof obj.data === 'string') return obj.data;
-                    if (typeof obj.data.text === 'string') return obj.data.text;
+                this.root = {
+                    name: "", type: "dir", children: {
+                        "C:": { name: "C:", type: "dir", children: {
+                            "Users": { name: "Users", type: "dir", children: {
+                                "Admin": { name: "Admin", type: "dir", children: {
+                                    "Desktop": { name: "Desktop", type: "dir", children: {
+                                        "calc.exe": { name: "calc.exe", type: "file", content: JSON.stringify(calcExeConfig) },
+                                        "matrix.exe": { name: "matrix.exe", type: "file", content: JSON.stringify(matrixConfig) }
+                                    }},
+                                    "Documents": { name: "Documents", type: "dir", children: {
+                                        "sys_test.txt": { name: "sys_test.txt", type: "file", content: "祝贺！所有的文字已被全局强制覆盖为纯白色！\n文件资源管理器的侧边栏已经修复！\n输入框现在完全可以完美唤起 iOS 键盘了！" }
+                                    }}
+                                }}
+                            }}
+                        }}
+                    }
+                };
+            }
+            resolvePath(path) {
+                const parts = path.split("/").filter(p => p);
+                let curr = this.root;
+                for (let p of parts) { if (curr.type !== "dir" || !curr.children[p]) return null; curr = curr.children[p]; }
+                return { node: curr };
+            }
+            readFile(path) { const res = this.resolvePath(path); return (res && res.node.type === "file") ? res.node.content : null; }
+            writeFile(path, content) {
+                const parts = path.split("/"); const file = parts.pop(); const dir = parts.join("/");
+                const res = this.resolvePath(dir || "/");
+                if (res && res.node.type === "dir") { res.node.children[file] = { name: file, type: "file", content: content }; return true; }
+                return false;
+            }
+        }
+        const VFS = new VirtualFileSystem();
+
+        class ProcessScheduler {
+            constructor() { this.processes = [{ pid: 1, name: "System", cpu: 85, ram: 1024 }]; this.pidCounter = 10; this.loop(); }
+            spawn(name) { const pid = this.pidCounter++; this.processes.push({ pid, name, cpu: 0, ram: 4096 }); return pid; }
+            kill(pid) { const idx = this.processes.findIndex(p => p.pid === pid); if (idx > -1) this.processes.splice(idx, 1); }
+            loop() {
+                setInterval(() => {
+                    let totalCpu = 0, totalRam = 250000;
+                    this.processes.forEach(p => {
+                        if (p.pid !== 1) { p.cpu = parseFloat((Math.random()*4).toFixed(1)); p.ram = Math.floor(p.ram*(0.95+Math.random()*0.1)); }
+                        totalCpu += p.cpu; totalRam += p.ram;
+                    });
+                    this.processes[0].cpu = parseFloat((100 - totalCpu).toFixed(1));
+                    SYSTEM_STATE.cpuLoad = Math.min(100, Math.floor(totalCpu));
+                    SYSTEM_STATE.ramLoad = Math.min(100, Math.floor((totalRam/8000000)*100));
+                }, 1000);
+            }
+        }
+        const Scheduler = new ProcessScheduler();
+
+        let globalAudioCtx = null;
+        function playSystemSound(freq, type = 'sine', duration = 0.1) {
+            try {
+                if (!window.AudioContext && !window.webkitAudioContext) return;
+                if (!globalAudioCtx) globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (globalAudioCtx.state === 'suspended') globalAudioCtx.resume();
+                const osc = globalAudioCtx.createOscillator(), gain = globalAudioCtx.createGain();
+                osc.type = type; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.06, globalAudioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + duration);
+                osc.connect(gain); gain.connect(globalAudioCtx.destination);
+                osc.start(); osc.stop(globalAudioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        class WindowManager {
+            constructor() { this.windows = []; this.topZIndex = 30; this.container = document.getElementById('window-container'); }
+
+            createWindow(id, title, templateId, w = 600, h = 400, onReady) {
+                if (this.windows.find(win => win.id === id)) { this.focusWindow(id); document.getElementById("win-"+id).classList.remove('hidden'); return; }
+
+                const pid = Scheduler.spawn(title);
+                w = Math.min(w, window.innerWidth - 20); h = Math.min(h, window.innerHeight - 80);
+                const x = Math.max(10, 30 + (this.windows.length * 20) % 100);
+                const y = Math.max(40, 50 + (this.windows.length * 20) % 100);
+
+                const winObj = { id, pid, title, x, y, w, h, zIndex: ++this.topZIndex, max: false };
+                this.windows.push(winObj);
+
+                const winEl = document.createElement('div');
+                winEl.id = "win-" + id;
+                winEl.className = "absolute acrylic rounded-xl border border-white/20 shadow-2xl flex flex-col overflow-hidden window-animate active-window-shadow text-white pointer-events-auto";
+                winEl.style.width = w + 'px'; winEl.style.height = h + 'px'; winEl.style.left = x + 'px'; winEl.style.top = y + 'px'; winEl.style.zIndex = winObj.zIndex;
+
+                winEl.innerHTML = `
+                    <div class="win-header h-10 bg-black/40 flex justify-between items-center px-3 cursor-move text-white">
+                        <span class="text-xs font-bold text-white pointer-events-none">${title}</span>
+                        <div class="flex h-full py-1.5 gap-1">
+                            <button class="win-min-btn w-8 hover:bg-white/20 rounded flex justify-center items-center text-white font-bold">🗕</button>
+                            <button class="win-max-btn w-8 hover:bg-white/20 rounded flex justify-center items-center text-white font-bold">🗖</button>
+                            <button class="win-close-btn w-8 hover:bg-red-500 rounded flex justify-center items-center text-white font-bold">✕</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-hidden relative bg-[#1e1e1e] text-white" id="win-content-${id}"></div>
+                `;
+                this.container.appendChild(winEl);
+
+                const tpl = document.getElementById(templateId);
+                if (tpl) {
+                    const clone = tpl.cloneNode(true);
+                    clone.classList.remove('hidden'); clone.id = "app-content-" + id;
+                    winEl.querySelector(`#win-content-${id}`).appendChild(clone);
                 }
-                return "";
+
+                // 【核心修复：分离按钮与拖拽逻辑，使用 pointerdown 并终止冒泡】
+                winEl.querySelector('.win-min-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.minimizeWindow(id); });
+                winEl.querySelector('.win-max-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.maximizeWindow(id); });
+                winEl.querySelector('.win-close-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.closeWindow(id); });
+
+                const header = winEl.querySelector('.win-header');
+                header.addEventListener('pointerdown', (e) => {
+                    // 如果点的是按钮，直接忽略，避免触发拖拽
+                    if (e.target.closest('button')) return; 
+                    
+                    this.focusWindow(id);
+                    let startX = e.clientX - winEl.offsetLeft, startY = e.clientY - winEl.offsetTop;
+                    const move = (me) => { winEl.style.left = (me.clientX - startX) + 'px'; winEl.style.top = (me.clientY - startY) + 'px'; };
+                    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+                    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+                });
+
+                winEl.addEventListener('pointerdown', (e) => {
+                    if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('textarea')) {
+                        this.focusWindow(id);
+                    }
+                });
+
+                if (onReady) onReady(winObj);
+                playSystemSound(600, 'sine', 0.1);
+                this.focusWindow(id);
+                updateTaskbar();
+            }
+
+            focusWindow(id) {
+                const win = this.windows.find(w => w.id === id);
+                if (!win) return;
+                win.zIndex = ++this.topZIndex;
+                const dom = document.getElementById("win-" + id);
+                if (dom) {
+                    dom.style.zIndex = win.zIndex;
+                    document.querySelectorAll('[id^="win-"]').forEach(el => el.classList.remove('active-window-shadow'));
+                    dom.classList.add('active-window-shadow');
+                }
+                SYSTEM_STATE.activeWindow = id;
+                updateTaskbar();
+            }
+
+            closeWindow(id) {
+                const idx = this.windows.findIndex(w => w.id === id);
+                if (idx === -1) return;
+                Scheduler.kill(this.windows[idx].pid);
+                document.getElementById("win-" + id).remove();
+                this.windows.splice(idx, 1);
+                updateTaskbar();
+            }
+
+            minimizeWindow(id) { document.getElementById("win-" + id).classList.add('hidden'); }
+            
+            maximizeWindow(id) {
+                const win = this.windows.find(w => w.id === id);
+                const dom = document.getElementById("win-" + id);
+                if (win.max) {
+                    dom.style.width = win.w + "px"; dom.style.height = win.h + "px";
+                    dom.style.left = win.x + "px"; dom.style.top = win.y + "px";
+                    win.max = false;
+                } else {
+                    dom.style.width = '100vw'; dom.style.height = 'calc(100vh - 3rem)';
+                    dom.style.left = '0px'; dom.style.top = '0px';
+                    win.max = true;
+                }
+            }
+        }
+        const windowManager = new WindowManager();
+
+        class WallpaperEngine {
+            constructor() {
+                this.canvas = document.getElementById('wallpaper-canvas'); this.ctx = this.canvas.getContext('2d');
+                this.resize(); this.stars = []; this.initEngine();
+                window.addEventListener('resize', () => this.resize()); this.animate();
+            }
+            resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; this.initEngine(); }
+            initEngine() {
+                this.stars = [];
+                for (let i = 0; i < 150; i++) this.stars.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, z: Math.random() * this.canvas.width });
+            }
+            animate() {
+                const w = this.canvas.width, h = this.canvas.height;
+                this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(0,0,w,h);
+                this.ctx.fillStyle = '#ffffff'; 
+                this.stars.forEach(s => {
+                    s.z -= 2; if (s.z <= 0) { s.z = w; s.x = Math.random() * w; s.y = Math.random() * h; }
+                    const k = 128 / s.z, px = (s.x - w/2) * k + w/2, py = (s.y - h/2) * k + h/2;
+                    if (px > 0 && px < w && py > 0 && py < h) { this.ctx.beginPath(); this.ctx.arc(px, py, (1 - s.z/w)*3, 0, Math.PI*2); this.ctx.fill(); }
+                });
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // --- Apps ---
+        function initTerminalApp(winObj) {
+            const container = document.getElementById("app-content-" + winObj.id);
+            const input = container.querySelector('#term-input');
+            const output = container.querySelector('#term-output');
+            
+            // 确保输入框获得焦点时不被拦截
+            input.addEventListener('pointerdown', (e) => { e.stopPropagation(); input.focus(); });
+
+            const print = (t) => { output.innerHTML += `<div class="text-white">${t}</div>`; output.scrollTop = output.scrollHeight; };
+            print("Windows Terminal [Version 1.3.0]");
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    print("C:\\> " + input.value);
+                    if (input.value === 'ls' || input.value === 'dir') print(Object.keys(VFS.resolvePath("C:/Users/Admin/Desktop").node.children).join("  "));
+                    input.value = '';
+                }
+            };
+        }
+
+        function initExplorerApp(winObj) {
+            const container = document.getElementById("app-content-" + winObj.id);
+            let path = "C:/Users/Admin/Desktop";
+            
+            const render = () => {
+                container.querySelector('#exp-current-path').innerText = path;
+                const grid = container.querySelector('#exp-file-grid'); grid.innerHTML = '';
+                const node = VFS.resolvePath(path);
+                
+                if (!node || !node.node) {
+                    grid.innerHTML = '<div class="p-4 text-red-400 text-xs text-white">无法访问此路径。</div>';
+                    return;
+                }
+                
+                const children = node.node.children;
+                Object.keys(children).forEach(name => {
+                    const isDir = children[name].type === 'dir';
+                    grid.innerHTML += `<div class="exp-item p-3 text-center cursor-pointer hover:bg-white/20 rounded text-white" data-name="${name}"><div class="text-3xl text-white">${isDir ? '📁' : '📄'}</div><div class="text-xs mt-1 truncate text-white">${name}</div></div>`;
+                });
+                
+                grid.querySelectorAll('.exp-item').forEach(el => {
+                    addDoubleTapListener(el, () => {
+                        const target = path.endsWith('/') ? path + el.dataset.name : path + "/" + el.dataset.name;
+                        if (VFS.resolvePath(target).node.type === 'dir') { path = target; render(); }
+                        else if (target.endsWith('.exe')) launchAppInstaller(target);
+                        else openEditor(target);
+                    });
+                });
             };
 
-            let primary = extract(tags.lyrics) || extract(tags.USLT) || extract(tags.SYLT);
-            if (primary && primary.includes('[')) return primary;
-
-            for (let key in tags) {
-                const item = tags[key];
-                const arr = Array.isArray(item) ? item : [item];
-                
-                for (let i of arr) {
-                    let txt = extract(i);
-                    if (typeof txt === 'string' && txt.includes('[00:')) return txt;
-                    
-                    if (i && i.data) {
-                        let deepTxt = extract(i.data.data) || extract(i.data);
-                        if (typeof deepTxt === 'string' && deepTxt.includes('[00:')) return deepTxt;
-                    }
+            container.querySelector('#exp-back-btn').addEventListener('pointerdown', (e) => { 
+                e.stopPropagation();
+                if(path.includes('/')) { 
+                    path = path.split('/').slice(0,-1).join('/'); 
+                    if (path === 'C:') path = 'C:/';
+                    render(); 
                 }
-            }
-            return primary; 
+            });
+            
+            container.querySelector('#exp-new-btn').addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                openEditor((path.endsWith('/') ? path : path + "/") + "new.txt");
+            });
+            
+            container.querySelectorAll('.sidebar-btn').forEach(btn => {
+                btn.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    path = btn.getAttribute('data-path');
+                    render();
+                });
+            });
+
+            render();
         }
 
-        // ==========================================
-        // 5. Lyrics Processing (Pure Lyrics Only)
-        // ==========================================
-        function processLyrics(rawText, source) {
-            if (!rawText || typeof rawText !== 'string') {
-                parsedLyrics = [];
-                isSyncedLyrics = false;
-                lyricsStatusEl.innerText = "INSTRUMENTAL";
-                lyricsContentEl.innerHTML = '<div class="text-left text-white/30 text-xl font-medium mt-10 tracking-widest font-sans">Instrumental</div>';
+        function openEditor(path) {
+            windowManager.createWindow('editor', '记事本', 'template-editor', 500, 400, (win) => {
+                const c = document.getElementById("app-content-" + win.id);
+                const pathInput = c.querySelector('#editor-file-path');
+                const ta = c.querySelector('#editor-textarea');
+                const saveBtn = c.querySelector('#editor-save-btn');
+                
+                pathInput.value = path;
+                ta.value = VFS.readFile(path) || '';
+                
+                // 确保 iPad 文本框点击后能弹出键盘
+                ta.addEventListener('pointerdown', (e) => { e.stopPropagation(); ta.focus(); });
+                pathInput.addEventListener('pointerdown', (e) => { e.stopPropagation(); pathInput.focus(); });
+
+                saveBtn.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    VFS.writeFile(pathInput.value, ta.value);
+                    windowManager.closeWindow(win.id);
+                });
+            });
+        }
+
+        function initBrowserApp(winObj) {
+            const c = document.getElementById("app-content-" + winObj.id);
+            const input = c.querySelector('#browser-url-input');
+            const iframe = c.querySelector('#browser-iframe');
+            const goBtn = c.querySelector('#browser-go-btn');
+            const homeBtn = c.querySelector('#browser-home-btn');
+            
+            input.addEventListener('pointerdown', (e) => { e.stopPropagation(); input.focus(); });
+
+            const load = () => {
+                let url = input.value.trim();
+                if (!url.startsWith('http') && !url.startsWith('jros')) url = 'https://' + url;
+                if (url.startsWith('jros')) {
+                    iframe.classList.add('hidden');
+                    c.querySelector('#browser-sandbox').classList.remove('hidden');
+                    c.querySelector('#browser-sandbox').innerHTML = `<h2 class="text-2xl font-bold text-white">欢迎使用 Edge</h2><p class="mt-4 text-white">请输入外部网址进行反向代理加载。</p>`;
+                } else {
+                    iframe.classList.remove('hidden');
+                    c.querySelector('#browser-sandbox').classList.add('hidden');
+                    iframe.src = PROXY_SERVER + "?url=" + encodeURIComponent(url);
+                }
+            };
+            
+            goBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); load(); });
+            homeBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); input.value='jros://welcome'; load(); });
+            input.onkeydown = (e) => { if(e.key === 'Enter') load(); };
+            load();
+        }
+
+        function launchAppInstaller(path) {
+            const data = VFS.readFile(path);
+            if (!data) return;
+            const config = JSON.parse(data);
+            windowManager.createWindow('installer', '安装程序', 'template-installer', 400, 300, (win) => {
+                const c = document.getElementById("app-content-" + win.id);
+                c.querySelector('#installer-title').innerText = "安装 " + config.appTitle;
+                
+                c.querySelector('#installer-btn-cancel').addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    windowManager.closeWindow(win.id);
+                });
+                
+                c.querySelector('#installer-btn-confirm').addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    SYSTEM_STATE.installedApps[config.appName] = config;
+                    const tmpl = document.createElement('div');
+                    tmpl.id = "template-" + config.appName; tmpl.className = "hidden";
+                    tmpl.innerHTML = `<div id="app-content-${config.appName}" class="w-full h-full bg-[#1e1e1e] text-white"></div>`;
+                    document.body.appendChild(tmpl);
+                    windowManager.closeWindow(win.id);
+                    openApp(config.appName);
+                });
+            });
+        }
+
+        function initMonitorApp(winObj) {
+            const c = document.getElementById("app-content-" + winObj.id);
+            const tbody = c.querySelector('#proc-table-body');
+            const timer = setInterval(() => {
+                if(!document.getElementById("app-content-" + winObj.id)) { clearInterval(timer); return; }
+                tbody.innerHTML = '';
+                Scheduler.processes.forEach(p => {
+                    tbody.innerHTML += `<tr class="border-b border-white/20 text-white"><td>${p.pid}</td><td>${p.name}</td><td>${p.cpu}%</td><td class="text-right text-white">${p.pid>4?`<button class="text-red-400 font-bold kill-btn" data-pid="${p.pid}">Kill</button>`:''}</td></tr>`;
+                });
+                tbody.querySelectorAll('.kill-btn').forEach(btn => {
+                    btn.addEventListener('pointerdown', (e) => {
+                        e.stopPropagation();
+                        Scheduler.kill(parseInt(btn.dataset.pid));
+                    });
+                });
+            }, 1000);
+        }
+
+        function initPaintApp(winObj) {
+            const c = document.getElementById("app-content-" + winObj.id);
+            const cvs = c.querySelector('#paint-canvas'); const ctx = cvs.getContext('2d');
+            const clearBtn = c.querySelector('#paint-clear-btn');
+            
+            const resize = () => { cvs.width = cvs.parentElement.clientWidth; cvs.height = cvs.parentElement.clientHeight; ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,cvs.width,cvs.height); };
+            resize(); winObj.onResizeCallback = resize;
+            let draw = false;
+            
+            cvs.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                draw = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY);
+            });
+            cvs.addEventListener('pointermove', (e) => {
+                if(draw) { ctx.lineTo(e.offsetX, e.offsetY); ctx.strokeStyle = c.querySelector('#paint-color').value; ctx.lineWidth = c.querySelector('#paint-size').value; ctx.stroke(); }
+            });
+            window.addEventListener('pointerup', () => draw = false);
+            
+            clearBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); resize(); });
+        }
+
+        function initSynthApp(winObj) {
+            const c = document.getElementById("app-content-" + winObj.id);
+            c.querySelector('#synth-play-btn').addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                playSystemSound(440, 'square', 0.5);
+            });
+        }
+
+        function initGameApp(winObj) {
+            const c = document.getElementById("app-content-" + winObj.id);
+            const cvs = c.querySelector('#game-canvas'); const ctx = cvs.getContext('2d');
+            let px = 150;
+            const resize = () => { cvs.width = cvs.parentElement.clientWidth; cvs.height = cvs.parentElement.clientHeight; };
+            resize(); winObj.onResizeCallback = resize;
+            const timer = setInterval(() => {
+                ctx.fillStyle = '#000'; ctx.fillRect(0,0,cvs.width,cvs.height);
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(px, 150, 20, 15);
+            }, 30);
+            
+            c.querySelector('#game-btn-left').addEventListener('pointerdown', (e) => { e.stopPropagation(); px-=15; });
+            c.querySelector('#game-btn-right').addEventListener('pointerdown', (e) => { e.stopPropagation(); px+=15; });
+            c.querySelector('#game-btn-fire').addEventListener('pointerdown', (e) => { e.stopPropagation(); playSystemSound(800, 'sawtooth', 0.1); });
+            
+            winObj.onDestroy = () => clearInterval(timer);
+        }
+
+        // --- Core Boot ---
+        window.onload = () => {
+            let logIdx = 0;
+            const logs = ["BIOS v1.3.0", "CPU Check OK", "Memory OK", "Loading Full-White GUI..."];
+            const iv = setInterval(() => {
+                if (logIdx < logs.length) {
+                    document.getElementById('boot-log').innerHTML += `<div class="text-white">> ${logs[logIdx]}</div>`;
+                    document.getElementById('boot-progress').style.width = ((logIdx+1)/logs.length*100) + '%';
+                    logIdx++;
+                } else {
+                    clearInterval(iv);
+                    document.getElementById('btn-start-os').classList.remove('hidden');
+                }
+            }, 200);
+
+            document.getElementById('btn-start-os').addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                playSystemSound(523.25, 'triangle', 0.15);
+                document.getElementById('boot-screen').classList.add('hidden');
+                document.getElementById('desktop-workspace').classList.remove('hidden');
+                document.getElementById('desktop-workspace').style.pointerEvents = 'auto';
+                new WallpaperEngine();
+                initDesktop();
+            });
+        };
+
+        const APPS = [
+            { id: 'explorer', label: '此电脑', icon: '📂' }, { id: 'browser', label: 'Edge', icon: '🌐' },
+            { id: 'editor', label: '记事本', icon: '📝' }, { id: 'monitor', label: '任务管理器', icon: '⚙️' },
+            { id: 'paint', label: '画图', icon: '🎨' }, { id: 'synth', label: '音乐', icon: '🎵' },
+            { id: 'game', label: '游戏', icon: '🚀' }, { id: 'settings', label: '设置', icon: '🎛️' }
+        ];
+
+        function openApp(id) {
+            document.getElementById('start-menu').classList.add('hidden');
+            if (SYSTEM_STATE.installedApps[id]) {
+                const app = SYSTEM_STATE.installedApps[id];
+                windowManager.createWindow(app.id, app.label, "template-" + app.id, app.width, app.height, (w) => new Function('winObj', app.script)(w));
                 return;
             }
-            
-            const cleanText = rawText.replace(/\0/g, '').trim();
-            const lines = cleanText.split(/\r?\n/);
-            
-            const timeReg = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
-            parsedLyrics = [];
-            
-            for (let line of lines) {
-                line = line.trim();
-                if (!line) continue;
-                
-                let match;
-                let timeTags = [];
-                timeReg.lastIndex = 0; 
-                
-                while ((match = timeReg.exec(line)) !== null) {
-                    const m = parseInt(match[1], 10);
-                    const s = parseInt(match[2], 10);
-                    const msStr = match[3] || '0';
-                    const ms = parseInt(msStr.padEnd(3, '0').slice(0, 3), 10);
-                    timeTags.push(m * 60 + s + ms / 1000);
-                }
-                
-                if (timeTags.length > 0) {
-                    let text = line.replace(/\[\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?\]/g, '').trim();
-                    text = text.replace(/[（(](?:翻译|translation)[：:].*?[）)]/gi, '').trim();
-                    
-                    for (let t of timeTags) {
-                        parsedLyrics.push({ time: t, text: text || '...' });
-                    }
-                }
-            }
-            
-            if (parsedLyrics.length > 0) {
-                isSyncedLyrics = true;
-                lyricsStatusEl.innerText = `${source}`;
-                
-                parsedLyrics.sort((a, b) => a.time - b.time);
-                
-                lyricsContentEl.innerHTML = parsedLyrics.map((l, i) => 
-                    `<div class="lyric-line font-sans" id="lyric-${i}" data-time="${l.time}">
-                        <span class="block">${l.text}</span>
-                    </div>`
-                ).join('');
-                
-                lyricsContentEl.style.paddingTop = '40vh';
-                lyricsContentEl.style.paddingBottom = '60vh';
-                
-                lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => {
-                    el.onclick = () => {
-                        audio.currentTime = parseFloat(el.getAttribute('data-time'));
-                        if (audio.paused) audio.play();
-                    };
-                });
-            } else {
-                isSyncedLyrics = false;
-                lyricsStatusEl.innerText = `TEXT [${source}]`;
-                lyricsContentEl.style.paddingTop = '10vh';
-                lyricsContentEl.style.paddingBottom = '10vh';
-                lyricsContentEl.innerHTML = `<div class="text-left text-white/50 text-xl whitespace-pre-wrap leading-loose px-2 font-sans">${cleanText}</div>`;
+            switch (id) {
+                case 'terminal': windowManager.createWindow('terminal', '终端', 'template-terminal', 500, 350, initTerminalApp); break;
+                case 'explorer': windowManager.createWindow('explorer', '资源管理器', 'template-explorer', 600, 400, initExplorerApp); break;
+                case 'browser': windowManager.createWindow('browser', 'Edge', 'template-browser', 700, 500, initBrowserApp); break;
+                case 'monitor': windowManager.createWindow('monitor', '任务管理器', 'template-monitor', 500, 400, initMonitorApp); break;
+                case 'paint': windowManager.createWindow('paint', '画板', 'template-paint', 500, 400, initPaintApp); break;
+                case 'synth': windowManager.createWindow('synth', '播放器', 'template-synth', 400, 300, initSynthApp); break;
+                case 'game': windowManager.createWindow('game', '游戏', 'template-game', 400, 400, initGameApp); break;
+                case 'settings': windowManager.createWindow('settings', '设置', 'template-settings', 400, 350); break;
             }
         }
 
-        // ==========================================
-        // 6. Playback & MediaSession Control
-        // ==========================================
-        const updateMediaSession = (lyricText = null) => {
-            if ('mediaSession' in navigator) {
-                const displayArtist = lyricText ? lyricText : currentTrackMeta.artist;
-                
-                navigator.mediaSession.metadata = new MediaMetadata({ 
-                    title: currentTrackMeta.title, 
-                    artist: displayArtist, 
-                    album: currentTrackMeta.album, 
-                    artwork: currentTrackMeta.coverUrl ? [{ src: currentTrackMeta.coverUrl, sizes: '512x512', type: 'image/jpeg' }] : [] 
-                });
-                
-                navigator.mediaSession.setActionHandler('play', () => audio.play());
-                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
-                navigator.mediaSession.setActionHandler('previoustrack', () => executeLoad((curIdx - 1 + filteredTracks.length) % filteredTracks.length, true));
-                navigator.mediaSession.setActionHandler('nexttrack', () => btnNext.click());
-            }
-        };
+        function initDesktop() {
+            setInterval(() => {
+                const d = new Date();
+                document.getElementById('taskbar-time-text').innerText = d.toTimeString().substring(0, 5);
+                document.getElementById('taskbar-date-text').innerText = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+            }, 1000);
 
-        const filterAudio = (items) => {
-            const audioRegex = /\.(mp3|flac|wav|m4a)$/i;
-            const extRegex = /\.[^/.]+$/;
-            return items.filter(f => audioRegex.test(f.name)).map(f => ({
-                t: f.name.replace(extRegex, ''), u: f.download_url
-            }));
-        };
-
-        const renderNav = () => {
-            navContainer.innerHTML = Object.keys(playlists).map(name => `<button class="text-[10px] md:text-xs px-3 py-1 bg-white/10 rounded-full hover:bg-white/20 transition-colors whitespace-nowrap btn-nav font-sans" data-name="${name}">${name}</button>`).join('');
-            navContainer.querySelectorAll('.btn-nav').forEach(btn => btn.onclick = () => switchPlaylist(btn.dataset.name));
-        };
-
-        const renderList = () => {
-            listContainer.innerHTML = filteredTracks.map((s, i) => {
-                const isActive = curIdx === i;
-                const activeClass = isActive ? 'track-active' : 'text-white/60 hover:bg-white/5';
-                const playingAnim = isActive && !audio.paused ? `<span class="inline-block w-1.5 h-1.5 bg-[#fa233b] rounded-full animate-pulse ml-2"></span>` : '';
-                return `<li class="p-2 md:p-3 text-xs md:text-sm rounded-lg cursor-pointer transition-colors font-sans ${activeClass}" data-idx="${i}">
-                    <span class="opacity-50 mr-2 font-sans">${String(i + 1).padStart(2, '0')}</span>${s.t} ${playingAnim}
-                </li>`;
-            }).join('');
-            listContainer.querySelectorAll('li').forEach(item => item.onclick = () => executeLoad(parseInt(item.dataset.idx), true));
-        };
-
-        const switchPlaylist = (name) => {
-            currentPlaylist = name;
-            filteredTracks = [...playlists[name]];
-            renderList();
-            if (filteredTracks.length > 0) executeLoad(0, false);
-        };
-
-        const executeLoad = (idx, auto) => {
-            if (filteredTracks.length === 0) return;
-            curIdx = idx;
-            const song = filteredTracks[curIdx];
+            const desk = document.getElementById('desktop-icons-container');
+            const menu = document.getElementById('start-menu-pinned-grid');
+            const rec = document.getElementById('start-menu-recommended-grid');
             
-            audio.src = song.u;
-            audio.load();
-            titleEl.innerText = song.t;
+            APPS.forEach(app => {
+                desk.innerHTML += `<div class="flex flex-col items-center p-2 rounded hover:bg-white/20 cursor-pointer text-white" id="desk-${app.id}"><span class="text-4xl drop-shadow">${app.icon}</span><span class="text-xs mt-1 drop-shadow font-bold">${app.label}</span></div>`;
+                menu.innerHTML += `<div class="flex flex-col items-center p-2 rounded hover:bg-white/20 cursor-pointer text-white" id="start-${app.id}"><span class="text-3xl">${app.icon}</span><span class="text-xs mt-1 font-bold">${app.label}</span></div>`;
+            });
 
-            currentTrackMeta = {
-                title: song.t,
-                artist: 'JRmusic',
-                album: currentPlaylist,
-                coverUrl: null
-            };
+            APPS.forEach(app => {
+                addDoubleTapListener(document.getElementById(`desk-${app.id}`), () => openApp(app.id));
+                addDoubleTapListener(document.getElementById(`start-${app.id}`), () => openApp(app.id));
+            });
 
-            artEl.classList.remove('loaded', 'opacity-100');
-            artEl.classList.add('opacity-0');
-            artEl.style.backgroundImage = 'none';
-            dynBgEl.style.backgroundImage = 'none';
-            emjEl.style.opacity = '1';
-            
-            currentLyricIndex = -1;
-            processLyrics(null, '');
-            lyricsContainerEl.scrollTo({ top: 0, behavior: 'auto' });
+            rec.innerHTML = `<div id="rec-test" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/20 cursor-pointer text-xs w-full text-white"><span>📄</span><div class="truncate text-left text-white"><p class="font-bold truncate text-white">readme.txt</p></div></div>`;
+            addDoubleTapListener(document.getElementById('rec-test'), () => openEditor('C:/Users/Admin/Desktop/readme.txt'));
 
-            if (currentCoverObjectURL) {
-                URL.revokeObjectURL(currentCoverObjectURL);
-                currentCoverObjectURL = null;
-            }
+            document.getElementById('btn-start').addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                document.getElementById('start-menu').classList.toggle('hidden');
+            });
+            document.getElementById('btn-clock').addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                document.getElementById('calendar-flyout').classList.toggle('hidden');
+            });
+            document.getElementById('btn-show-desktop').addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                windowManager.windows.forEach(w => windowManager.minimizeWindow(w.id));
+            });
+            document.getElementById('btn-shutdown').addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                document.getElementById('desktop-workspace').classList.add('crt-shutdown');
+                setTimeout(() => document.body.innerHTML = '<div class="text-center mt-40 font-bold text-white">已关机，请刷新。</div>', 400);
+            });
 
-            updateMediaSession();
-            if (auto) audio.play().catch(e => console.log('Wait gesture:', e));
-            else renderList();
+            const cg = document.getElementById('calendar-grid');
+            for(let i=1;i<=31;i++) cg.innerHTML += `<div class="p-1 rounded text-white ${i===new Date().getDate()?'bg-[#0078d4] font-bold':''}">${i}</div>`;
+        }
 
-            let lyricsFound = false;
-
-            const lrcUrl = song.u.replace(/\.(mp3|flac|wav|m4a)$/i, '.lrc');
-            fetch(lrcUrl)
-                .then(res => { if (res.ok) return res.text(); throw new Error(); })
-                .then(lrcText => {
-                    if (lrcText && lrcText.trim()) {
-                        lyricsFound = true;
-                        processLyrics(lrcText, 'LRC FILE');
-                    }
-                })
-                .catch(e => {});
-
-            fetch(song.u)
-                .then(res => { if (!res.ok) throw new Error(); return res.blob(); })
-                .then(audioBlob => {
-                    if (!window.jsmediatags) return;
-                    new window.jsmediatags.Reader(audioBlob).read({
-                        onSuccess: (tag) => {
-                            if (tag.tags.title) {
-                                currentTrackMeta.title = tag.tags.title;
-                                titleEl.innerText = tag.tags.title;
-                            }
-                            if (tag.tags.artist) currentTrackMeta.artist = tag.tags.artist;
-                            if (tag.tags.album) currentTrackMeta.album = tag.tags.album;
-
-                            const pic = tag.tags.picture;
-                            if (pic) {
-                                const byteArray = new Uint8Array(pic.data);
-                                const coverBlob = new Blob([byteArray], { type: pic.format });
-                                currentCoverObjectURL = URL.createObjectURL(coverBlob);
-                                currentTrackMeta.coverUrl = currentCoverObjectURL;
-                                
-                                artEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
-                                dynBgEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
-                                
-                                artEl.classList.remove('opacity-0');
-                                artEl.classList.add('opacity-100');
-                                emjEl.style.opacity = '0';
-                            }
-                            
-                            updateMediaSession();
-
-                            if (!lyricsFound) {
-                                const aggressiveLrcText = aggressivelyFindLyrics(tag.tags);
-                                if (aggressiveLrcText) {
-                                    processLyrics(aggressiveLrcText, 'ID3 TAG');
-                                }
-                            }
-                        },
-                        onError: () => {}
+        function updateTaskbar() {
+            const bar = document.getElementById('taskbar-running-apps'); bar.innerHTML = '';
+            windowManager.windows.forEach(w => {
+                const app = APPS.find(a => a.id === w.id) || {icon:'⚙️'};
+                const active = SYSTEM_STATE.activeWindow === w.id ? 'bg-[#0078d4] w-4' : 'bg-white/40 w-1.5';
+                bar.innerHTML += `<div class="relative w-10 h-10 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer text-white" id="taskbar-item-${w.id}"><span class="text-2xl">${app.icon}</span><span class="absolute bottom-0 h-[3px] rounded-full transition-all ${active}"></span></div>`;
+            });
+            windowManager.windows.forEach(w => {
+                const item = document.getElementById("taskbar-item-" + w.id);
+                if (item) {
+                    item.addEventListener('pointerdown', (e) => {
+                        e.stopPropagation();
+                        windowManager.focusWindow(w.id);
+                        document.getElementById("win-" + w.id).classList.remove('hidden');
                     });
-                })
-                .catch(err => {});
-        };
-
-        audio.onended = () => {
-            if (filteredTracks.length === 0) return;
-            if (loopMode === 'single') executeLoad(curIdx, true);
-            else if (loopMode === 'random') {
-                let nextIndex = Math.floor(Math.random() * filteredTracks.length);
-                if (filteredTracks.length > 1 && nextIndex === curIdx) nextIndex = (nextIndex + 1) % filteredTracks.length;
-                executeLoad(nextIndex, true);
-            } else {
-                executeLoad((curIdx + 1) % filteredTracks.length, true);
-            }
-        };
-
-        btnPlay.onclick = () => { audio.paused ? audio.play() : audio.pause(); };
-        btnNext.onclick = () => { executeLoad((curIdx + 1 + filteredTracks.length) % filteredTracks.length, true); };
-
-        audio.onplay = () => { 
-            artEl.classList.add('playing');
-            playIcon.className = 'w-3 h-4 border-l-[4px] border-r-[4px] border-black ml-0'; 
-            renderList();
-        };
-        audio.onpause = () => { 
-            artEl.classList.remove('playing');
-            playIcon.className = 'w-0 h-0 border-y-[8px] border-y-transparent border-l-[14px] border-l-black ml-1'; 
-            renderList();
-        };
-        
-        audio.ontimeupdate = () => {
-            let s = audio.currentTime;
-            if (isNaN(s)) { curTimeEl.innerText = '00:00'; return; }
-            let m = Math.floor(s / 60), sec = Math.floor(s % 60);
-            curTimeEl.innerText = m.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
-            
-            if (isSyncedLyrics && parsedLyrics.length > 0) {
-                let activeIdx = -1;
-                for (let i = 0; i < parsedLyrics.length; i++) {
-                    if (s >= parsedLyrics[i].time) activeIdx = i;
-                    else break;
                 }
-                
-                if (activeIdx !== currentLyricIndex) {
-                    lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
-                    if (activeIdx !== -1) {
-                        const currEl = lyricsContentEl.querySelector(`#lyric-${activeIdx}`);
-                        if (currEl) {
-                            currEl.classList.add('active');
-                            const container = lyricsContainerEl;
-                            const scrollPos = currEl.offsetTop - (container.clientHeight / 2) + (currEl.clientHeight / 2);
-                            container.scrollTo({ top: scrollPos, behavior: 'smooth' });
-                            
-                            const currentLine = parsedLyrics[activeIdx];
-                            updateMediaSession(currentLine.text);
-                        }
-                    } else {
-                        updateMediaSession();
-                    }
-                    currentLyricIndex = activeIdx;
-                }
-            }
-        };
-
-        searchInput.oninput = () => {
-            const val = searchInput.value.toLowerCase();
-            filteredTracks = playlists[currentPlaylist].filter(s => s.t.toLowerCase().includes(val));
-            renderList();
-        };
-
-        btnMode.onclick = () => { 
-            const modes = ['list', 'random', 'single']; 
-            loopMode = modes[(modes.indexOf(loopMode) + 1) % modes.length]; 
-            lcdMode.innerText = loopMode.toUpperCase();
-        };
-
-        async function loadLibrary(user, repo) {
-            try {
-                audio.pause(); audio.src = ''; curTimeEl.innerText = '00:00';
-                playlists = {}; filteredTracks = []; listContainer.innerHTML = ''; navContainer.innerHTML = '';
-                titleEl.innerText = 'Loading Repo...'; netStatus.innerText = `CONNECTING...`;
-                
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/`);
-                if (!res.ok) throw new Error('API LIMIT OR REPO NOT FOUND');
-                
-                const items = await res.json();
-                playlists['Root'] = filterAudio(items);
-                
-                const folders = items.filter(i => i.type === 'dir');
-                for (let f of folders) {
-                    netStatus.innerText = `FETCHING DIR: ${f.name}`;
-                    const subData = await (await fetch(f.url)).json();
-                    const tracks = filterAudio(subData);
-                    if(tracks.length > 0) playlists[f.name] = tracks;
-                }
-                
-                netStatus.innerText = 'ONLINE';
-                localStorage.setItem('jrmusic_gh_user', user);
-                localStorage.setItem('jrmusic_gh_repo', repo);
-                
-                renderNav(); switchPlaylist('Root');
-            } catch (e) {
-                titleEl.innerText = 'Connection Error'; netStatus.innerText = 'SYNC FAILED - CHECK REPO OR API';
-            }
+            });
         }
-        
-        btnSync.onclick = () => { const u = ghUserInp.value.trim(); const r = ghRepoInp.value.trim(); if(u && r) loadLibrary(u, r); };
-        loadLibrary(savedUser, savedRepo);
-
-        winObj.onDestroy = () => {
-            audio.pause(); audio.src = '';
-            if (currentCoverObjectURL) URL.revokeObjectURL(currentCoverObjectURL);
-        };
     </script>
 </body>
 </html>
