@@ -12,7 +12,7 @@ targets:
       - path: StockScope
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.jraistudio
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.stockscope
         INFOPLIST_FILE: StockScope/Info.plist
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"
