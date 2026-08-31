@@ -1,4 +1,4 @@
-name: JRaistudio
+name: StockScope
 options:
   bundleIdPrefix: com.example
   deploymentTarget:
