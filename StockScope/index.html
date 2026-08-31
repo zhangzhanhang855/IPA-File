@@ -1,934 +1,1582 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Windows 11 - JR OS Professional</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        winblue: { DEFAULT: '#0078d4', hover: '#0067b8', light: '#e6f2fc' },
-                        winbg: { dark: '#1c1c1c', light: '#f3f3f3' }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400;1,700&family=Fira+Code:wght@400;500&display=swap');
-        
-        * {
-            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            user-select: none;
-            -webkit-user-select: none;
-            color: #ffffff;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gemini Studio Pro — Apple HIG Orchestrator</title>
+<style>
+/* ==========================================================================
+   1. APPLE HIG THEME SYSTEM (Frosted Glassmorphism, Vibrancy, San Francisco)
+   ========================================================================== */
+:root {
+  --system-bg: #000000;
+  --surface-translucent: rgba(28, 28, 30, 0.65);
+  --surface-card: rgba(44, 44, 46, 0.55);
+  --surface-card-hover: rgba(58, 58, 60, 0.7);
+  --surface-elevated: rgba(36, 36, 38, 0.85);
+  --surface-border: rgba(255, 255, 255, 0.12);
+  --surface-highlight: rgba(255, 255, 255, 0.18);
+  --surface-separator: rgba(255, 255, 255, 0.08);
 
-        input, textarea {
-            user-select: text !important;
-            -webkit-user-select: text !important;
-            pointer-events: auto !important;
-            touch-action: manipulation !important;
-            outline: none;
-            color: #ffffff !important;
-            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif !important;
-        }
+  --apple-blue: #0A84FF;
+  --apple-blue-rgb: 10, 132, 255;
+  --apple-cyan: #64D2FF;
+  --apple-green: #30D158;
+  --apple-yellow: #FFD60A;
+  --apple-orange: #FF9F0A;
+  --apple-red: #FF453A;
+  --apple-purple: #BF5AF2;
+  --apple-indigo: #5E5CE6;
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-tertiary: rgba(235, 235, 245, 0.38);
+  --text-quaternary: rgba(235, 235, 245, 0.2);
 
-        button, .cursor-pointer {
-            touch-action: manipulation !important;
-            color: #ffffff;
-            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, Roboto, sans-serif !important;
-        }
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
 
-        .font-mono-os { font-family: 'Fira Code', Consolas, Monaco, monospace !important; }
+  --spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  --sidebar-w: 280px;
+  --header-h: 56px;
+  --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", Monaco, Menlo, Consolas, "Cascadia Code", monospace;
+  
+  --shadow-window: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--surface-border);
+  --shadow-popup: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
 
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-        .acrylic {
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-        }
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--system-bg);
+  font-family: var(--font-stack);
+  color: var(--text-primary);
+  user-select: none;
+}
 
-        .window-animate { animation: winOpen 0.15s cubic-bezier(0.1, 0.9, 0.2, 1); }
-        @keyframes winOpen { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+/* Vibrancy Background Ambient */
+.ambient-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 600px at 10% 10%, rgba(var(--apple-blue-rgb), 0.15), transparent 70%),
+    radial-gradient(900px 500px at 90% 20%, rgba(191, 90, 242, 0.12), transparent 60%),
+    radial-gradient(800px 800px at 50% 90%, rgba(48, 209, 88, 0.08), transparent 70%),
+    linear-gradient(180deg, #090A0F 0%, #030407 100%);
+}
 
-        .start-animate { animation: startPop 0.2s cubic-bezier(0.1, 0.9, 0.2, 1); }
-        @keyframes startPop { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.ambient-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
 
-        .crt-shutdown { animation: crtSec 0.4s ease-out forwards; }
-        @keyframes crtSec { 0% { transform: scaleY(1) scaleX(1); filter: brightness(1); } 50% { transform: scaleY(0.01) scaleX(1.1); filter: brightness(3); } 100% { transform: scaleY(0) scaleX(0); filter: brightness(5); opacity: 0; } }
+/* ==========================================================================
+   2. APP CONTAINER & MASTER LAYOUT
+   ========================================================================== */
+#app {
+  position: relative;
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
 
-        .active-window-shadow {
-            box-shadow: 0 15px 50px rgba(0, 120, 212, 0.3);
-            border-color: #0078d4 !important;
-        }
+/* Glass Surface Utility */
+.glass {
+  background: var(--surface-translucent);
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  backdrop-filter: blur(40px) saturate(190%);
+  border: 1px solid var(--surface-border);
+  box-shadow: inset 0 1px 0 var(--surface-highlight);
+}
 
-        /* Safe area support for mobile/iPad notch and status bars */
-        body {
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
-        }
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--surface-separator);
+  background: rgba(20, 20, 22, 0.6);
+  backdrop-filter: blur(35px);
+  transition: width 0.3s var(--spring-smooth);
+  flex-shrink: 0;
+  z-index: 10;
+}
 
-        #desktop-workspace {
-            top: env(safe-area-inset-top);
-            height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
-        }
-    </style>
+.sidebar-header {
+  height: var(--header-h);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--surface-separator);
+}
+
+.window-traffic-lights {
+  display: flex;
+  gap: 8px;
+}
+
+.traffic-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  cursor: pointer;
+}
+.traffic-close { background: #FF5F56; border: 0.5px solid #E0443E; }
+.traffic-min { background: #FFBD2E; border: 0.5px solid #DEA123; }
+.traffic-max { background: #27C93F; border: 0.5px solid #1AAB29; }
+
+.sidebar-nav {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: rgba(var(--apple-blue-rgb), 0.18);
+  color: var(--apple-blue);
+  box-shadow: inset 0 0 0 1px rgba(var(--apple-blue-rgb), 0.3);
+}
+
+.nav-item .icon {
+  font-size: 16px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.session-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 10px;
+  padding: 0 12px 12px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.session-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.session-row.active {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.session-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-delete-btn {
+  opacity: 0;
+  transition: opacity 0.15s;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 2px 4px;
+  border-radius: var(--radius-xs);
+}
+.session-row:hover .session-delete-btn { opacity: 1; }
+.session-delete-btn:hover { color: var(--apple-red); }
+
+/* Main Stage */
+.main-stage {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: rgba(14, 14, 16, 0.4);
+}
+
+/* Header / Title Bar */
+.stage-header {
+  height: var(--header-h);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--surface-separator);
+  z-index: 5;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.status-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--surface-border);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--apple-green);
+  box-shadow: 0 0 8px var(--apple-green);
+}
+
+.status-dot.idle { background: var(--apple-green); box-shadow: 0 0 8px var(--apple-green); }
+.status-dot.busy { background: var(--apple-yellow); box-shadow: 0 0 8px var(--apple-yellow); animation: pulse 1s infinite; }
+.status-dot.error { background: var(--apple-red); box-shadow: 0 0 8px var(--apple-red); }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Buttons (Apple HIG Tactile) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s var(--spring-smooth);
+  user-select: none;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-0.5px);
+}
+
+.btn:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+.btn-primary {
+  background: var(--apple-blue);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(var(--apple-blue-rgb), 0.35);
+}
+
+.btn-primary:hover {
+  background: #2591FF;
+  box-shadow: 0 6px 20px rgba(var(--apple-blue-rgb), 0.5);
+}
+
+.btn-danger {
+  background: rgba(255, 69, 58, 0.15);
+  border-color: rgba(255, 69, 58, 0.3);
+  color: var(--apple-red);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 69, 58, 0.25);
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+}
+
+/* View Canvas Stacks */
+.view-viewport {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.view-panel {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.view-panel.active {
+  display: flex;
+}
+
+/* ==========================================================================
+   3. CHAT VIEW (CONVERSATION & HIG CHAT BUBBLES)
+   ========================================================================== */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.messages-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chat-bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  max-width: 82%;
+  animation: bubblePop 0.25s var(--spring-smooth) forwards;
+}
+
+.chat-bubble-wrap.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat-bubble-wrap.model {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.chat-bubble-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.chat-bubble {
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  line-height: 1.6;
+  position: relative;
+  word-break: break-word;
+  user-select: text;
+}
+
+.chat-bubble-wrap.user .chat-bubble {
+  background: var(--apple-blue);
+  color: #FFFFFF;
+  border-bottom-right-radius: var(--radius-xs);
+  box-shadow: 0 4px 12px rgba(var(--apple-blue-rgb), 0.25);
+}
+
+.chat-bubble-wrap.model .chat-bubble {
+  background: var(--surface-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--surface-border);
+  color: var(--text-primary);
+  border-bottom-left-radius: var(--radius-xs);
+}
+
+.chat-bubble pre {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--surface-separator);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  margin: 8px 0;
+}
+
+.chat-bubble code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+/* Chat Input Bar */
+.chat-dock {
+  padding: 16px 24px 20px;
+  background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 12, 0.9) 100%);
+}
+
+.chat-input-wrapper {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
+  padding: 8px 12px 8px 18px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  box-shadow: var(--shadow-popup);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chat-input-wrapper:focus-within {
+  border-color: rgba(var(--apple-blue-rgb), 0.5);
+  box-shadow: 0 0 0 3px rgba(var(--apple-blue-rgb), 0.2), var(--shadow-popup);
+}
+
+.chat-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.4;
+  resize: none;
+  max-height: 160px;
+  min-height: 24px;
+  padding: 4px 0;
+}
+
+.chat-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* ==========================================================================
+   4. PIPELINE ORCHESTRATOR VIEW (DAG / SEQUENTIAL MULTI-STAGE ENGINE)
+   ========================================================================== */
+.pipeline-view {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pipeline-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-card);
+  padding: 18px 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--surface-border);
+}
+
+.pipeline-hero-text h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pipeline-hero-text p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.pipeline-stages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.pipeline-node {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s var(--spring-smooth);
+  position: relative;
+}
+
+.pipeline-node.running {
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 20px rgba(var(--apple-blue-rgb), 0.25);
+}
+
+.pipeline-node.done {
+  border-color: var(--apple-green);
+}
+
+.pipeline-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.node-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.node-idx {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.node-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pipeline-node-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 14px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input-text, .input-select, .input-textarea {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input-textarea {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.input-text:focus, .input-select:focus, .input-textarea:focus {
+  border-color: var(--apple-blue);
+}
+
+.node-output-preview {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+}
+
+/* Pipeline Connector Cable Visualizer */
+.pipeline-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+/* ==========================================================================
+   5. POOL MANAGEMENT & SETTINGS MODAL (APPLE SHEET)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  background: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-window);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: sheetPop 0.3s var(--spring-smooth) forwards;
+}
+
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--surface-separator);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.api-pool-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.api-pool-item .key-preview {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.key-health-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+}
+.key-health-tag.valid { background: rgba(48, 209, 88, 0.2); color: var(--apple-green); }
+.key-health-tag.invalid { background: rgba(255, 69, 58, 0.2); color: var(--apple-red); }
+.key-health-tag.unchecked { background: rgba(255, 255, 255, 0.1); color: var(--text-tertiary); }
+
+/* ==========================================================================
+   6. METRICS & TELEMETRY TOAST
+   ========================================================================== */
+.toast-manager {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  background: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-popup);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  animation: toastIn 0.3s var(--spring-smooth) forwards;
+}
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheetPop { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes bubblePop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Scrollbar refinement */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); }
+</style>
 </head>
-<body class="overflow-hidden w-screen h-screen select-none bg-cover bg-center transition-all duration-300 text-white" style="background-image: url('https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2560'); background-color: #000;">
+<body>
 
-    <div id="desktop-wallpaper-trigger" class="absolute inset-0 z-0 pointer-events-auto"></div>
-    <canvas id="wallpaper-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+<div class="ambient-canvas"></div>
 
-    <!--=================== 1. Boot Screen ===================-->
-    <div id="boot-screen" class="absolute inset-0 bg-black z-[9999] flex flex-col justify-between items-center py-20 font-mono-os text-white">
-        <div class="flex flex-col items-center mt-20">
-            <div class="w-16 h-16 rounded-full border-4 border-zinc-800 border-t-[#0078d4] animate-spin mb-8"></div>
-            <div id="boot-log" class="text-xs text-white max-w-lg h-32 overflow-y-auto space-y-1 text-center font-mono-os"></div>
-        </div>
-        <div class="flex flex-col items-center space-y-4 w-full max-w-xs">
-            <div class="text-lg font-semibold tracking-wider text-white" style="font-family: 'Google Sans', sans-serif;">Windows 11 Pro</div>
-            <div class="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden border border-zinc-800">
-                <div id="boot-progress" class="bg-[#0078d4] h-full w-0 transition-all duration-100 ease-out"></div>
-            </div>
-            <button id="btn-start-os" class="hidden px-6 py-2.5 bg-[#0078d4] hover:bg-[#0067b8] text-white font-bold rounded-md shadow-lg transition duration-200 cursor-pointer" style="font-family: 'Google Sans', sans-serif;">
-                Start Windows Experience
-            </button>
-        </div>
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="window-traffic-lights">
+        <span class="traffic-light traffic-close" title="Close"></span>
+        <span class="traffic-light traffic-min" title="Minimize"></span>
+        <span class="traffic-light traffic-max" title="Maximize"></span>
+      </div>
+      <button class="btn btn-icon" id="btnNewSession" title="New Chat (⌘N)">＋</button>
     </div>
 
-    <!--=================== 2. Main Desktop ===================-->
-    <div id="desktop-workspace" class="absolute inset-0 z-10 hidden flex flex-col h-full w-full justify-between pb-12 overflow-hidden pointer-events-none">
-        
-        <header class="hidden"><span id="top-cpu"></span></header>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-view="chatView">
+        <span class="icon">💬</span>
+        <span>Studio Chat</span>
+      </div>
+      <div class="nav-item" data-view="pipelineView">
+        <span class="icon">⚡️</span>
+        <span>Pipeline Matrix</span>
+      </div>
+    </nav>
 
-        <!-- Desktop Icons -->
-        <main class="flex-1 w-full relative p-4 grid grid-flow-col auto-cols-[85px] grid-rows-[repeat(auto-fill,100px)] gap-y-4 gap-x-2 content-start items-start z-10 pointer-events-auto text-white" id="desktop-icons-container"></main>
-
-        <div id="window-container" class="absolute inset-0 z-20 pointer-events-none"></div>
-
-        <!-- Calendar & Notification Center -->
-        <div id="calendar-flyout" class="absolute bottom-14 right-3 w-80 acrylic rounded-xl border border-white/10 shadow-2xl z-50 p-4 hidden flex flex-col space-y-4 transition-all duration-200 pointer-events-auto text-white" style="background: rgba(30, 30, 30, 0.85);">
-            <div class="flex justify-between items-center pb-2 border-b border-white/10">
-                <h4 class="font-bold text-sm text-white" id="flyout-month-year">May 2026</h4>
-                <div class="flex space-x-1 text-xs">
-                    <button class="p-1 hover:bg-white/10 rounded text-white">▲</button><button class="p-1 hover:bg-white/10 rounded text-white">▼</button>
-                </div>
-            </div>
-            <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-xs text-white"></div>
-            <div class="border-t border-white/10 pt-3 space-y-2">
-                <h5 class="text-xs font-bold text-white">Action Center</h5>
-                <div class="bg-white/5 p-2 rounded border border-white/5 text-[11px] leading-relaxed text-white">
-                    <p class="font-bold text-[#0078d4]">✨ System Notice</p>
-                    <p class="text-white">All interactions refactored to low-level pointerdown events, resolving touch and layer deadlock issues.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Start Menu -->
-        <div id="start-menu" class="absolute bottom-14 left-1/2 -translate-x-1/2 w-[580px] max-w-[95vw] acrylic rounded-2xl border border-white/10 shadow-2xl z-50 p-6 hidden flex flex-col space-y-6 transition-all duration-200 pointer-events-auto text-white" style="height: 600px; max-height: 80vh; background: rgba(30, 30, 30, 0.85);">
-            <div class="relative w-full shrink-0">
-                <input type="text" id="start-search-input" placeholder=" Search apps, files, and settings" class="w-full bg-black/40 border border-white/20 rounded-full py-2 px-10 text-xs text-white placeholder-white">
-                <span class="absolute left-4 top-2.5 text-white">🔍</span>
-            </div>
-            <div class="flex-1 overflow-y-auto">
-                <div class="flex justify-between items-center mb-4 px-1"><h4 class="font-bold text-xs text-white">Pinned (Double click to open)</h4></div>
-                <div class="grid grid-cols-4 sm:grid-cols-6 gap-y-6 gap-x-2 text-center text-white" id="start-menu-pinned-grid"></div>
-            </div>
-            <div class="h-32 shrink-0">
-                <div class="flex justify-between items-center mb-3 px-1"><h4 class="font-bold text-xs text-white">Recommended (Double click to open)</h4></div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-white" id="start-menu-recommended-grid"></div>
-            </div>
-            <div class="flex items-center justify-between border-t border-white/10 pt-4 shrink-0">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-full bg-[#0078d4] flex items-center justify-center text-white font-bold text-sm">A</div>
-                    <span class="text-xs font-semibold text-white">Administrator</span>
-                </div>
-                <button id="btn-shutdown" class="p-2 hover:bg-white/10 rounded-lg text-sm text-white bg-red-600" title="Shut Down">⏻ Shut Down</button>
-            </div>
-        </div>
-
-        <!--=================== 3. Taskbar ===================-->
-        <footer class="absolute bottom-0 left-0 right-0 h-12 acrylic border-t border-white/10 flex items-center px-3 z-50 justify-between pointer-events-auto text-white" style="background: rgba(20, 20, 20, 0.75);">
-            <div class="w-24 hidden md:flex items-center space-x-2 text-xs text-white cursor-pointer hover:bg-white/5 p-1 rounded">
-                <span class="text-lg">🌤️</span> <span class="text-white">24°C</span>
-            </div>
-            <div class="flex-1 flex justify-center" id="taskbar-center-container">
-                <div class="flex items-center space-x-1" id="taskbar-apps-wrapper">
-                    <button id="btn-start" class="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-md transition active:scale-95" title="Start">
-                        <svg class="w-5 h-5 text-[#0078d4]" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.8 1.95L24 0v11.55H10.8V1.95zM10.8 12.45H24v11.55l-13.2-1.95v-9.6z"/>
-                        </svg>
-                    </button>
-                    <div class="flex items-center space-x-1 text-white" id="taskbar-running-apps"></div>
-                </div>
-            </div>
-            <div class="w-auto flex items-center space-x-2">
-                <div class="flex items-center space-x-2 text-xs text-white hover:bg-white/10 p-1 px-2 rounded cursor-pointer">
-                    <span class="text-white">📶</span><span class="text-white">🔊</span><span class="text-white hidden sm:inline">🔋</span>
-                </div>
-                <div id="btn-clock" class="text-right text-[11px] text-white hover:bg-white/10 p-1 px-2 rounded cursor-pointer font-mono-os">
-                    <div class="font-bold text-white" id="taskbar-time-text">00:00</div>
-                    <div class="text-[9px] text-white" id="taskbar-date-text">2026/05/20</div>
-                </div>
-                <div id="btn-show-desktop" class="w-1.5 h-10 border-l border-white/20 hover:bg-white/30 transition cursor-pointer" title="Show Desktop"></div>
-            </div>
-        </footer>
+    <div class="session-section">
+      <div class="section-label">
+        <span>Conversations</span>
+        <span id="sessionCount">0</span>
+      </div>
+      <div class="session-list" id="sessionList"></div>
     </div>
 
-    <!--=================== 4. APP Templates ===================-->
-    <div class="hidden">
-        
-        <div id="template-terminal" class="h-full w-full flex flex-col font-mono-os text-xs md:text-sm p-3 overflow-hidden bg-[#0c0c0c] text-white">
-            <div class="flex-1 overflow-y-auto mb-2 space-y-1 text-white" id="term-output"></div>
-            <div class="flex items-center">
-                <span class="text-white mr-2 shrink-0">C:\\Users\\Admin&gt;</span>
-                <input type="text" id="term-input" class="bg-transparent border-none outline-none text-white flex-1 font-mono-os">
-            </div>
-        </div>
-
-        <div id="template-explorer" class="h-full w-full flex text-white select-none bg-[#191919]">
-            <div class="w-40 bg-zinc-900 border-r border-white/20 p-2 hidden sm:flex flex-col space-y-1.5 text-xs shrink-0 text-white">
-                <div class="px-2 py-1 uppercase text-[9px] font-bold text-white">Quick Access</div>
-                <button data-path="C:/Users/Admin/Desktop" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">🖥️ Desktop</button>
-                <button data-path="C:/Users/Admin/Documents" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📄 Documents</button>
-                <div class="px-2 py-1 uppercase text-[9px] font-bold pt-3 text-white">This PC</div>
-                <button data-path="C:/" class="sidebar-btn p-2 hover:bg-white/10 text-left rounded text-white">📀 Local Disk (C:)</button>
-            </div>
-            <div class="flex-1 flex flex-col min-w-0 bg-[#1e1e1e] text-white">
-                <div class="flex items-center justify-between p-2 border-b border-white/20 bg-black/30 gap-2">
-                    <div class="flex items-center space-x-1 flex-1 min-w-0">
-                        <button id="exp-back-btn" class="w-8 h-8 hover:bg-white/20 rounded transition text-white font-bold">⬅️</button>
-                        <span id="exp-current-path" class="font-mono-os px-3 py-1 bg-black/50 rounded text-xs overflow-hidden whitespace-nowrap flex-1 text-white">C:/</span>
-                    </div>
-                    <button id="exp-new-btn" class="px-3 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] text-white text-xs font-bold rounded shadow">➕ New</button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 content-start text-white" id="exp-file-grid"></div>
-            </div>
-        </div>
-
-        <div id="template-editor" class="h-full w-full flex flex-col overflow-hidden text-sm bg-[#1e1e1e] text-white">
-            <div class="flex items-center px-3 py-1.5 bg-[#2d2d2d] border-b border-white/20 text-xs space-x-3 text-white">
-                <button class="hover:bg-white/20 px-2 py-1 rounded text-white" id="editor-menu-file">File (F)</button>
-                <button class="hover:bg-white/20 px-2 py-1 rounded text-white">Edit (E)</button>
-                <button id="editor-save-btn" class="ml-auto px-3 py-1 bg-[#0078d4] hover:bg-[#0067b8] text-white font-bold rounded">💾 Save</button>
-            </div>
-            <div class="p-1 border-b border-white/20 bg-black/40 flex items-center px-2 text-white">
-                <span class="text-xs text-white pr-2">Path:</span>
-                <input type="text" id="editor-file-path" class="bg-transparent border-none text-xs font-mono-os text-white flex-1">
-            </div>
-            <textarea id="editor-textarea" class="flex-1 p-4 bg-[#1e1e1e] text-white font-mono-os text-sm placeholder-white" placeholder="Start typing here..."></textarea>
-        </div>
-
-        <!-- Browser -->
-        <div id="template-browser" class="h-full w-full flex flex-col overflow-hidden text-sm bg-[#1e1e1e] text-white">
-            <div class="flex flex-col border-b border-white/20 bg-[#2d2d2d]">
-                <div class="flex items-center p-2 gap-2 text-white">
-                    <div class="flex gap-1">
-                        <button id="browser-back-btn" class="w-8 h-8 rounded hover:bg-white/20 text-white font-bold">⬅️</button>
-                        <button id="browser-forward-btn" class="w-8 h-8 rounded hover:bg-white/20 text-white font-bold">➡️</button>
-                        <button id="browser-home-btn" class="w-8 h-8 rounded hover:bg-white/20 text-white font-bold">🏠</button>
-                    </div>
-                    <div class="flex-1 flex items-center bg-black/40 border border-white/20 rounded-full px-3 py-1 shadow-inner text-white">
-                        <span class="text-emerald-500 mr-2">🔒</span>
-                        <input type="text" id="browser-url-input" class="bg-transparent border-none w-full outline-none font-mono-os text-xs text-white" value="jros://welcome">
-                        <button id="browser-go-btn" class="ml-2 px-3 py-1 bg-[#0078d4] hover:bg-[#0067b8] text-white text-xs font-bold rounded-full">GO</button>
-                    </div>
-                </div>
-                <div class="w-full bg-black h-[2px] relative">
-                    <div id="browser-progress-bar" class="absolute left-0 top-0 h-full bg-[#0078d4] w-full transition-all" style="transform: translateX(-100%);"></div>
-                </div>
-            </div>
-            <div class="flex-1 relative bg-[#1e1e1e]" id="browser-view-container">
-                <div id="browser-sandbox" class="absolute inset-0 overflow-y-auto p-6 bg-[#1e1e1e] text-white hidden"></div>
-                <iframe id="browser-iframe" class="absolute inset-0 w-full h-full border-none hidden"></iframe>
-            </div>
-        </div>
-
-        <div id="template-installer" class="h-full w-full flex flex-col justify-between p-4 bg-[#1e1e1e] text-white">
-            <div class="flex items-center gap-4 mb-4 text-white">
-                <div id="installer-icon" class="text-5xl text-white">📦</div>
-                <div>
-                    <h3 id="installer-title" class="text-lg font-bold text-white">Software Installer</h3>
-                    <p id="installer-subtitle" class="text-xs text-white">Source: VFS Virtual Disk</p>
-                </div>
-            </div>
-            <div class="flex-1 bg-black/50 border border-white/20 rounded p-3 text-xs text-white">
-                <p class="font-bold text-amber-400 mb-2">Warning</p>
-                <p class="text-white">This application will be granted full system execution privileges.</p>
-            </div>
-            <div id="installer-progress-section" class="hidden my-3">
-                <div class="flex justify-between text-xs mb-1 text-white"><span class="text-white">Installing...</span><span id="installer-percent-text" class="text-white">0%</span></div>
-                <div class="w-full bg-black h-2 rounded border border-white/20 overflow-hidden">
-                    <div id="installer-progress" class="bg-[#0078d4] h-full w-0"></div>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 mt-2">
-                <button id="installer-btn-cancel" class="px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded text-xs font-bold text-white">Cancel</button>
-                <button id="installer-btn-confirm" class="px-4 py-1.5 bg-[#0078d4] hover:bg-[#0067b8] rounded text-xs font-bold text-white shadow">Install</button>
-            </div>
-        </div>
-
-        <div id="template-monitor" class="h-full w-full flex flex-col p-3 gap-4 bg-[#1e1e1e] text-white">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-black/30 p-3 rounded border border-white/20 text-white">
-                    <h5 class="text-xs font-bold text-white mb-2">CPU (%)</h5>
-                    <canvas id="canvas-cpu-chart" class="w-full h-24"></canvas>
-                </div>
-                <div class="bg-black/30 p-3 rounded border border-white/20 text-white">
-                    <h5 class="text-xs font-bold text-white mb-2">RAM (KB)</h5>
-                    <canvas id="canvas-ram-chart" class="w-full h-24"></canvas>
-                </div>
-            </div>
-            <div class="flex-1 bg-black/30 rounded border border-white/20 p-3 flex flex-col text-white">
-                <h5 class="text-xs font-bold text-white mb-2">Processes</h5>
-                <div class="flex-1 overflow-y-auto text-white">
-                    <table class="w-full text-xs text-left text-white">
-                        <thead><tr class="border-b border-white/20 text-white"><th class="pb-1 text-white">PID</th><th class="pb-1 text-white">Name</th><th class="pb-1 text-white">CPU</th><th class="pb-1 text-right text-white">Action</th></tr></thead>
-                        <tbody id="proc-table-body" class="text-white"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="template-paint" class="h-full w-full flex flex-col p-2 bg-[#1e1e1e] text-white">
-            <div class="flex items-center gap-3 pb-2 border-b border-white/20">
-                <input type="color" id="paint-color" value="#0078d4" class="w-8 h-8 rounded border-none bg-transparent">
-                <input type="range" id="paint-size" min="1" max="20" value="4" class="w-24">
-                <button id="paint-clear-btn" class="ml-auto px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold">Clear</button>
-            </div>
-            <div class="flex-1 bg-white rounded mt-2 relative border border-white/20">
-                <canvas id="paint-canvas" class="absolute w-full h-full cursor-crosshair"></canvas>
-            </div>
-        </div>
-
-        <div id="template-synth" class="h-full w-full flex flex-col p-4 gap-4 bg-[#1e1e1e] text-white">
-            <div class="bg-black/40 p-4 rounded border border-white/20 flex justify-between items-center">
-                <h4 class="font-bold text-sm text-white">16-Bit Audio Synthesizer</h4>
-                <div class="flex gap-2">
-                    <button id="synth-play-btn" class="px-4 py-2 bg-[#0078d4] hover:bg-[#0067b8] text-white rounded text-xs font-bold">Play</button>
-                    <button id="synth-stop-btn" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-bold" disabled>Stop</button>
-                </div>
-            </div>
-            <div class="flex-1 bg-black rounded relative border border-white/20">
-                <canvas id="synth-visualizer" class="absolute w-full h-full"></canvas>
-            </div>
-        </div>
-
-        <div id="template-game" class="h-full w-full flex flex-col p-2 bg-[#1e1e1e] text-white">
-            <div class="flex justify-between items-center pb-2 border-b border-white/20 text-xs px-2 text-white">
-                <div class="text-white">Score: <span id="game-score" class="font-bold text-white">0</span></div>
-                <button id="game-restart" class="px-3 py-1 bg-[#0078d4] text-white rounded font-bold">Restart</button>
-            </div>
-            <div class="flex-1 bg-black rounded mt-2 relative overflow-hidden border border-white/20">
-                <canvas id="game-canvas" class="absolute w-full h-full"></canvas>
-            </div>
-            <div class="h-16 flex justify-between items-center mt-2 px-2 md:hidden">
-                <div class="flex gap-2">
-                    <button id="game-btn-left" class="w-14 h-12 bg-white/20 text-white rounded-xl text-xl">◀</button>
-                    <button id="game-btn-right" class="w-14 h-12 bg-white/20 text-white rounded-xl text-xl">▶</button>
-                </div>
-                <button id="game-btn-fire" class="w-24 h-12 bg-red-600 text-white font-bold rounded-xl shadow text-sm">🔥 Fire</button>
-            </div>
-        </div>
-
-        <div id="template-settings" class="h-full w-full overflow-y-auto p-5 bg-[#1e1e1e] text-white text-sm">
-            <div class="bg-black/40 p-4 rounded border border-white/20 text-xs leading-relaxed space-y-2 text-white">
-                <h3 class="text-sm font-bold text-white border-b border-white/20 pb-2 mb-2">Windows 11 System Information</h3>
-                <p class="text-white">Core Version: v1.3.0 Ultimate Touch-Stable Edition</p>
-                <p class="text-white">Patch Notes: All buttons bound to high-priority pointerdown handlers to eliminate interaction deadlocks.</p>
-            </div>
-            <div class="mt-4 text-white">
-                <h4 class="font-bold text-white border-b border-white/20 pb-2 mb-3">Live Wallpapers</h4>
-                <label class="flex items-center gap-3 p-2 hover:bg-white/10 rounded cursor-pointer text-white">
-                    <input type="radio" name="wallpaper-type" value="stars" checked> Interstellar
-                </label>
-                <label class="flex items-center gap-3 p-2 hover:bg-white/10 rounded cursor-pointer text-white">
-                    <input type="radio" name="wallpaper-type" value="rain"> Matrix Digital Rain
-                </label>
-            </div>
-        </div>
+    <div style="padding: 12px; border-top: 1px solid var(--surface-separator);">
+      <button class="btn" style="width: 100%; justify-content: flex-start;" id="btnOpenSettings">
+        <span class="icon">⚙️</span>
+        <span>API Keys & Pools</span>
+      </button>
     </div>
+  </aside>
 
-    <!--=================== 5. Core Engine JavaScript ===================-->
-    <script>
-        const PROXY_SERVER = "https://jr-os-proxy.zhangzhanhang855.workers.dev/proxy";
+  <!-- MAIN VIEWPORT -->
+  <main class="main-stage">
+    <!-- TOP STATUS BAR -->
+    <header class="stage-header">
+      <div class="header-meta">
+        <span class="header-title" id="stageTitle">Studio Chat</span>
+        <div class="status-capsule">
+          <span class="status-dot idle" id="globalStatusDot"></span>
+          <span id="globalStatusText">Gemini Ready</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" id="btnExportSession" title="Export Current Session">📤 Export</button>
+        <button class="btn btn-danger" id="btnClearCurrentChat" title="Clear Context">Clear Context</button>
+      </div>
+    </header>
 
-        const SYSTEM_STATE = {
-            wallpaper: 'stars',
-            activeWindow: null,
-            cpuLoad: 0, ramLoad: 35,
-            installedApps: {}
-        };
+    <!-- VIEW CONTAINERS -->
+    <div class="view-viewport">
+      <!-- 1. STUDIO CHAT VIEW -->
+      <section class="view-panel active" id="chatView">
+        <div class="chat-container">
+          <div class="messages-scrollable" id="messagesContainer">
+            <!-- Messages rendered dynamically -->
+          </div>
+          <div class="chat-dock">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-textarea" id="chatInput" placeholder="Message Gemini API or execute workflow (Shift+Enter for newline)..." rows="1"></textarea>
+              <button class="btn btn-primary" id="btnSendMessage">Send</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        // Stable double-tap / double-click event handler
-        function addDoubleTapListener(element, callback) {
-            if (!element) return;
-            let lastTap = 0;
-            element.addEventListener('pointerdown', (e) => {
-                e.preventDefault(); 
-                const currentTime = Date.now();
-                const tapLength = currentTime - lastTap;
-                if (tapLength > 0 && tapLength < 500) {
-                    callback(e);
-                    lastTap = 0;
-                } else {
-                    lastTap = currentTime;
-                }
-            });
-        }
+      <!-- 2. MULTI-STAGE PIPELINE ORCHESTRATOR -->
+      <section class="view-panel" id="pipelineView">
+        <div class="pipeline-view">
+          <div class="pipeline-hero">
+            <div class="pipeline-hero-text">
+              <h2>Gemini Sequential Pipeline Orchestrator</h2>
+              <p>Chain multi-turn Gemini reasoning stages where each step dynamically ingests outputs from previous models.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn" id="btnAddPipelineStage">＋ Add Step</button>
+              <button class="btn btn-primary" id="btnRunPipeline">🚀 Execute Pipeline</button>
+            </div>
+          </div>
 
-        // Virtual File System
-        class VirtualFileSystem {
-            constructor() {
-                const calcExeConfig = {
-                    appName: "calc", appTitle: "Calculator", icon: "🧮", width: 320, height: 400,
-                    script: "const content=document.getElementById('win-content-'+winObj.id); content.innerHTML='<div class=\"p-4 flex flex-col h-full bg-slate-900 text-white select-text\"><div id=\"calc-screen\" class=\"bg-black p-3 text-right text-2xl font-mono mb-4 rounded border border-slate-800 h-14 overflow-hidden text-white\">0</div><div class=\"grid grid-cols-4 gap-2 flex-1\"><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-c\">C</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-div\">/</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-mul\">*</button><button class=\"bg-red-600 p-2 rounded font-bold text-white\" id=\"calc-del\">Del</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-7\">7</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-8\">8</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-9\">9</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-sub\">-</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-4\">4</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-5\">5</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-6\">6</button><button class=\"bg-slate-800 p-2 rounded font-bold text-white\" id=\"calc-add\">+</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-1\">1</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-2\">2</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-3\">3</button><button class=\"bg-[#0078d4] p-2 row-span-2 rounded font-bold text-white\" id=\"calc-eq\">=</button><button class=\"bg-slate-700 p-2 col-span-2 rounded font-bold text-white\" id=\"calc-0\">0</button><button class=\"bg-slate-700 p-2 rounded font-bold text-white\" id=\"calc-dot\">.</button></div></div>'; const s=content.querySelector('#calc-screen'); let c=''; const press=(val)=>{if(val==='C')c=''; else if(val==='Del')c=c.slice(0,-1); else if(val==='='){try{c=String(eval(c))}catch(e){c='Err'}} else c+=val; s.innerText=c||'0'; playSystemSound(1000,'sine',0.05);}; content.querySelectorAll('button').forEach(b=>{ b.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); press(b.innerText==='Del'?'Del':(b.id==='calc-div'?'/':(b.id==='calc-mul'?'*':(b.id==='calc-sub'?'-':(b.id==='calc-add'?'+':b.innerText))))); }); });"
-                };
-                const matrixConfig = {
-                    appName: "matrix", appTitle: "Matrix Rain", icon: "📟", width: 500, height: 400,
-                    script: "const content=document.getElementById('win-content-'+winObj.id); content.innerHTML='<canvas id=\"matrix-cvs-\"+winObj.id+\"' class=\"w-full h-full bg-black\"></canvas>'; const cvs=document.getElementById('matrix-cvs-'+winObj.id); const ctx=cvs.getContext('2d'); cvs.width=500; cvs.height=360; const cols=Math.floor(cvs.width/12); const drops=new Array(cols).fill(0); const iv=setInterval(()=>{ctx.fillStyle=\"rgba(0,0,0,0.05)\"; ctx.fillRect(0,0,cvs.width,cvs.height); ctx.fillStyle=\"#ffffff\"; ctx.font=\"10px monospace\"; for(let i=0;i<drops.length;i++){ctx.fillText(Math.floor(Math.random()*10),i*12,drops[i]*12); if(drops[i]*12>cvs.height&&Math.random()>0.975)drops[i]=0; drops[i]++;}},30); winObj.onDestroy=()=>clearInterval(iv);"
-                };
+          <div class="field-group" style="background: var(--surface-card); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--surface-border);">
+            <label class="field-label">Pipeline Initial Input / Context Payload</label>
+            <textarea class="input-textarea" id="pipelineInitialPayload" placeholder="Enter raw context, code, or query for the root node..." style="min-height: 80px;"></textarea>
+          </div>
 
-                this.root = {
-                    name: "", type: "dir", children: {
-                        "C:": { name: "C:", type: "dir", children: {
-                            "Users": { name: "Users", type: "dir", children: {
-                                "Admin": { name: "Admin", type: "dir", children: {
-                                    "Desktop": { name: "Desktop", type: "dir", children: {
-                                        "calc.exe": { name: "calc.exe", type: "file", content: JSON.stringify(calcExeConfig) },
-                                        "matrix.exe": { name: "matrix.exe", type: "file", content: JSON.stringify(matrixConfig) }
-                                    }},
-                                    "Documents": { name: "Documents", type: "dir", children: {
-                                        "sys_test.txt": { name: "sys_test.txt", type: "file", content: "System ready!\nAll typography set to Google Sans.\nFull support for safe-area insets and touch events." }
-                                    }}
-                                }}
-                            }}
-                        }}
-                    }
-                };
-            }
-            resolvePath(path) {
-                const parts = path.split("/").filter(p => p);
-                let curr = this.root;
-                for (let p of parts) { if (curr.type !== "dir" || !curr.children[p]) return null; curr = curr.children[p]; }
-                return { node: curr };
-            }
-            readFile(path) { const res = this.resolvePath(path); return (res && res.node.type === "file") ? res.node.content : null; }
-            writeFile(path, content) {
-                const parts = path.split("/"); const file = parts.pop(); const dir = parts.join("/");
-                const res = this.resolvePath(dir || "/");
-                if (res && res.node.type === "dir") { res.node.children[file] = { name: file, type: "file", content: content }; return true; }
-                return false;
-            }
-        }
-        const VFS = new VirtualFileSystem();
+          <div class="pipeline-stages-container" id="pipelineStagesList">
+            <!-- Pipeline stage nodes injected dynamically -->
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
 
-        class ProcessScheduler {
-            constructor() { this.processes = [{ pid: 1, name: "System", cpu: 85, ram: 1024 }]; this.pidCounter = 10; this.loop(); }
-            spawn(name) { const pid = this.pidCounter++; this.processes.push({ pid, name, cpu: 0, ram: 4096 }); return pid; }
-            kill(pid) { const idx = this.processes.findIndex(p => p.pid === pid); if (idx > -1) this.processes.splice(idx, 1); }
-            loop() {
-                setInterval(() => {
-                    let totalCpu = 0, totalRam = 250000;
-                    this.processes.forEach(p => {
-                        if (p.pid !== 1) { p.cpu = parseFloat((Math.random()*4).toFixed(1)); p.ram = Math.floor(p.ram*(0.95+Math.random()*0.1)); }
-                        totalCpu += p.cpu; totalRam += p.ram;
-                    });
-                    this.processes[0].cpu = parseFloat((100 - totalCpu).toFixed(1));
-                    SYSTEM_STATE.cpuLoad = Math.min(100, Math.floor(totalCpu));
-                    SYSTEM_STATE.ramLoad = Math.min(100, Math.floor((totalRam/8000000)*100));
-                }, 1000);
-            }
-        }
-        const Scheduler = new ProcessScheduler();
+<!-- SETTINGS MODAL: API KEY POOL & MODEL DISCOVERY -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3>Gemini API Configuration & Keys Pool</h3>
+      <button class="btn btn-icon" id="btnCloseSettings">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label">Add Gemini API Key to Pool</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="password" class="input-text" id="inputNewApiKey" placeholder="AIzaSy..." style="flex: 1;">
+          <button class="btn btn-primary" id="btnAddApiKey">Add Key</button>
+        </div>
+      </div>
 
-        let globalAudioCtx = null;
-        function playSystemSound(freq, type = 'sine', duration = 0.1) {
-            try {
-                if (!window.AudioContext && !window.webkitAudioContext) return;
-                if (!globalAudioCtx) globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (globalAudioCtx.state === 'suspended') globalAudioCtx.resume();
-                const osc = globalAudioCtx.createOscillator(), gain = globalAudioCtx.createGain();
-                osc.type = type; osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.06, globalAudioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + duration);
-                osc.connect(gain); gain.connect(globalAudioCtx.destination);
-                osc.start(); osc.stop(globalAudioCtx.currentTime + duration);
-            } catch (e) {}
-        }
+      <div class="field-group">
+        <label class="field-label">Active Gemini API Key Pool (Load Balanced)</label>
+        <div id="apiKeyPoolList" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Pool items injected dynamically -->
+        </div>
+      </div>
 
-        class WindowManager {
-            constructor() { this.windows = []; this.topZIndex = 30; this.container = document.getElementById('window-container'); }
+      <div class="field-group">
+        <label class="field-label">Default Model Selector</label>
+        <div style="display: flex; gap: 8px;">
+          <select class="input-select" id="selectDefaultModel" style="flex: 1;">
+            <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Accurate)</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro (Reasoning & Analysis)</option>
+            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+            <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+          </select>
+          <button class="btn" id="btnSyncOnlineModels">🔄 Fetch Models</button>
+        </div>
+      </div>
 
-            createWindow(id, title, templateId, w = 600, h = 400, onReady) {
-                if (this.windows.find(win => win.id === id)) { this.focusWindow(id); document.getElementById("win-"+id).classList.remove('hidden'); return; }
+      <div class="field-group">
+        <label class="field-label">Export / Import Studio Data</label>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn" id="btnExportAllData" style="flex: 1;">Backup Database (JSON)</button>
+          <button class="btn" id="btnImportAllData" style="flex: 1;">Restore Database</button>
+          <input type="file" id="fileImportInput" accept=".json" style="display: none;">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-                const pid = Scheduler.spawn(title);
-                w = Math.min(w, window.innerWidth - 20); h = Math.min(h, window.innerHeight - 80);
-                const x = Math.max(10, 30 + (this.windows.length * 20) % 100);
-                const y = Math.max(40, 50 + (this.windows.length * 20) % 100);
+<!-- TOAST NOTIFICATION CONTAINER -->
+<div class="toast-manager" id="toastContainer"></div>
 
-                const winObj = { id, pid, title, x, y, w, h, zIndex: ++this.topZIndex, max: false };
-                this.windows.push(winObj);
+<!-- ==========================================================================
+   7. CORE ENGINE JAVASCRIPT LOGIC
+   ========================================================================== -->
+<script>
+/**
+ * GEMINI STUDIO ARCHITECTURE ENGINE
+ * Single-file reactive state store, multi-key round-robin scheduler,
+ * sequential pipeline dispatcher, and Apple-grade renderer.
+ */
 
-                const winEl = document.createElement('div');
-                winEl.id = "win-" + id;
-                winEl.className = "absolute acrylic rounded-xl border border-white/20 shadow-2xl flex flex-col overflow-hidden window-animate active-window-shadow text-white pointer-events-auto";
-                winEl.style.width = w + 'px'; winEl.style.height = h + 'px'; winEl.style.left = x + 'px'; winEl.style.top = y + 'px'; winEl.style.zIndex = winObj.zIndex;
+// Global State
+const Store = {
+  activeView: 'chatView',
+  sessions: [],
+  activeSessionId: null,
+  apiKeys: [],
+  currentKeyIndex: 0,
+  defaultModel: 'gemini-2.5-flash',
+  modelsRegistry: [
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite'
+  ],
+  pipelineStages: [
+    {
+      id: 'stg_1',
+      title: 'Phase 1: Analysis & Extraction',
+      model: 'gemini-2.5-flash',
+      systemPrompt: 'You are a meticulous analyst. Extract key facts, issues, and constraints from the input.',
+      temperature: 0.2,
+      lastOutput: ''
+    },
+    {
+      id: 'stg_2',
+      title: 'Phase 2: Solution Architecture',
+      model: 'gemini-2.5-flash',
+      systemPrompt: 'You are a senior solutions engineer. Based on the analysis, design a clean, optimal solution.',
+      temperature: 0.4,
+      lastOutput: ''
+    },
+    {
+      id: 'stg_3',
+      title: 'Phase 3: Code & Verification Matrix',
+      model: 'gemini-2.5-pro',
+      systemPrompt: 'You are a QA and code architect. Review previous steps and output the complete production-grade result.',
+      temperature: 0.1,
+      lastOutput: ''
+    }
+  ]
+};
 
-                winEl.innerHTML = `
-                    <div class="win-header h-10 bg-black/40 flex justify-between items-center px-3 cursor-move text-white">
-                        <span class="text-xs font-bold text-white pointer-events-none">${title}</span>
-                        <div class="flex h-full py-1.5 gap-1">
-                            <button class="win-min-btn w-8 hover:bg-white/20 rounded flex justify-center items-center text-white font-bold">🗕</button>
-                            <button class="win-max-btn w-8 hover:bg-white/20 rounded flex justify-center items-center text-white font-bold">🗖</button>
-                            <button class="win-close-btn w-8 hover:bg-red-500 rounded flex justify-center items-center text-white font-bold">✕</button>
-                        </div>
-                    </div>
-                    <div class="flex-1 overflow-hidden relative bg-[#1e1e1e] text-white" id="win-content-${id}"></div>
-                `;
-                this.container.appendChild(winEl);
+// Persistence Handlers
+function saveStore() {
+  localStorage.setItem('GEMINI_STUDIO_STORE_V1', JSON.stringify({
+    sessions: Store.sessions,
+    activeSessionId: Store.activeSessionId,
+    apiKeys: Store.apiKeys,
+    defaultModel: Store.defaultModel,
+    pipelineStages: Store.pipelineStages
+  }));
+}
 
-                const tpl = document.getElementById(templateId);
-                if (tpl) {
-                    const clone = tpl.cloneNode(true);
-                    clone.classList.remove('hidden'); clone.id = "app-content-" + id;
-                    winEl.querySelector(`#win-content-${id}`).appendChild(clone);
-                }
+function loadStore() {
+  try {
+    const raw = localStorage.getItem('GEMINI_STUDIO_STORE_V1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      Store.sessions = parsed.sessions || [];
+      Store.activeSessionId = parsed.activeSessionId || null;
+      Store.apiKeys = parsed.apiKeys || [];
+      Store.defaultModel = parsed.defaultModel || 'gemini-2.5-flash';
+      Store.pipelineStages = parsed.pipelineStages || Store.pipelineStages;
+    }
+  } catch (err) {
+    console.error('Failed to load store from local storage:', err);
+  }
 
-                winEl.querySelector('.win-min-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.minimizeWindow(id); });
-                winEl.querySelector('.win-max-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.maximizeWindow(id); });
-                winEl.querySelector('.win-close-btn').addEventListener('pointerdown', (e) => { e.stopPropagation(); this.closeWindow(id); });
+  if (Store.sessions.length === 0) {
+    createNewSession('General Conversation');
+  } else if (!Store.activeSessionId || !Store.sessions.find(s => s.id === Store.activeSessionId)) {
+    Store.activeSessionId = Store.sessions[0].id;
+  }
+}
 
-                const header = winEl.querySelector('.win-header');
-                header.addEventListener('pointerdown', (e) => {
-                    if (e.target.closest('button')) return; 
-                    
-                    this.focusWindow(id);
-                    let startX = e.clientX - winEl.offsetLeft, startY = e.clientY - winEl.offsetTop;
-                    const move = (me) => { winEl.style.left = (me.clientX - startX) + 'px'; winEl.style.top = (me.clientY - startY) + 'px'; };
-                    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
-                    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
-                });
+// Key Pool Load Balancer
+function getNextAvailableApiKey() {
+  if (!Store.apiKeys || Store.apiKeys.length === 0) {
+    throw new Error('No Gemini API Key found. Please add a valid API key in Settings.');
+  }
+  const activeKeyObj = Store.apiKeys[Store.currentKeyIndex % Store.apiKeys.length];
+  Store.currentKeyIndex++;
+  return activeKeyObj.key;
+}
 
-                winEl.addEventListener('pointerdown', (e) => {
-                    if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('textarea')) {
-                        this.focusWindow(id);
-                    }
-                });
+// Toast Notifier
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  
+  let icon = 'ℹ️';
+  if (type === 'success') icon = '✅';
+  if (type === 'error') icon = '❌';
+  if (type === 'warn') icon = '⚠️';
 
-                if (onReady) onReady(winObj);
-                playSystemSound(600, 'sine', 0.1);
-                this.focusWindow(id);
-                updateTaskbar();
-            }
+  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
 
-            focusWindow(id) {
-                const win = this.windows.find(w => w.id === id);
-                if (!win) return;
-                win.zIndex = ++this.topZIndex;
-                const dom = document.getElementById("win-" + id);
-                if (dom) {
-                    dom.style.zIndex = win.zIndex;
-                    document.querySelectorAll('[id^="win-"]').forEach(el => el.classList.remove('active-window-shadow'));
-                    dom.classList.add('active-window-shadow');
-                }
-                SYSTEM_STATE.activeWindow = id;
-                updateTaskbar();
-            }
+// Gemini Raw API Service
+async function callGeminiApi({ model, contents, systemInstruction, temperature = 0.7 }) {
+  const apiKey = getNextAvailableApiKey();
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-            closeWindow(id) {
-                const idx = this.windows.findIndex(w => w.id === id);
-                if (idx === -1) return;
-                Scheduler.kill(this.windows[idx].pid);
-                document.getElementById("win-" + id).remove();
-                this.windows.splice(idx, 1);
-                updateTaskbar();
-            }
+  const payload = {
+    contents: contents,
+    generationConfig: {
+      temperature: parseFloat(temperature),
+      maxOutputTokens: 8192
+    }
+  };
 
-            minimizeWindow(id) { document.getElementById("win-" + id).classList.add('hidden'); }
-            
-            maximizeWindow(id) {
-                const win = this.windows.find(w => w.id === id);
-                const dom = document.getElementById("win-" + id);
-                if (win.max) {
-                    dom.style.width = win.w + "px"; dom.style.height = win.h + "px";
-                    dom.style.left = win.x + "px"; dom.style.top = win.y + "px";
-                    win.max = false;
-                } else {
-                    dom.style.width = '100vw'; dom.style.height = 'calc(100vh - 3rem)';
-                    dom.style.left = '0px'; dom.style.top = '0px';
-                    win.max = true;
-                }
-            }
-        }
-        const windowManager = new WindowManager();
+  if (systemInstruction) {
+    payload.systemInstruction = {
+      parts: [{ text: systemInstruction }]
+    };
+  }
 
-        class WallpaperEngine {
-            constructor() {
-                this.canvas = document.getElementById('wallpaper-canvas'); this.ctx = this.canvas.getContext('2d');
-                this.resize(); this.stars = []; this.initEngine();
-                window.addEventListener('resize', () => this.resize()); this.animate();
-            }
-            resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; this.initEngine(); }
-            initEngine() {
-                this.stars = [];
-                for (let i = 0; i < 150; i++) this.stars.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, z: Math.random() * this.canvas.width });
-            }
-            animate() {
-                const w = this.canvas.width, h = this.canvas.height;
-                this.ctx.fillStyle = 'rgba(0,0,0,0.2)'; this.ctx.fillRect(0,0,w,h);
-                this.ctx.fillStyle = '#ffffff'; 
-                this.stars.forEach(s => {
-                    s.z -= 2; if (s.z <= 0) { s.z = w; s.x = Math.random() * w; s.y = Math.random() * h; }
-                    const k = 128 / s.z, px = (s.x - w/2) * k + w/2, py = (s.y - h/2) * k + h/2;
-                    if (px > 0 && px < w && py > 0 && py < h) { this.ctx.beginPath(); this.ctx.arc(px, py, (1 - s.z/w)*3, 0, Math.PI*2); this.ctx.fill(); }
-                });
-                requestAnimationFrame(() => this.animate());
-            }
-        }
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-        // --- Apps ---
-        function initTerminalApp(winObj) {
-            const container = document.getElementById("app-content-" + winObj.id);
-            const input = container.querySelector('#term-input');
-            const output = container.querySelector('#term-output');
-            
-            input.addEventListener('pointerdown', (e) => { e.stopPropagation(); input.focus(); });
+  if (!response.ok) {
+    const errorDetails = await response.text();
+    throw new Error(`API Error [HTTP ${response.status}]: ${errorDetails}`);
+  }
 
-            const print = (t) => { output.innerHTML += `<div class="text-white">${t}</div>`; output.scrollTop = output.scrollHeight; };
-            print("Windows Terminal [Version 1.3.0]");
-            input.onkeydown = (e) => {
-                if (e.key === 'Enter' && input.value.trim()) {
-                    print("C:\\> " + input.value);
-                    if (input.value === 'ls' || input.value === 'dir') print(Object.keys(VFS.resolvePath("C:/Users/Admin/Desktop").node.children).join("  "));
-                    input.value = '';
-                }
-            };
-        }
+  const data = await response.json();
+  const textOutput = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+  return textOutput;
+}
 
-        function initExplorerApp(winObj) {
-            const container = document.getElementById("app-content-" + winObj.id);
-            let path = "C:/Users/Admin/Desktop";
-            
-            const render = () => {
-                container.querySelector('#exp-current-path').innerText = path;
-                const grid = container.querySelector('#exp-file-grid'); grid.innerHTML = '';
-                const node = VFS.resolvePath(path);
-                
-                if (!node || !node.node) {
-                    grid.innerHTML = '<div class="p-4 text-red-400 text-xs text-white">Cannot access path.</div>';
-                    return;
-                }
-                
-                const children = node.node.children;
-                Object.keys(children).forEach(name => {
-                    const isDir = children[name].type === 'dir';
-                    grid.innerHTML += `<div class="exp-item p-3 text-center cursor-pointer hover:bg-white/20 rounded text-white" data-name="${name}"><div class="text-3xl text-white">${isDir ? '📁' : '📄'}</div><div class="text-xs mt-1 truncate text-white">${name}</div></div>`;
-                });
-                
-                grid.querySelectorAll('.exp-item').forEach(el => {
-                    addDoubleTapListener(el, () => {
-                        const target = path.endsWith('/') ? path + el.dataset.name : path + "/" + el.dataset.name;
-                        if (VFS.resolvePath(target).node.type === 'dir') { path = target; render(); }
-                        else if (target.endsWith('.exe')) launchAppInstaller(target);
-                        else openEditor(target);
-                    });
-                });
-            };
+// Session Management
+function createNewSession(title = 'New Conversation') {
+  const newSession = {
+    id: 'ses_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    title: title,
+    createdAt: new Date().toISOString(),
+    messages: [
+      {
+        role: 'model',
+        text: 'Hello! I am connected to the Gemini API engine. How can I assist your workflow today?',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]
+  };
+  Store.sessions.unshift(newSession);
+  Store.activeSessionId = newSession.id;
+  saveStore();
+  renderSessionList();
+  renderActiveChat();
+}
 
-            container.querySelector('#exp-back-btn').addEventListener('pointerdown', (e) => { 
-                e.stopPropagation();
-                if(path.includes('/')) { 
-                    path = path.split('/').slice(0,-1).join('/'); 
-                    if (path === 'C:') path = 'C:/';
-                    render(); 
-                }
-            });
-            
-            container.querySelector('#exp-new-btn').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                openEditor((path.endsWith('/') ? path : path + "/") + "new.txt");
-            });
-            
-            container.querySelectorAll('.sidebar-btn').forEach(btn => {
-                btn.addEventListener('pointerdown', (e) => {
-                    e.stopPropagation();
-                    path = btn.getAttribute('data-path');
-                    render();
-                });
-            });
+function deleteSession(id, event) {
+  if (event) event.stopPropagation();
+  if (Store.sessions.length <= 1) {
+    showToast('Cannot delete the last remaining session.', 'warn');
+    return;
+  }
+  Store.sessions = Store.sessions.filter(s => s.id !== id);
+  if (Store.activeSessionId === id) {
+    Store.activeSessionId = Store.sessions[0].id;
+  }
+  saveStore();
+  renderSessionList();
+  renderActiveChat();
+  showToast('Session deleted.', 'info');
+}
 
-            render();
-        }
+function getActiveSession() {
+  return Store.sessions.find(s => s.id === Store.activeSessionId);
+}
 
-        function openEditor(path) {
-            windowManager.createWindow('editor', 'Notepad', 'template-editor', 500, 400, (win) => {
-                const c = document.getElementById("app-content-" + win.id);
-                const pathInput = c.querySelector('#editor-file-path');
-                const ta = c.querySelector('#editor-textarea');
-                const saveBtn = c.querySelector('#editor-save-btn');
-                
-                pathInput.value = path;
-                ta.value = VFS.readFile(path) || '';
-                
-                ta.addEventListener('pointerdown', (e) => { e.stopPropagation(); ta.focus(); });
-                pathInput.addEventListener('pointerdown', (e) => { e.stopPropagation(); pathInput.focus(); });
+// UI Renderers
+function renderSessionList() {
+  const container = document.getElementById('sessionList');
+  container.innerHTML = '';
+  document.getElementById('sessionCount').textContent = Store.sessions.length;
 
-                saveBtn.addEventListener('pointerdown', (e) => {
-                    e.stopPropagation();
-                    VFS.writeFile(pathInput.value, ta.value);
-                    windowManager.closeWindow(win.id);
-                });
-            });
-        }
+  Store.sessions.forEach(session => {
+    const row = document.createElement('div');
+    row.className = `session-row ${session.id === Store.activeSessionId ? 'active' : ''}`;
+    row.onclick = () => {
+      Store.activeSessionId = session.id;
+      saveStore();
+      renderSessionList();
+      renderActiveChat();
+    };
 
-        function initBrowserApp(winObj) {
-            const c = document.getElementById("app-content-" + winObj.id);
-            const input = c.querySelector('#browser-url-input');
-            const iframe = c.querySelector('#browser-iframe');
-            const goBtn = c.querySelector('#browser-go-btn');
-            const homeBtn = c.querySelector('#browser-home-btn');
-            
-            input.addEventListener('pointerdown', (e) => { e.stopPropagation(); input.focus(); });
+    row.innerHTML = `
+      <div class="session-title-wrap">
+        <span>💬</span>
+        <span style="overflow: hidden; text-overflow: ellipsis;">${session.title}</span>
+      </div>
+      <button class="session-delete-btn" title="Delete">✕</button>
+    `;
 
-            const load = () => {
-                let url = input.value.trim();
-                if (!url.startsWith('http') && !url.startsWith('jros')) url = 'https://' + url;
-                if (url.startsWith('jros')) {
-                    iframe.classList.add('hidden');
-                    c.querySelector('#browser-sandbox').classList.remove('hidden');
-                    c.querySelector('#browser-sandbox').innerHTML = `<h2 class="text-2xl font-bold text-white">Welcome to Edge</h2><p class="mt-4 text-white">Enter an external URL to load via reverse proxy.</p>`;
-                } else {
-                    iframe.classList.remove('hidden');
-                    c.querySelector('#browser-sandbox').classList.add('hidden');
-                    iframe.src = PROXY_SERVER + "?url=" + encodeURIComponent(url);
-                }
-            };
-            
-            goBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); load(); });
-            homeBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); input.value='jros://welcome'; load(); });
-            input.onkeydown = (e) => { if(e.key === 'Enter') load(); };
-            load();
-        }
+    row.querySelector('.session-delete-btn').onclick = (e) => deleteSession(session.id, e);
+    container.appendChild(row);
+  });
+}
 
-        function launchAppInstaller(path) {
-            const data = VFS.readFile(path);
-            if (!data) return;
-            const config = JSON.parse(data);
-            windowManager.createWindow('installer', 'Installer', 'template-installer', 400, 300, (win) => {
-                const c = document.getElementById("app-content-" + win.id);
-                c.querySelector('#installer-title').innerText = "Install " + config.appTitle;
-                
-                c.querySelector('#installer-btn-cancel').addEventListener('pointerdown', (e) => {
-                    e.stopPropagation();
-                    windowManager.closeWindow(win.id);
-                });
-                
-                c.querySelector('#installer-btn-confirm').addEventListener('pointerdown', (e) => {
-                    e.stopPropagation();
-                    SYSTEM_STATE.installedApps[config.appName] = config;
-                    const tmpl = document.createElement('div');
-                    tmpl.id = "template-" + config.appName; tmpl.className = "hidden";
-                    tmpl.innerHTML = `<div id="app-content-${config.appName}" class="w-full h-full bg-[#1e1e1e] text-white"></div>`;
-                    document.body.appendChild(tmpl);
-                    windowManager.closeWindow(win.id);
-                    openApp(config.appName);
-                });
-            });
-        }
+function renderActiveChat() {
+  const session = getActiveSession();
+  const container = document.getElementById('messagesContainer');
+  container.innerHTML = '';
+  if (!session) return;
 
-        function initMonitorApp(winObj) {
-            const c = document.getElementById("app-content-" + winObj.id);
-            const tbody = c.querySelector('#proc-table-body');
-            const timer = setInterval(() => {
-                if(!document.getElementById("app-content-" + winObj.id)) { clearInterval(timer); return; }
-                tbody.innerHTML = '';
-                Scheduler.processes.forEach(p => {
-                    tbody.innerHTML += `<tr class="border-b border-white/20 text-white"><td>${p.pid}</td><td>${p.name}</td><td>${p.cpu}%</td><td class="text-right text-white">${p.pid>4?`<button class="text-red-400 font-bold kill-btn" data-pid="${p.pid}">Kill</button>`:''}</td></tr>`;
-                });
-                tbody.querySelectorAll('.kill-btn').forEach(btn => {
-                    btn.addEventListener('pointerdown', (e) => {
-                        e.stopPropagation();
-                        Scheduler.kill(parseInt(btn.dataset.pid));
-                    });
-                });
-            }, 1000);
-        }
+  session.messages.forEach(msg => {
+    const wrap = document.createElement('div');
+    wrap.className = `chat-bubble-wrap ${msg.role}`;
+    
+    wrap.innerHTML = `
+      <div class="chat-bubble-meta">
+        <span>${msg.role === 'user' ? 'You' : 'Gemini'}</span>
+        <span>•</span>
+        <span>${msg.timestamp || ''}</span>
+      </div>
+      <div class="chat-bubble">${formatMarkdownToHtml(msg.text)}</div>
+    `;
+    container.appendChild(wrap);
+  });
 
-        function initPaintApp(winObj) {
-            const c = document.getElementById("app-content-" + winObj.id);
-            const cvs = c.querySelector('#paint-canvas'); const ctx = cvs.getContext('2d');
-            const clearBtn = c.querySelector('#paint-clear-btn');
-            
-            const resize = () => { cvs.width = cvs.parentElement.clientWidth; cvs.height = cvs.parentElement.clientHeight; ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,cvs.width,cvs.height); };
-            resize(); winObj.onResizeCallback = resize;
-            let draw = false;
-            
-            cvs.addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                draw = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY);
-            });
-            cvs.addEventListener('pointermove', (e) => {
-                if(draw) { ctx.lineTo(e.offsetX, e.offsetY); ctx.strokeStyle = c.querySelector('#paint-color').value; ctx.lineWidth = c.querySelector('#paint-size').value; ctx.stroke(); }
-            });
-            window.addEventListener('pointerup', () => draw = false);
-            
-            clearBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); resize(); });
-        }
+  container.scrollTop = container.scrollHeight;
+}
 
-        function initSynthApp(winObj) {
-            const c = document.getElementById("app-content-" + winObj.id);
-            c.querySelector('#synth-play-btn').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                playSystemSound(440, 'square', 0.5);
-            });
-        }
+function formatMarkdownToHtml(text) {
+  if (!text) return '';
+  let esc = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  // Format code blocks
+  esc = esc.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Format inline code
+  esc = esc.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold & Italic
+  esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  esc = esc.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // Line breaks
+  return esc.replace(/\n/g, '<br>');
+}
 
-        function initGameApp(winObj) {
-            const c = document.getElementById("app-content-" + winObj.id);
-            const cvs = c.querySelector('#game-canvas'); const ctx = cvs.getContext('2d');
-            let px = 150;
-            const resize = () => { cvs.width = cvs.parentElement.clientWidth; cvs.height = cvs.parentElement.clientHeight; };
-            resize(); winObj.onResizeCallback = resize;
-            const timer = setInterval(() => {
-                ctx.fillStyle = '#000'; ctx.fillRect(0,0,cvs.width,cvs.height);
-                ctx.fillStyle = '#ffffff'; ctx.fillRect(px, 150, 20, 15);
-            }, 30);
-            
-            c.querySelector('#game-btn-left').addEventListener('pointerdown', (e) => { e.stopPropagation(); px-=15; });
-            c.querySelector('#game-btn-right').addEventListener('pointerdown', (e) => { e.stopPropagation(); px+=15; });
-            c.querySelector('#game-btn-fire').addEventListener('pointerdown', (e) => { e.stopPropagation(); playSystemSound(800, 'sawtooth', 0.1); });
-            
-            winObj.onDestroy = () => clearInterval(timer);
-        }
+// Chat Dispatcher
+async function handleSendMessage() {
+  const input = document.getElementById('chatInput');
+  const userText = input.value.trim();
+  if (!userText) return;
 
-        // --- Core Boot ---
-        window.onload = () => {
-            let logIdx = 0;
-            const logs = ["BIOS v1.3.0", "CPU Check OK", "Memory OK", "Loading Full-White GUI..."];
-            const iv = setInterval(() => {
-                if (logIdx < logs.length) {
-                    document.getElementById('boot-log').innerHTML += `<div class="text-white">> ${logs[logIdx]}</div>`;
-                    document.getElementById('boot-progress').style.width = ((logIdx+1)/logs.length*100) + '%';
-                    logIdx++;
-                } else {
-                    clearInterval(iv);
-                    document.getElementById('btn-start-os').classList.remove('hidden');
-                }
-            }, 200);
+  const session = getActiveSession();
+  if (!session) return;
 
-            document.getElementById('btn-start-os').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                playSystemSound(523.25, 'triangle', 0.15);
-                document.getElementById('boot-screen').classList.add('hidden');
-                document.getElementById('desktop-workspace').classList.remove('hidden');
-                document.getElementById('desktop-workspace').style.pointerEvents = 'auto';
-                new WallpaperEngine();
-                initDesktop();
-            });
-        };
+  // Add User Message
+  session.messages.push({
+    role: 'user',
+    text: userText,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
 
-        const APPS = [
-            { id: 'explorer', label: 'This PC', icon: '📂' }, { id: 'browser', label: 'Edge', icon: '🌐' },
-            { id: 'editor', label: 'Notepad', icon: '📝' }, { id: 'monitor', label: 'Task Manager', icon: '⚙️' },
-            { id: 'paint', label: 'Paint', icon: '🎨' }, { id: 'synth', label: 'Music', icon: '🎵' },
-            { id: 'game', label: 'Game', icon: '🚀' }, { id: 'settings', label: 'Settings', icon: '🎛️' }
-        ];
+  if (session.messages.length === 2) {
+    session.title = userText.slice(0, 24) + (userText.length > 24 ? '...' : '');
+    renderSessionList();
+  }
 
-        function openApp(id) {
-            document.getElementById('start-menu').classList.add('hidden');
-            if (SYSTEM_STATE.installedApps[id]) {
-                const app = SYSTEM_STATE.installedApps[id];
-                windowManager.createWindow(app.id, app.label, "template-" + app.id, app.width, app.height, (w) => new Function('winObj', app.script)(w));
-                return;
-            }
-            switch (id) {
-                case 'terminal': windowManager.createWindow('terminal', 'Terminal', 'template-terminal', 500, 350, initTerminalApp); break;
-                case 'explorer': windowManager.createWindow('explorer', 'File Explorer', 'template-explorer', 600, 400, initExplorerApp); break;
-                case 'browser': windowManager.createWindow('browser', 'Edge', 'template-browser', 700, 500, initBrowserApp); break;
-                case 'monitor': windowManager.createWindow('monitor', 'Task Manager', 'template-monitor', 500, 400, initMonitorApp); break;
-                case 'paint': windowManager.createWindow('paint', 'Paint', 'template-paint', 500, 400, initPaintApp); break;
-                case 'synth': windowManager.createWindow('synth', 'Player', 'template-synth', 400, 300, initSynthApp); break;
-                case 'game': windowManager.createWindow('game', 'Game', 'template-game', 400, 400, initGameApp); break;
-                case 'settings': windowManager.createWindow('settings', 'Settings', 'template-settings', 400, 350); break;
-            }
-        }
+  input.value = '';
+  input.style.height = 'auto';
+  renderActiveChat();
 
-        function initDesktop() {
-            setInterval(() => {
-                const d = new Date();
-                document.getElementById('taskbar-time-text').innerText = d.toTimeString().substring(0, 5);
-                document.getElementById('taskbar-date-text').innerText = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
-            }, 1000);
+  setGlobalStatus('busy', 'Gemini Thinking...');
 
-            const desk = document.getElementById('desktop-icons-container');
-            const menu = document.getElementById('start-menu-pinned-grid');
-            const rec = document.getElementById('start-menu-recommended-grid');
-            
-            APPS.forEach(app => {
-                desk.innerHTML += `<div class="flex flex-col items-center p-2 rounded hover:bg-white/20 cursor-pointer text-white" id="desk-${app.id}"><span class="text-4xl drop-shadow">${app.icon}</span><span class="text-xs mt-1 drop-shadow font-bold">${app.label}</span></div>`;
-                menu.innerHTML += `<div class="flex flex-col items-center p-2 rounded hover:bg-white/20 cursor-pointer text-white" id="start-${app.id}"><span class="text-3xl">${app.icon}</span><span class="text-xs mt-1 font-bold">${app.label}</span></div>`;
-            });
+  try {
+    const historyPayload = session.messages.map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.text }]
+    }));
 
-            APPS.forEach(app => {
-                addDoubleTapListener(document.getElementById(`desk-${app.id}`), () => openApp(app.id));
-                addDoubleTapListener(document.getElementById(`start-${app.id}`), () => openApp(app.id));
-            });
+    const reply = await callGeminiApi({
+      model: Store.defaultModel,
+      contents: historyPayload
+    });
 
-            rec.innerHTML = `<div id="rec-test" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/20 cursor-pointer text-xs w-full text-white"><span>📄</span><div class="truncate text-left text-white"><p class="font-bold truncate text-white">readme.txt</p></div></div>`;
-            addDoubleTapListener(document.getElementById('rec-test'), () => openEditor('C:/Users/Admin/Desktop/readme.txt'));
+    session.messages.push({
+      role: 'model',
+      text: reply,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
 
-            document.getElementById('btn-start').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                document.getElementById('start-menu').classList.toggle('hidden');
-            });
-            document.getElementById('btn-clock').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                document.getElementById('calendar-flyout').classList.toggle('hidden');
-            });
-            document.getElementById('btn-show-desktop').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                windowManager.windows.forEach(w => windowManager.minimizeWindow(w.id));
-            });
-            document.getElementById('btn-shutdown').addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                document.getElementById('desktop-workspace').classList.add('crt-shutdown');
-                setTimeout(() => document.body.innerHTML = '<div class="text-center mt-40 font-bold text-white">System shut down. Please refresh to restart.</div>', 400);
-            });
+    saveStore();
+    renderActiveChat();
+    setGlobalStatus('idle', 'Gemini Ready');
+  } catch (err) {
+    setGlobalStatus('error', 'Error');
+    showToast(err.message, 'error');
+    session.messages.push({
+      role: 'model',
+      text: `⚠️ **Error Generating Response:** ${err.message}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    renderActiveChat();
+  }
+}
 
-            const cg = document.getElementById('calendar-grid');
-            for(let i=1;i<=31;i++) cg.innerHTML += `<div class="p-1 rounded text-white ${i===new Date().getDate()?'bg-[#0078d4] font-bold':''}">${i}</div>`;
-        }
+// Pipeline View Logic
+function renderPipelineStages() {
+  const container = document.getElementById('pipelineStagesList');
+  container.innerHTML = '';
 
-        function updateTaskbar() {
-            const bar = document.getElementById('taskbar-running-apps'); bar.innerHTML = '';
-            windowManager.windows.forEach(w => {
-                const app = APPS.find(a => a.id === w.id) || {icon:'⚙️'};
-                const active = SYSTEM_STATE.activeWindow === w.id ? 'bg-[#0078d4] w-4' : 'bg-white/40 w-1.5';
-                bar.innerHTML += `<div class="relative w-10 h-10 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer text-white" id="taskbar-item-${w.id}"><span class="text-2xl">${app.icon}</span><span class="absolute bottom-0 h-[3px] rounded-full transition-all ${active}"></span></div>`;
-            });
-            windowManager.windows.forEach(w => {
-                const item = document.getElementById("taskbar-item-" + w.id);
-                if (item) {
-                    item.addEventListener('pointerdown', (e) => {
-                        e.stopPropagation();
-                        windowManager.focusWindow(w.id);
-                        document.getElementById("win-" + w.id).classList.remove('hidden');
-                    });
-                }
-            });
-        }
-    </script>
+  Store.pipelineStages.forEach((stage, idx) => {
+    if (idx > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'pipeline-connector';
+      conn.textContent = '↓';
+      container.appendChild(conn);
+    }
+
+    const node = document.createElement('div');
+    node.className = 'pipeline-node';
+    node.id = `node_${stage.id}`;
+
+    node.innerHTML = `
+      <div class="pipeline-node-header">
+        <div class="node-badge">
+          <span class="node-idx">${idx + 1}</span>
+          <span>${stage.title}</span>
+        </div>
+        <div class="node-controls">
+          <button class="btn btn-danger btn-icon" onclick="deletePipelineStage(${idx})" title="Remove Stage">✕</button>
+        </div>
+      </div>
+      <div class="pipeline-node-body">
+        <div class="field-group">
+          <label class="field-label">Model Endpoint</label>
+          <select class="input-select" onchange="updateStageModel(${idx}, this.value)">
+            ${Store.modelsRegistry.map(m => `<option value="${m}" ${m === stage.model ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+          <label class="field-label" style="margin-top: 6px;">Temperature</label>
+          <input type="number" step="0.1" min="0" max="1" class="input-text" value="${stage.temperature}" onchange="updateStageTemp(${idx}, this.value)">
+        </div>
+        <div class="field-group">
+          <label class="field-label">System Instruction & Task</label>
+          <textarea class="input-textarea" onchange="updateStagePrompt(${idx}, this.value)">${stage.systemPrompt}</textarea>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Stage Output Cache</label>
+        <div class="node-output-preview">${stage.lastOutput || 'Stage has not run yet.'}</div>
+      </div>
+    `;
+    container.appendChild(node);
+  });
+}
+
+function updateStageModel(index, val) { Store.pipelineStages[index].model = val; saveStore(); }
+function updateStageTemp(index, val) { Store.pipelineStages[index].temperature = parseFloat(val); saveStore(); }
+function updateStagePrompt(index, val) { Store.pipelineStages[index].systemPrompt = val; saveStore(); }
+
+function deletePipelineStage(index) {
+  if (Store.pipelineStages.length <= 1) {
+    showToast('At least one pipeline stage is required.', 'warn');
+    return;
+  }
+  Store.pipelineStages.splice(index, 1);
+  saveStore();
+  renderPipelineStages();
+}
+
+async function executePipeline() {
+  const rootInput = document.getElementById('pipelineInitialPayload').value.trim();
+  if (!rootInput) {
+    showToast('Please provide an initial payload for the pipeline.', 'warn');
+    return;
+  }
+
+  setGlobalStatus('busy', 'Running Pipeline...');
+  let rollingPayload = rootInput;
+
+  for (let i = 0; i < Store.pipelineStages.length; i++) {
+    const stage = Store.pipelineStages[i];
+    const nodeElem = document.getElementById(`node_${stage.id}`);
+    
+    if (nodeElem) {
+      nodeElem.classList.add('running');
+      nodeElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    try {
+      const output = await callGeminiApi({
+        model: stage.model,
+        systemInstruction: stage.systemPrompt,
+        temperature: stage.temperature,
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `INPUT PAYLOAD FROM PREVIOUS STEP:\n\n${rollingPayload}` }]
+          }
+        ]
+      });
+
+      stage.lastOutput = output;
+      rollingPayload = output; // Hand off to subsequent node
+
+      if (nodeElem) {
+        nodeElem.classList.remove('running');
+        nodeElem.classList.add('done');
+        nodeElem.querySelector('.node-output-preview').textContent = output;
+      }
+    } catch (err) {
+      if (nodeElem) nodeElem.classList.remove('running');
+      setGlobalStatus('error', 'Pipeline Error');
+      showToast(`Stage ${i + 1} Failed: ${err.message}`, 'error');
+      return;
+    }
+  }
+
+  saveStore();
+  setGlobalStatus('idle', 'Pipeline Completed');
+  showToast('Pipeline execution finished successfully!', 'success');
+}
+
+// API Key Pool Management
+function renderApiKeyPool() {
+  const container = document.getElementById('apiKeyPoolList');
+  container.innerHTML = '';
+
+  if (Store.apiKeys.length === 0) {
+    container.innerHTML = '<div style="color: var(--text-tertiary); font-size: 13px;">No keys configured. API calls will fail.</div>';
+    return;
+  }
+
+  Store.apiKeys.forEach((keyObj, idx) => {
+    const row = document.createElement('div');
+    row.className = 'api-pool-item';
+    const masked = keyObj.key.slice(0, 6) + '••••••••••••' + keyObj.key.slice(-4);
+    row.innerHTML = `
+      <span class="key-preview">${masked}</span>
+      <span class="key-health-tag valid">Active</span>
+      <button class="btn btn-danger btn-icon" style="width: 24px; height: 24px;" onclick="removeApiKey(${idx})">✕</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function addApiKey() {
+  const input = document.getElementById('inputNewApiKey');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!val.startsWith('AIza')) {
+    showToast('Notice: Gemini API keys generally begin with "AIza"', 'warn');
+  }
+
+  Store.apiKeys.push({ key: val, addedAt: new Date().toISOString() });
+  input.value = '';
+  saveStore();
+  renderApiKeyPool();
+  showToast('API Key added to load balancer.', 'success');
+}
+
+function removeApiKey(index) {
+  Store.apiKeys.splice(index, 1);
+  saveStore();
+  renderApiKeyPool();
+}
+
+async function fetchOnlineModels() {
+  if (Store.apiKeys.length === 0) {
+    showToast('Add an API Key first to discover available models.', 'warn');
+    return;
+  }
+  showToast('Connecting to Google Model Discovery API...', 'info');
+  try {
+    const key = Store.apiKeys[0].key;
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    const geminiModels = (data.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map(m => m.name.replace(/^models\//, ''));
+
+    if (geminiModels.length > 0) {
+      Store.modelsRegistry = geminiModels;
+      const select = document.getElementById('selectDefaultModel');
+      select.innerHTML = geminiModels.map(m => `<option value="${m}">${m}</option>`).join('');
+      select.value = geminiModels.includes('gemini-2.5-flash') ? 'gemini-2.5-flash' : geminiModels[0];
+      renderPipelineStages();
+      showToast(`Discovered ${geminiModels.length} models successfully!`, 'success');
+    }
+  } catch (err) {
+    showToast(`Model Discovery Failed: ${err.message}`, 'error');
+  }
+}
+
+// Global Indicator Helper
+function setGlobalStatus(state, label) {
+  const dot = document.getElementById('globalStatusDot');
+  const text = document.getElementById('globalStatusText');
+  dot.className = `status-dot ${state}`;
+  text.textContent = label;
+}
+
+// Export Session Dialog
+function exportCurrentSession() {
+  const session = getActiveSession();
+  if (!session) return;
+  const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Gemini_Session_${session.title.replace(/[^a-z0-9]/gi, '_')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Session exported to JSON.', 'success');
+}
+
+// Lifecycle Initialization
+window.addEventListener('DOMContentLoaded', () => {
+  loadStore();
+  renderSessionList();
+  renderActiveChat();
+  renderPipelineStages();
+  renderApiKeyPool();
+
+  // Navigation Switching
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+      item.classList.add('active');
+      const viewId = item.dataset.view;
+      document.getElementById(viewId).classList.add('active');
+      document.getElementById('stageTitle').textContent = viewId === 'chatView' ? 'Studio Chat' : 'Pipeline Orchestrator';
+    });
+  });
+
+  // Settings Modal Handlers
+  document.getElementById('btnOpenSettings').onclick = () => document.getElementById('settingsModal').classList.add('active');
+  document.getElementById('btnCloseSettings').onclick = () => document.getElementById('settingsModal').classList.remove('active');
+  document.getElementById('btnAddApiKey').onclick = addApiKey;
+  document.getElementById('btnSyncOnlineModels').onclick = fetchOnlineModels;
+
+  // Session Toolbar
+  document.getElementById('btnNewSession').onclick = () => createNewSession();
+  document.getElementById('btnExportSession').onclick = exportCurrentSession;
+  document.getElementById('btnClearCurrentChat').onclick = () => {
+    const session = getActiveSession();
+    if (session) {
+      session.messages = [];
+      saveStore();
+      renderActiveChat();
+      showToast('Conversation context cleared.', 'info');
+    }
+  };
+
+  // Pipeline Toolbar
+  document.getElementById('btnAddPipelineStage').onclick = () => {
+    Store.pipelineStages.push({
+      id: 'stg_' + Date.now(),
+      title: `Phase ${Store.pipelineStages.length + 1}: Refinement Stage`,
+      model: Store.defaultModel,
+      systemPrompt: 'Refine and improve the previous output with precision.',
+      temperature: 0.3,
+      lastOutput: ''
+    });
+    saveStore();
+    renderPipelineStages();
+  };
+  document.getElementById('btnRunPipeline').onclick = executePipeline;
+
+  // Chat Input Auto-Resize & Enter to Send
+  const chatInput = document.getElementById('chatInput');
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 160) + 'px';
+  });
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  });
+
+  document.getElementById('btnSendMessage').onclick = handleSendMessage;
+});
+</script>
 </body>
 </html>
