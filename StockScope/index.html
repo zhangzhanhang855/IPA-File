@@ -1,2291 +1,855 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Windows 10 OS Simulator</title>
-  
-  <!-- Typography: Google Sans & Icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Product+Sans:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
-  <style>
-    /* ==========================================================================
-       WINDOWS 10 FLUID DESIGN SYSTEM & CSS RESET
-       ========================================================================== */
-    :root {
-      --font-main: 'Product Sans', 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: 'Roboto Mono', monospace;
-      --accent-color: #0078d7;
-      --accent-hover: #1084df;
-      --accent-glow: rgba(0, 120, 215, 0.4);
-      --taskbar-bg: rgba(16, 16, 16, 0.82);
-      --taskbar-blur: blur(28px);
-      --acrylic-bg: rgba(32, 32, 32, 0.88);
-      --acrylic-blur: blur(35px) saturate(140%);
-      --window-border: rgba(255, 255, 255, 0.12);
-      --window-active-border: var(--accent-color);
-      --text-main: #f3f3f3;
-      --text-muted: #a0a0a0;
-      --bg-dark: #1f1f1f;
-      --bg-light: #2d2d2d;
-      --taskbar-height: 40px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-
-    body, html {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      font-family: var(--font-main);
-      color: var(--text-main);
-      background-color: #000;
-    }
-
-    input, textarea, button {
-      font-family: inherit;
-      user-select: text;
-      -webkit-user-select: text;
-    }
-
-    /* Desktop Viewport */
-    #desktop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: calc(100vh - var(--taskbar-height));
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      overflow: hidden;
-      transition: background-image 0.3s ease;
-    }
-
-    /* Desktop Selection Box */
-    #selection-box {
-      position: absolute;
-      border: 1px solid rgba(0, 120, 215, 0.85);
-      background: rgba(0, 120, 215, 0.22);
-      pointer-events: none;
-      display: none;
-      z-index: 5;
-    }
-
-    /* Desktop Icons Grid */
-    #desktop-icons-container {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      bottom: 10px;
-      display: flex;
-      flex-direction: column;
-      flex-wrap: wrap;
-      align-content: flex-start;
-      gap: 12px;
-      z-index: 2;
-    }
-
-    .desktop-icon {
-      width: 78px;
-      height: 86px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 4px;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-
-    .desktop-icon:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .desktop-icon.selected {
-      background: rgba(255, 255, 255, 0.18);
-      border-color: rgba(255, 255, 255, 0.35);
-    }
-
-    .desktop-icon i, .desktop-icon img {
-      font-size: 32px;
-      width: 34px;
-      height: 34px;
-      margin-bottom: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      object-fit: contain;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-    }
-
-    .desktop-icon span {
-      font-size: 11.5px;
-      line-height: 1.25;
-      color: #ffffff;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-
-    /* ==========================================================================
-       TASKBAR COMPONENT
-       ========================================================================== */
-    #taskbar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100vw;
-      height: var(--taskbar-height);
-      background: var(--taskbar-bg);
-      backdrop-filter: var(--taskbar-blur);
-      -webkit-backdrop-filter: var(--taskbar-blur);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 99999;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #taskbar-left, #taskbar-tray {
-      display: flex;
-      height: 100%;
-      align-items: center;
-    }
-
-    .taskbar-btn {
-      width: 48px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #ffffff;
-      cursor: pointer;
-      position: relative;
-      transition: background 0.15s ease;
-    }
-
-    .taskbar-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    .taskbar-btn:active {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    #start-btn:hover i {
-      color: var(--accent-hover);
-    }
-
-    /* Taskbar App Items */
-    #taskbar-apps {
-      display: flex;
-      height: 100%;
-      gap: 2px;
-    }
-
-    .taskbar-app-item {
-      width: 46px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      position: relative;
-      transition: background 0.15s;
-    }
-
-    .taskbar-app-item:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .taskbar-app-item.active {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    .taskbar-app-item.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 6px;
-      right: 6px;
-      height: 2px;
-      background: var(--accent-color);
-      box-shadow: 0 0 6px var(--accent-color);
-    }
-
-    .taskbar-app-item.running:not(.active)::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 18px;
-      right: 18px;
-      height: 2px;
-      background: #888;
-    }
-
-    .taskbar-app-item i, .taskbar-app-item img {
-      font-size: 18px;
-      width: 20px;
-      height: 20px;
-      object-fit: contain;
-    }
-
-    /* System Tray */
-    .tray-item {
-      padding: 0 8px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .tray-item:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    #clock-widget {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-end;
-      padding: 0 10px;
-      font-size: 11px;
-      line-height: 1.3;
-    }
-
-    #show-desktop-btn {
-      width: 6px;
-      height: 100%;
-      border-left: 1px solid rgba(255, 255, 255, 0.2);
-      cursor: pointer;
-    }
-
-    #show-desktop-btn:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
-
-    /* ==========================================================================
-       START MENU & ACTION CENTER (ACRYLIC GLASS)
-       ========================================================================== */
-    #start-menu {
-      position: absolute;
-      bottom: var(--taskbar-height);
-      left: 0;
-      width: 640px;
-      height: 540px;
-      background: var(--acrylic-bg);
-      backdrop-filter: var(--acrylic-blur);
-      -webkit-backdrop-filter: var(--acrylic-blur);
-      border: 1px solid var(--window-border);
-      display: none;
-      flex-direction: row;
-      z-index: 99998;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
-      animation: startMenuSlide 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
-    }
-
-    @keyframes startMenuSlide {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    #start-left-bar {
-      width: 48px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .start-bar-btn {
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .start-bar-btn:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    #start-apps-list {
-      width: 240px;
-      height: 100%;
-      overflow-y: auto;
-      padding: 12px 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .start-app-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 12px;
-      border-radius: 2px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background 0.15s;
-    }
-
-    .start-app-row:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    .start-app-row i, .start-app-row img {
-      font-size: 18px;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      object-fit: contain;
-    }
-
-    #start-tiles-view {
-      flex: 1;
-      height: 100%;
-      overflow-y: auto;
-      padding: 16px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows: 95px;
-      gap: 8px;
-      background: rgba(0, 0, 0, 0.15);
-    }
-
-    .live-tile {
-      background: var(--accent-color);
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      cursor: pointer;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: transform 0.15s ease, filter 0.15s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .live-tile:hover {
-      transform: scale(0.98);
-      filter: brightness(1.15);
-    }
-
-    .live-tile i, .live-tile img {
-      font-size: 26px;
-      width: 28px;
-      height: 28px;
-    }
-
-    .live-tile span {
-      font-size: 11.5px;
-      font-weight: 500;
-      color: #fff;
-    }
-
-    /* Action Center */
-    #action-center {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 360px;
-      height: calc(100vh - var(--taskbar-height));
-      background: var(--acrylic-bg);
-      backdrop-filter: var(--acrylic-blur);
-      -webkit-backdrop-filter: var(--acrylic-blur);
-      border-left: 1px solid var(--window-border);
-      display: none;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 18px;
-      z-index: 99998;
-      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-      animation: actionCenterSlide 0.22s ease-out;
-    }
-
-    @keyframes actionCenterSlide {
-      from { transform: translateX(100%); }
-      to { transform: translateX(0); }
-    }
-
-    .action-tiles-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-    }
-
-    .action-tile {
-      height: 60px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      cursor: pointer;
-      font-size: 10.5px;
-      color: #ddd;
-      border-radius: 2px;
-      transition: background 0.15s;
-    }
-
-    .action-tile.active {
-      background: var(--accent-color);
-      color: #fff;
-    }
-
-    .action-tile i {
-      font-size: 16px;
-    }
-
-    /* ==========================================================================
-       WINDOW MANAGER ARCHITECTURE
-       ========================================================================== */
-    .win10-window {
-      position: absolute;
-      background: var(--bg-dark);
-      border: 1px solid var(--window-border);
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65);
-      border-radius: 4px 4px 0 0;
-      display: flex;
-      flex-direction: column;
-      min-width: 280px;
-      min-height: 180px;
-      overflow: hidden;
-      z-index: 10;
-    }
-
-    .win10-window.active {
-      border-color: var(--window-active-border);
-      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85);
-    }
-
-    .window-titlebar {
-      height: 32px;
-      background: #181818;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-left: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      cursor: default;
-    }
-
-    .win10-window.active .window-titlebar {
-      background: #202020;
-    }
-
-    .window-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #e0e0e0;
-      pointer-events: none;
-    }
-
-    .window-title i, .window-title img {
-      width: 16px;
-      height: 16px;
-      font-size: 14px;
-      object-fit: contain;
-    }
-
-    .window-controls {
-      display: flex;
-      height: 100%;
-    }
-
-    .win-control-btn {
-      width: 44px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      color: #ccc;
-      cursor: pointer;
-      transition: background 0.12s;
-    }
-
-    .win-control-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .win-control-btn.btn-close:hover {
-      background: #e81123;
-      color: #fff;
-    }
-
-    .window-content {
-      flex: 1;
-      width: 100%;
-      height: calc(100% - 32px);
-      overflow: auto;
-      background: #252525;
-      position: relative;
-    }
-
-    /* Resize Handles */
-    .resize-handle {
-      position: absolute;
-      z-index: 100;
-    }
-    .resize-right { right: 0; top: 0; width: 6px; height: 100%; cursor: ew-resize; }
-    .resize-bottom { bottom: 0; left: 0; height: 6px; width: 100%; cursor: ns-resize; }
-    .resize-corner { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
-
-    /* ==========================================================================
-       AUTHENTIC BUILT-IN APPLICATIONS
-       ========================================================================== */
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Liquid Glass Music Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Google Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     
-    /* File Explorer */
-    .explorer-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #1e1e1e;
-      color: #eee;
-    }
-    .explorer-ribbon {
-      padding: 6px 12px;
-      background: #2d2d2d;
-      border-bottom: 1px solid #3a3a3a;
-      display: flex;
-      gap: 8px;
-    }
-    .explorer-btn {
-      background: #3a3a3a;
-      border: 1px solid #4a4a4a;
-      color: #fff;
-      padding: 4px 10px;
-      font-size: 11.5px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .explorer-btn:hover {
-      background: #484848;
-    }
-    .explorer-address-bar {
-      padding: 4px 8px;
-      background: #252525;
-      border-bottom: 1px solid #333;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-    }
-    .address-box {
-      flex: 1;
-      background: #181818;
-      border: 1px solid #3c3c3c;
-      padding: 3px 8px;
-      color: #ddd;
-      font-size: 11.5px;
-      border-radius: 2px;
-    }
-    .explorer-body {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
-    .explorer-sidebar {
-      width: 180px;
-      background: #181818;
-      border-right: 1px solid #2d2d2d;
-      padding: 8px;
-      overflow-y: auto;
-      font-size: 12px;
-    }
-    .sidebar-folder {
-      padding: 6px 8px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .sidebar-folder:hover, .sidebar-folder.active {
-      background: rgba(255, 255, 255, 0.08);
-    }
-    .explorer-file-view {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      grid-auto-rows: 90px;
-      gap: 10px;
-    }
-    .file-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
-      border-radius: 3px;
-      cursor: pointer;
-      text-align: center;
-      border: 1px solid transparent;
-    }
-    .file-item:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-    .file-item i, .file-item img {
-      font-size: 30px;
-      width: 32px;
-      height: 32px;
-      margin-bottom: 4px;
-      object-fit: contain;
-    }
-    .file-item span {
-      font-size: 11px;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+    <!-- Google Sans Font Imports -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 
-    /* Notepad App */
-    .notepad-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #1e1e1e;
-    }
-    .notepad-menubar {
-      background: #252525;
-      padding: 2px 8px;
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      border-bottom: 1px solid #333;
-    }
-    .notepad-menubar span {
-      padding: 3px 6px;
-      cursor: pointer;
-    }
-    .notepad-menubar span:hover {
-      background: rgba(255,255,255,0.1);
-    }
-    .notepad-textarea {
-      flex: 1;
-      background: #1e1e1e;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      resize: none;
-      outline: none;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      line-height: 1.5;
-    }
+    <style>
+        /* Force Google Sans Font Universally Across All Tags */
+        *, *::before, *::after, html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed, 
+        figure, figcaption, footer, header, hgroup, 
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video, input, button, select, textarea {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        }
 
-    /* Calculator App */
-    .calc-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #202020;
-      padding: 8px;
-    }
-    .calc-display {
-      height: 70px;
-      background: transparent;
-      color: #fff;
-      text-align: right;
-      padding: 10px;
-      font-size: 32px;
-      font-weight: 300;
-      overflow: hidden;
-    }
-    .calc-history {
-      font-size: 12px;
-      color: #888;
-      height: 16px;
-    }
-    .calc-grid {
-      flex: 1;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 3px;
-    }
-    .calc-btn {
-      background: #323232;
-      border: 1px solid rgba(255,255,255,0.03);
-      color: #fff;
-      font-size: 15px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .calc-btn:hover {
-      background: #3e3e3e;
-    }
-    .calc-btn.op-btn {
-      background: #282828;
-      font-weight: 500;
-    }
-    .calc-btn.equals-btn {
-      background: var(--accent-color);
-    }
-    .calc-btn.equals-btn:hover {
-      background: var(--accent-hover);
-    }
+        body { 
+            background: #050508; 
+            color: #ffffff; 
+            min-height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-    /* Command Prompt / Terminal */
-    .cmd-container {
-      height: 100%;
-      background: #0c0c0c;
-      color: #cccccc;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      padding: 10px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .cmd-output {
-      white-space: pre-wrap;
-      line-height: 1.4;
-      margin-bottom: 6px;
-    }
-    .cmd-input-line {
-      display: flex;
-      align-items: center;
-    }
-    .cmd-prompt-text {
-      color: #00ff66;
-      margin-right: 6px;
-    }
-    .cmd-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: inherit;
-      font-size: inherit;
-    }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #app-container { width: 100vw; height: 100vh; box-sizing: border-box; }
+        #win-content-main { width: 100%; height: 100%; position: relative; }
 
-    /* Settings App */
-    .settings-container {
-      display: flex;
-      height: 100%;
-      background: #1f1f1f;
-      color: #fff;
-    }
-    .settings-sidebar {
-      width: 220px;
-      background: #181818;
-      border-right: 1px solid #2e2e2e;
-      padding: 16px 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .settings-nav-item {
-      padding: 10px 12px;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .settings-nav-item:hover, .settings-nav-item.active {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--accent-color);
-    }
-    .settings-page {
-      flex: 1;
-      padding: 24px;
-      overflow-y: auto;
-    }
-    .settings-group {
-      margin-bottom: 24px;
-    }
-    .settings-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-    .settings-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #2d2d2d;
-    }
-    .setting-btn {
-      background: var(--accent-color);
-      border: none;
-      color: #fff;
-      padding: 8px 16px;
-      border-radius: 2px;
-      cursor: pointer;
-      font-size: 12px;
-    }
+        /* Liquid Glass Surface Styling */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(40px) saturate(210%);
+            -webkit-backdrop-filter: blur(40px) saturate(210%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        }
 
-    /* JREX Sandbox Container */
-    .jrex-sandbox-container {
-      width: 100%;
-      height: 100%;
-      background: #181818;
-      display: flex;
-      flex-direction: column;
-    }
-    .jrex-sandbox-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-    }
+        .liquid-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(30px) saturate(190%);
+            -webkit-backdrop-filter: blur(30px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+        }
 
-    /* Context Menu */
-    #context-menu {
-      position: absolute;
-      width: 210px;
-      background: #252525;
-      border: 1px solid #3c3c3c;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-      padding: 4px 0;
-      display: none;
-      flex-direction: column;
-      z-index: 100000;
-    }
-    .context-menu-item {
-      padding: 8px 16px;
-      font-size: 12px;
-      color: #eee;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-    }
-    .context-menu-item:hover {
-      background: var(--accent-color);
-      color: #fff;
-    }
-    .context-divider {
-      height: 1px;
-      background: #3a3a3a;
-      margin: 4px 0;
-    }
+        /* High-End Liquid Glass Interactive Buttons */
+        .liquid-btn {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.3),
+                inset 0 1px 1.5px rgba(255, 255, 255, 0.45),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+            border-radius: 9999px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+        }
 
-    /* Hidden File Input for .jrex Import */
-    #jrex-file-input {
-      display: none;
-    }
-  </style>
+        .liquid-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 48%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+            border-radius: 9999px 9999px 0 0;
+            pointer-events: none;
+        }
+
+        .liquid-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.1) 100%);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 
+                0 12px 30px rgba(0, 0, 0, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.7),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .liquid-btn:active {
+            transform: translateY(1px) scale(0.96);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.25),
+                inset 0 1px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Active State for Segmented Control / Playlist Buttons */
+        .liquid-btn-active {
+            background: linear-gradient(135deg, rgba(250, 35, 59, 0.85) 0%, rgba(250, 35, 59, 0.5) 100%) !important;
+            border-color: rgba(255, 150, 170, 0.7) !important;
+            box-shadow: 
+                0 8px 28px rgba(250, 35, 59, 0.5),
+                inset 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+            color: #ffffff !important;
+        }
+
+        /* Liquid Input Styling */
+        .liquid-input {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .liquid-input:focus {
+            border-color: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Glass Scrubber Slider */
+        .glass-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .glass-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5), 0 0 8px rgba(250, 35, 59, 0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .glass-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.9), 0 0 12px rgba(250, 35, 59, 1);
+        }
+    </style>
 </head>
 <body>
 
-  <!-- DESKTOP WORKSPACE -->
-  <div id="desktop">
-    <div id="desktop-icons-container"></div>
-    <div id="selection-box"></div>
-  </div>
-
-  <!-- CONTEXT MENU -->
-  <div id="context-menu">
-    <div class="context-menu-item" onclick="Sys.openApp('explorer')"><i class="fa-solid fa-folder-open"></i> Open File Explorer</div>
-    <div class="context-menu-item" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-cloud-arrow-up"></i> Install .jrex Application</div>
-    <div class="context-menu-item" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-file-export"></i> Sync & Save to iOS Files</div>
-    <div class="context-divider"></div>
-    <div class="context-menu-item" onclick="Sys.openApp('notepad')"><i class="fa-solid fa-file-lines"></i> New Text Document</div>
-    <div class="context-menu-item" onclick="Sys.openApp('settings')"><i class="fa-solid fa-gear"></i> Personalize & Display</div>
-    <div class="context-divider"></div>
-    <div class="context-menu-item" onclick="Sys.refreshDesktop()"><i class="fa-solid fa-rotate-right"></i> Refresh</div>
-  </div>
-
-  <!-- START MENU -->
-  <div id="start-menu">
-    <div id="start-left-bar">
-      <div class="start-bar-top">
-        <div class="start-bar-btn" title="User Account"><i class="fa-solid fa-circle-user"></i></div>
-      </div>
-      <div class="start-bar-bottom">
-        <div class="start-bar-btn" onclick="Sys.openApp('explorer')" title="Documents"><i class="fa-solid fa-file"></i></div>
-        <div class="start-bar-btn" onclick="Sys.openApp('settings')" title="Settings"><i class="fa-solid fa-gear"></i></div>
-        <div class="start-bar-btn" onclick="Sys.reboot()" title="Power"><i class="fa-solid fa-power-off"></i></div>
-      </div>
-    </div>
-    
-    <div id="start-apps-list">
-      <!-- Dynamically populated app list -->
+    <div id="app-container">
+        <div id="win-content-main"></div>
     </div>
 
-    <div id="start-tiles-view">
-      <div class="live-tile" onclick="Sys.openApp('edge')">
-        <i class="fa-brands fa-edge" style="color: #4edaff;"></i>
-        <span>Microsoft Edge</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('jrex_installer')" style="background:#5c2d91;">
-        <i class="fa-solid fa-box-open" style="color:#ffb900;"></i>
-        <span>JR App Store</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('explorer')" style="background:#d13438;">
-        <i class="fa-solid fa-folder"></i>
-        <span>File Explorer</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('calc')" style="background:#008272;">
-        <i class="fa-solid fa-calculator"></i>
-        <span>Calculator</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('cmd')" style="background:#107c10;">
-        <i class="fa-solid fa-terminal"></i>
-        <span>Command Prompt</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('settings')" style="background:#0078d7;">
-        <i class="fa-solid fa-sliders"></i>
-        <span>Settings</span>
-      </div>
-    </div>
-  </div>
+    <script>
+        const winObj = { id: 'main', onDestroy: () => {} };
+        const content = document.getElementById('win-content-' + winObj.id);
 
-  <!-- ACTION CENTER -->
-  <div id="action-center">
-    <div style="flex:1;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <span style="font-size:14px; font-weight:600;">Notifications</span>
-        <span style="font-size:11.5px; color:var(--accent-color); cursor:pointer;" onclick="Sys.clearNotifications()">Clear all</span>
-      </div>
-      <div id="notification-feed" style="font-size:12px; color:#aaa; line-height:1.5;">
-        No new notifications.
-      </div>
-    </div>
+        // Dynamic CSS Setup
+        const styleEl = document.createElement('style');
+        styleEl.innerHTML = `
+            #win-content-${winObj.id} {
+                --am-red: #fa233b;
+                --am-bg: rgba(10, 10, 16, 0.45);
+                height: 100%; 
+                font-family: 'Google Sans', sans-serif !important;
+            }
+            
+            /* Background Blur Layer */
+            .am-bg-blur {
+                position: absolute;
+                inset: -15%;
+                background-size: cover;
+                background-position: center;
+                filter: blur(80px) brightness(0.32) saturate(1.8);
+                z-index: 0;
+                transition: background-image 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+            }
 
-    <div class="action-tiles-grid">
-      <div class="action-tile active" onclick="this.classList.toggle('active')"><i class="fa-solid fa-wifi"></i> Wi-Fi</div>
-      <div class="action-tile active" onclick="this.classList.toggle('active')"><i class="fa-brands fa-bluetooth-b"></i> Bluetooth</div>
-      <div class="action-tile" onclick="this.classList.toggle('active')"><i class="fa-solid fa-moon"></i> Night light</div>
-      <div class="action-tile active" onclick="Sys.openApp('settings')"><i class="fa-solid fa-gear"></i> All settings</div>
-      <div class="action-tile" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-floppy-disk"></i> Save iOS</div>
-      <div class="action-tile" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-file-import"></i> .JREX App</div>
-      <div class="action-tile" onclick="this.classList.toggle('active')"><i class="fa-solid fa-battery-half"></i> Saver</div>
-      <div class="action-tile" onclick="Sys.toggleFullscreen()"><i class="fa-solid fa-expand"></i> Fullscreen</div>
-    </div>
-  </div>
+            /* Layout Grid */
+            .am-layout {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                width: 100%;
+                overflow-y: auto;
+                overflow-x: hidden;
+                scroll-snap-type: y proximity;
+                font-family: 'Google Sans', sans-serif !important;
+            }
+            @media (min-width: 768px) {
+                .am-layout { 
+                    flex-direction: row; 
+                    overflow-y: hidden; 
+                    scroll-snap-type: none;
+                }
+            }
 
-  <!-- TASKBAR -->
-  <div id="taskbar">
-    <div id="taskbar-left">
-      <div id="start-btn" class="taskbar-btn" title="Start" onclick="Sys.toggleStartMenu()">
-        <i class="fa-brands fa-windows" style="font-size:18px;"></i>
-      </div>
-      <div class="taskbar-btn" title="Type here to search" onclick="Sys.openApp('cmd')">
-        <i class="fa-solid fa-magnifying-glass"></i>
-      </div>
-      <div class="taskbar-btn" title="Task View" onclick="Sys.arrangeWindows()">
-        <i class="fa-solid fa-table-cells-large"></i>
-      </div>
-      <div id="taskbar-apps"></div>
-    </div>
+            .am-player-panel, .am-lyrics-panel {
+                scroll-snap-align: start;
+            }
 
-    <div id="taskbar-tray">
-      <div class="tray-item" title="Import .jrex app" onclick="Sys.promptImportJREX()">
-        <i class="fa-solid fa-cloud-arrow-up"></i>
-      </div>
-      <div class="tray-item" title="Audio / Volume">
-        <i class="fa-solid fa-volume-high"></i>
-      </div>
-      <div class="tray-item" title="Network Internet Access">
-        <i class="fa-solid fa-wifi"></i>
-      </div>
-      <div id="clock-widget" class="tray-item" title="Date and Time Settings" onclick="Sys.openApp('settings')">
-        <span id="tray-time">12:00 PM</span>
-        <span id="tray-date">2026/8/31</span>
-      </div>
-      <div class="tray-item" title="Action Center" onclick="Sys.toggleActionCenter()">
-        <i class="fa-regular fa-message"></i>
-      </div>
-      <div id="show-desktop-btn" title="Show Desktop" onclick="Sys.minimizeAllWindows()"></div>
-    </div>
-  </div>
+            .am-player-panel {
+                background: var(--am-bg);
+                backdrop-filter: blur(45px) saturate(210%);
+                -webkit-backdrop-filter: blur(45px) saturate(210%);
+                border-right: 1px solid rgba(255, 255, 255, 0.08);
+                display: flex;
+                flex-direction: column;
+            }
 
-  <!-- Hidden File Input for iOS/Desktop .jrex and system files -->
-  <input type="file" id="jrex-file-input" accept=".jrex,.json" />
+            /* Cover Art */
+            .am-cover-art {
+                width: 100%;
+                aspect-ratio: 1/1;
+                border-radius: 28px;
+                background-color: rgba(255, 255, 255, 0.03);
+                background-size: cover;
+                background-position: center;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12);
+                transition: opacity 0.6s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                position: relative;
+                overflow: hidden;
+            }
+            .am-cover-art.playing {
+                transform: scale(1.03);
+                box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.85), 0 0 35px rgba(250, 35, 59, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.25);
+            }
 
-  <!-- ==========================================================================
-       CORE OPERATING SYSTEM RUNTIME & JREX ENGINE
-       ========================================================================== -->
-  <script>
-    /**
-     * @typedef {Object} JREXPackage
-     * @property {string} id - Unique identifier
-     * @property {string} name - Display title
-     * @property {string} icon - FontAwesome class or Data URL / Image URL
-     * @property {string} version - App semantic version
-     * @property {string} author - Author name
-     * @property {number} [width] - Default window width
-     * @property {number} [height] - Default window height
-     * @property {string} html - HTML markup for the UI
-     * @property {string} [css] - Custom styling
-     * @property {string} [js] - Custom executable scripts
-     */
+            /* Lyric Gradient Mask */
+            .lyrics-mask { 
+                -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%); 
+                mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%); 
+            }
 
-    class OperatingSystem {
-      constructor() {
-        this.storageKey = 'WIN10_SIMULATOR_STATE_V1';
-        this.windows = new Map();
-        this.installedApps = new Map();
-        this.activeWindowId = null;
-        this.zIndexCounter = 100;
-        this.state = {
-          wallpaper: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=2850&q=80',
-          accentColor: '#0078d7',
-          installedJREX: [],
-          documents: [
-            { name: 'Welcome.txt', content: 'Welcome to Windows 10 OS Simulator!\n\nFeatures:\n- Install any .jrex app package.\n- Add custom app shortcuts to the desktop.\n- Automatic state sync to iOS Files / LocalStorage.\n- Native window manager with drag & resize.' }
-          ]
-        };
+            /* Lyric Lines */
+            .lyric-line { 
+                font-family: 'Google Sans', sans-serif !important;
+                transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+                color: rgba(255, 255, 255, 0.35); 
+                padding: 12px 0; 
+                font-size: 20px; 
+                font-weight: 500;
+                line-height: 1.4; 
+                cursor: pointer; 
+                transform-origin: left center;
+                filter: blur(0.4px);
+                text-align: left;
+                width: 100%;
+            }
+            @media (min-width: 768px) {
+                .lyric-line { font-size: 32px; padding: 14px 0; line-height: 1.35; letter-spacing: -0.02em; }
+            }
+            
+            .lyric-line:hover { 
+                color: rgba(255, 255, 255, 0.8); 
+                filter: blur(0px);
+            }
+            
+            .lyric-line.active { 
+                color: #ffffff; 
+                font-size: 26px; 
+                font-weight: 700;
+                transform: scale(1.03); 
+                filter: blur(0px);
+                text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 255, 255, 0.25);
+            }
+            @media (min-width: 768px) {
+                .lyric-line.active { font-size: 42px; transform: scale(1.04); }
+            }
+            
+            .track-active {
+                background: linear-gradient(135deg, rgba(250, 35, 59, 0.25) 0%, rgba(250, 35, 59, 0.08) 100%);
+                border: 1px solid rgba(250, 35, 59, 0.35);
+                color: #ffffff;
+                font-weight: 600;
+                box-shadow: 0 4px 18px rgba(250, 35, 59, 0.2);
+            }
+        `;
+        content.appendChild(styleEl);
 
-        this.init();
-      }
-
-      async init() {
-        this.loadPersistentState();
-        this.setupSystemApps();
-        this.setupEventListeners();
-        this.renderDesktop();
-        this.renderTaskbar();
-        this.startClock();
-        this.applyPersonalization();
-      }
-
-      // ========================================================================
-      // PERSISTENCE & IOS FILES COMPATIBILITY
-      // ========================================================================
-      loadPersistentState() {
-        try {
-          const raw = localStorage.getItem(this.storageKey);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            this.state = { ...this.state, ...parsed };
-          }
-        } catch (e) {
-          console.warn('Could not read state from localStorage', e);
-        }
-      }
-
-      savePersistentState() {
-        try {
-          localStorage.setItem(this.storageKey, JSON.stringify(this.state));
-        } catch (e) {
-          console.error('Failed to save state to localStorage', e);
-        }
-      }
-
-      /**
-       * Exports entire system image to a .json/.jrex format readable and 
-       * downloadable directly into the iOS "Files" application.
-       */
-      exportToIOSFiles() {
-        this.savePersistentState();
-        const exportData = {
-          system: 'Windows 10 Simulator (iOS Edition)',
-          exportDate: new Date().toISOString(),
-          version: '1.0.0',
-          data: this.state
-        };
-
-        const jsonString = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-        const downloadAnchor = document.createElement('a');
-        const filename = `Win10_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+        // HTML Layout Construction
+        content.innerHTML += `
+        <div id="dynamic-bg" class="am-bg-blur"></div>
         
-        downloadAnchor.setAttribute('href', jsonString);
-        downloadAnchor.setAttribute('download', filename);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-
-        this.pushNotification('Backup Saved', `System state exported to iOS Files (${filename})`);
-      }
-
-      // ========================================================================
-      // BUILT-IN SYSTEM APPLICATIONS
-      // ========================================================================
-      setupSystemApps() {
-        // 1. File Explorer
-        this.registerApp({
-          id: 'explorer',
-          name: 'File Explorer',
-          icon: 'fa-solid fa-folder',
-          width: 750,
-          height: 480,
-          render: (win) => this.renderFileExplorer(win)
-        });
-
-        // 2. Notepad
-        this.registerApp({
-          id: 'notepad',
-          name: 'Notepad',
-          icon: 'fa-solid fa-file-lines',
-          width: 600,
-          height: 420,
-          render: (win, args) => this.renderNotepad(win, args)
-        });
-
-        // 3. Calculator
-        this.registerApp({
-          id: 'calc',
-          name: 'Calculator',
-          icon: 'fa-solid fa-calculator',
-          width: 320,
-          height: 460,
-          render: (win) => this.renderCalculator(win)
-        });
-
-        // 4. Command Prompt
-        this.registerApp({
-          id: 'cmd',
-          name: 'Command Prompt',
-          icon: 'fa-solid fa-terminal',
-          width: 620,
-          height: 380,
-          render: (win) => this.renderCmd(win)
-        });
-
-        // 5. Settings
-        this.registerApp({
-          id: 'settings',
-          name: 'Settings',
-          icon: 'fa-solid fa-gear',
-          width: 720,
-          height: 500,
-          render: (win) => this.renderSettings(win)
-        });
-
-        // 6. Microsoft Edge
-        this.registerApp({
-          id: 'edge',
-          name: 'Microsoft Edge',
-          icon: 'fa-brands fa-edge',
-          width: 800,
-          height: 520,
-          render: (win) => {
-            win.content.innerHTML = `
-              <div style="display:flex; flex-direction:column; height:100%; background:#252525;">
-                <div style="display:flex; gap:8px; padding:6px; background:#1e1e1e; border-bottom:1px solid #333;">
-                  <input type="text" id="edge-url-input" value="https://bing.com" style="flex:1; background:#121212; border:1px solid #444; color:#fff; padding:4px 10px; font-size:12px; border-radius:3px;">
-                  <button class="explorer-btn" onclick="const url = document.getElementById('edge-url-input').value; this.parentElement.nextElementSibling.src = url;"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+        <div class="am-layout no-scrollbar">
+            <!-- Left Panel: Controls & Library -->
+            <section class="am-player-panel w-full md:w-[390px] lg:w-[430px] flex-shrink-0 p-5 md:p-8 flex flex-col min-h-[100dvh] md:min-h-0 md:h-full z-10">
+                
+                <!-- Album Artwork -->
+                <div class="relative w-[55%] sm:w-[60%] md:w-full max-w-[260px] md:max-w-[280px] mx-auto mb-4 md:mb-5">
+                    <div id="cover-art-${winObj.id}" class="am-cover-art opacity-0"></div>
+                    <span class="absolute inset-0 flex items-center justify-center text-5xl md:text-6xl pointer-events-none drop-shadow-xl" id="cover-emoji">🎵</span>
                 </div>
-                <iframe src="https://bing.com" style="flex:1; width:100%; border:none; background:#fff;"></iframe>
-              </div>
-            `;
-          }
-        });
 
-        // 7. JREX App Installer
-        this.registerApp({
-          id: 'jrex_installer',
-          name: 'JR App Store & Installer',
-          icon: 'fa-solid fa-box-open',
-          width: 640,
-          height: 480,
-          render: (win) => this.renderJREXInstaller(win)
-        });
+                <!-- Track Info -->
+                <div class="mb-3 md:mb-4 text-center md:text-left">
+                    <h2 class="text-xl md:text-2xl font-bold text-white truncate tracking-tight font-sans" id="title">Not Playing</h2>
+                    <div class="flex items-center justify-center md:justify-start gap-2 mt-1">
+                        <span class="text-[10px] md:text-xs font-bold text-white/80 bg-white/15 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/10 font-sans tracking-wide" id="lcd-mode">LIST</span>
+                        <span class="text-[10px] md:text-xs font-medium text-white/50 font-sans">JRmusic Engine</span>
+                    </div>
+                </div>
 
-        // Register Installed JREX Packages from State
-        this.state.installedJREX.forEach(pkg => {
-          this.registerJREXPackage(pkg, false);
-        });
-      }
+                <!-- Progress Scrubber -->
+                <div class="mb-3 px-1">
+                    <input type="range" id="seek-bar" class="glass-slider" value="0" min="0" max="100" step="0.1">
+                    <div class="flex justify-between items-center text-[11px] text-white/50 font-medium mt-1 font-sans">
+                        <span id="cur-time">00:00</span>
+                        <span id="dur-time">00:00</span>
+                    </div>
+                </div>
 
-      registerApp(appConfig) {
-        this.installedApps.set(appConfig.id, appConfig);
-      }
+                <!-- Playback & Mode Controls -->
+                <div class="flex flex-col mb-4 md:mb-5">
+                    <div class="flex justify-center items-center gap-5 md:gap-6">
+                        <button class="liquid-btn w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-white/70 hover:text-white font-sans" id="btn-prev" title="Previous Track">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12l10-8v16zM5 4h4v16H5z"/></svg>
+                        </button>
+                        
+                        <button class="liquid-btn w-14 h-14 md:w-16 md:h-16 !bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-2xl font-sans" id="btn-play">
+                            <div class="w-0 h-0 border-y-[8px] border-y-transparent border-l-[14px] border-l-black ml-1 transition-all" id="play-icon"></div>
+                        </button>
+                        
+                        <button class="liquid-btn w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-white/70 hover:text-white font-sans" id="btn-next" title="Next Track">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4z"/><path d="M15 4h4v16h-4z"/></svg>
+                        </button>
 
-      // ========================================================================
-      // .JREX PACKAGE RUNTIME & COMPILER
-      // ========================================================================
-      /**
-       * Installs and executes custom .jrex JSON packages
-       * @param {JREXPackage} pkg 
-       * @param {boolean} persist 
-       */
-      registerJREXPackage(pkg, persist = true) {
-        if (!pkg.id || !pkg.name) {
-          throw new Error('Invalid .jrex package format: missing id or name.');
+                        <button id="mode-btn" class="liquid-btn text-[10px] md:text-xs px-3.5 py-2 font-bold text-white/80 hover:text-white font-sans">
+                            MODE
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Playlist & GitHub Sync Card -->
+                <div class="flex-1 flex flex-col min-h-[260px] md:min-h-0 liquid-card overflow-hidden border border-white/10 p-2.5 md:p-3">
+                    <div class="mb-2 pb-2 border-b border-white/10">
+                        <div class="flex gap-1.5">
+                            <input class="flex-1 min-w-0 liquid-input rounded-xl px-2.5 py-1.5 text-[11px] md:text-xs outline-none text-white placeholder-white/30 font-sans" id="gh-user" placeholder="GitHub User" type="text">
+                            <input class="flex-1 min-w-0 liquid-input rounded-xl px-2.5 py-1.5 text-[11px] md:text-xs outline-none text-white placeholder-white/30 font-sans" id="gh-repo" placeholder="Repository" type="text">
+                            <button class="liquid-btn liquid-btn-active px-3 py-1.5 text-[11px] md:text-xs font-bold shrink-0 font-sans" id="btn-sync">SYNC</button>
+                        </div>
+                    </div>
+                    
+                    <div class="px-0.5 mb-2">
+                        <input class="w-full liquid-input rounded-xl px-3 py-1.5 text-xs outline-none text-white placeholder-white/30 font-sans" id="search-input" placeholder="Search tracks..." type="text">
+                        <div class="flex gap-1.5 overflow-x-auto no-scrollbar mt-2 pb-1" id="playlist-nav"></div>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto no-scrollbar pr-0.5">
+                        <ul id="track-list" class="space-y-1.5 font-sans"></ul>
+                    </div>
+                    
+                    <div class="pt-2 mt-1 border-t border-white/5 text-center">
+                        <p class="text-[10px] text-white/40 font-medium flex justify-center items-center gap-1 font-sans tracking-wide" id="net-status">System Standby</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Immersive Lyrics -->
+            <section class="am-lyrics-panel flex-1 flex flex-col min-h-[100dvh] md:min-h-0 md:h-full relative z-10 p-5 md:pl-12 md:pr-12 md:pt-8">
+                <div class="absolute top-6 right-5 md:top-8 md:right-12 z-20">
+                    <span class="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-widest liquid-btn px-3.5 py-1.5 rounded-full font-sans" id="lyrics-status">LYRICS SYSTEM</span>
+                </div>
+                
+                <div class="flex-1 relative w-full overflow-hidden lyrics-mask">
+                    <div id="lyrics-container-${winObj.id}" class="absolute inset-0 overflow-y-auto no-scrollbar" style="scroll-behavior: smooth;">
+                        <div id="lyrics-content-${winObj.id}" class="w-full max-w-3xl mx-auto pb-[60vh] pt-[40vh] flex flex-col px-0 md:px-4">
+                            <div class="text-left text-white/30 text-lg md:text-xl font-medium mt-10 tracking-widest font-sans">
+                                Loading Lyrics...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <audio id="player-audio-${winObj.id}" playsinline></audio>`;
+
+        // Component Handles
+        const audio = content.querySelector('#player-audio-' + winObj.id);
+        const titleEl = content.querySelector('#title');
+        const curTimeEl = content.querySelector('#cur-time');
+        const durTimeEl = content.querySelector('#dur-time');
+        const seekBar = content.querySelector('#seek-bar');
+        const playIcon = content.querySelector('#play-icon');
+        const btnPlay = content.querySelector('#btn-play');
+        const btnPrev = content.querySelector('#btn-prev');
+        const btnNext = content.querySelector('#btn-next');
+        const btnMode = content.querySelector('#mode-btn');
+        const lcdMode = content.querySelector('#lcd-mode');
+        const navContainer = content.querySelector('#playlist-nav');
+        const listContainer = content.querySelector('#track-list');
+        const searchInput = content.querySelector('#search-input');
+        const artEl = content.querySelector('#cover-art-' + winObj.id);
+        const dynBgEl = content.querySelector('#dynamic-bg');
+        const emjEl = content.querySelector('#cover-emoji');
+        const netStatus = content.querySelector('#net-status');
+        const ghUserInp = content.querySelector('#gh-user');
+        const ghRepoInp = content.querySelector('#gh-repo');
+        const btnSync = content.querySelector('#btn-sync');
+        
+        const lyricsContainerEl = content.querySelector(`#lyrics-container-${winObj.id}`);
+        const lyricsContentEl = content.querySelector(`#lyrics-content-${winObj.id}`);
+        const lyricsStatusEl = content.querySelector('#lyrics-status');
+
+        let playlists = {};
+        let currentPlaylist = 'Root';
+        let filteredTracks = [];
+        let curIdx = 0;
+        let loopMode = 'list';
+        let currentCoverObjectURL = null;
+        
+        let parsedLyrics = [];
+        let currentLyricIndex = -1;
+        let isSyncedLyrics = false;
+        let isUserSeeking = false;
+
+        let currentTrackMeta = { title: '', artist: 'JRmusic', album: 'Local Music', coverUrl: null };
+
+        const savedUser = localStorage.getItem('jrmusic_gh_user') || 'zhangzhanhang855';
+        const savedRepo = localStorage.getItem('jrmusic_gh_repo') || 'musiconly';
+        ghUserInp.value = savedUser;
+        ghRepoInp.value = savedRepo;
+
+        if (!window.jsmediatags) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js';
+            document.head.appendChild(script);
         }
 
-        this.installedApps.set(pkg.id, {
-          id: pkg.id,
-          name: pkg.name,
-          icon: pkg.icon || 'fa-solid fa-cube',
-          width: pkg.width || 640,
-          height: pkg.height || 480,
-          isJREX: true,
-          render: (win) => {
-            const container = document.createElement('div');
-            container.className = 'jrex-sandbox-container';
-            const iframe = document.createElement('iframe');
-            iframe.className = 'jrex-sandbox-iframe';
-            iframe.sandbox = 'allow-scripts allow-modals allow-forms allow-same-origin';
+        // Lyric Aggressive Search
+        function aggressivelyFindLyrics(tags) {
+            if (!tags) return "";
 
-            const bundleHtml = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body { font-family: 'Product Sans', -apple-system, sans-serif; margin: 0; padding: 14px; box-sizing: border-box; }
-                  ${pkg.css || ''}
-                </style>
-              </head>
-              <body>
-                ${pkg.html || '<div style="padding:20px;">No interface provided.</div>'}
-                <script>
-                  try {
-                    ${pkg.js || ''}
-                  } catch(err) {
-                    console.error('JREX Runtime Error:', err);
-                  }
-                <\/script>
-              </body>
-              </html>
-            `;
+            const extract = (obj) => {
+                if (!obj) return "";
+                if (typeof obj === 'string') return obj;
+                if (typeof obj.text === 'string') return obj.text;
+                if (typeof obj.lyrics === 'string') return obj.lyrics;
+                if (obj.data) {
+                    if (typeof obj.data === 'string') return obj.data;
+                    if (typeof obj.data.text === 'string') return obj.data.text;
+                }
+                return "";
+            };
 
-            container.appendChild(iframe);
-            win.content.innerHTML = '';
-            win.content.appendChild(container);
-            iframe.srcdoc = bundleHtml;
-          }
-        });
+            let primary = extract(tags.lyrics) || extract(tags.USLT) || extract(tags.SYLT);
+            if (primary && primary.includes('[')) return primary;
 
-        if (persist) {
-          const exists = this.state.installedJREX.findIndex(item => item.id === pkg.id);
-          if (exists >= 0) {
-            this.state.installedJREX[exists] = pkg;
-          } else {
-            this.state.installedJREX.push(pkg);
-          }
-          this.savePersistentState();
-          this.renderDesktop();
-          this.renderStartMenuApps();
-          this.pushNotification('App Installed', `${pkg.name} is now available on Desktop.`);
+            for (let key in tags) {
+                const item = tags[key];
+                const arr = Array.isArray(item) ? item : [item];
+                
+                for (let i of arr) {
+                    let txt = extract(i);
+                    if (typeof txt === 'string' && txt.includes('[00:')) return txt;
+                    
+                    if (i && i.data) {
+                        let deepTxt = extract(i.data.data) || extract(i.data);
+                        if (typeof deepTxt === 'string' && deepTxt.includes('[00:')) return deepTxt;
+                    }
+                }
+            }
+            return primary; 
         }
-      }
 
-      promptImportJREX() {
-        const fileInput = document.getElementById('jrex-file-input');
-        fileInput.onchange = (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            try {
-              const parsed = JSON.parse(event.target.result);
-              
-              // Handle whole system backup recovery
-              if (parsed.system && parsed.data) {
-                this.state = parsed.data;
-                this.savePersistentState();
-                alert('System image restored successfully! Reloading...');
-                location.reload();
+        // Lyric Parser
+        function processLyrics(rawText, source) {
+            if (!rawText || typeof rawText !== 'string') {
+                parsedLyrics = [];
+                isSyncedLyrics = false;
+                lyricsStatusEl.innerText = "INSTRUMENTAL";
+                lyricsContentEl.innerHTML = '<div class="text-left text-white/30 text-xl font-medium mt-10 tracking-widest font-sans">Instrumental</div>';
                 return;
-              }
-
-              // Handle individual .jrex package
-              this.registerJREXPackage(parsed, true);
-              alert(`Successfully installed: ${parsed.name}`);
-            } catch (err) {
-              alert('Error reading .jrex package. Please make sure the JSON format is valid.');
             }
-          };
-          reader.readAsText(file);
-        };
-        fileInput.click();
-      }
-
-      // ========================================================================
-      // WINDOW MANAGEMENT ENGINE (DRAG, RESIZE, Z-INDEX, SNAP)
-      // ========================================================================
-      openApp(appId, args = {}) {
-        const app = this.installedApps.get(appId);
-        if (!app) return;
-
-        // If window already exists, bring it to focus
-        for (const [winId, win] of this.windows) {
-          if (win.appId === appId) {
-            if (win.isMinimized) {
-              this.restoreWindow(winId);
+            
+            const cleanText = rawText.replace(/\0/g, '').trim();
+            const lines = cleanText.split(/\r?\n/);
+            
+            const timeReg = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
+            parsedLyrics = [];
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                let match;
+                let timeTags = [];
+                timeReg.lastIndex = 0; 
+                
+                while ((match = timeReg.exec(line)) !== null) {
+                    const m = parseInt(match[1], 10);
+                    const s = parseInt(match[2], 10);
+                    const msStr = match[3] || '0';
+                    const ms = parseInt(msStr.padEnd(3, '0').slice(0, 3), 10);
+                    timeTags.push(m * 60 + s + ms / 1000);
+                }
+                
+                if (timeTags.length > 0) {
+                    let text = line.replace(/\[\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?\]/g, '').trim();
+                    text = text.replace(/[（(](?:翻译|translation)[：:].*?[）)]/gi, '').trim();
+                    
+                    for (let t of timeTags) {
+                        parsedLyrics.push({ time: t, text: text || '...' });
+                    }
+                }
             }
-            this.focusWindow(winId);
-            return;
-          }
-        }
-
-        const winId = `win_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-        const winElem = document.createElement('div');
-        winElem.className = 'win10-window';
-        winElem.id = winId;
-
-        // Default bounds
-        const startX = Math.max(40, 80 + (this.windows.size * 25) % (window.innerWidth - app.width - 80));
-        const startY = Math.max(30, 40 + (this.windows.size * 25) % (window.innerHeight - app.height - 100));
-
-        winElem.style.width = `${app.width}px`;
-        winElem.style.height = `${app.height}px`;
-        winElem.style.left = `${startX}px`;
-        winElem.style.top = `${startY}px`;
-        winElem.style.zIndex = ++this.zIndexCounter;
-
-        // Titlebar markup
-        winElem.innerHTML = `
-          <div class="window-titlebar">
-            <div class="window-title">
-              <i class="${app.icon}"></i>
-              <span>${app.name}</span>
-            </div>
-            <div class="window-controls">
-              <div class="win-control-btn btn-min" onclick="Sys.minimizeWindow('${winId}')"><i class="fa-solid fa-minus"></i></div>
-              <div class="win-control-btn btn-max" onclick="Sys.maximizeWindow('${winId}')"><i class="fa-regular fa-square"></i></div>
-              <div class="win-control-btn btn-close" onclick="Sys.closeWindow('${winId}')"><i class="fa-solid fa-xmark"></i></div>
-            </div>
-          </div>
-          <div class="window-content"></div>
-          <div class="resize-handle resize-right"></div>
-          <div class="resize-handle resize-bottom"></div>
-          <div class="resize-handle resize-corner"></div>
-        `;
-
-        document.getElementById('desktop').appendChild(winElem);
-
-        const winObj = {
-          id: winId,
-          appId: appId,
-          elem: winElem,
-          content: winElem.querySelector('.window-content'),
-          isMaximized: false,
-          isMinimized: false,
-          prevRect: null
-        };
-
-        this.windows.set(winId, winObj);
-        this.setupWindowInteractions(winObj);
-        this.focusWindow(winId);
-
-        // Render application UI
-        app.render(winObj, args);
-        this.renderTaskbar();
-        this.closeStartMenu();
-      }
-
-      setupWindowInteractions(winObj) {
-        const { elem } = winObj;
-        const titlebar = elem.querySelector('.window-titlebar');
-
-        // Focus window on mousedown / touch
-        elem.addEventListener('mousedown', () => this.focusWindow(winObj.id));
-        elem.addEventListener('touchstart', () => this.focusWindow(winObj.id), { passive: true });
-
-        // Titlebar Dragging
-        let isDragging = false;
-        let dragOffset = { x: 0, y: 0 };
-
-        const onDragStart = (clientX, clientY) => {
-          if (winObj.isMaximized) return;
-          isDragging = true;
-          dragOffset.x = clientX - elem.offsetLeft;
-          dragOffset.y = clientY - elem.offsetTop;
-          this.focusWindow(winObj.id);
-        };
-
-        const onDragMove = (clientX, clientY) => {
-          if (!isDragging) return;
-          let newX = clientX - dragOffset.x;
-          let newY = clientY - dragOffset.y;
-          
-          // Constrain within desktop boundaries
-          newY = Math.max(0, Math.min(newY, window.innerHeight - 80));
-          elem.style.left = `${newX}px`;
-          elem.style.top = `${newY}px`;
-        };
-
-        const onDragEnd = () => { isDragging = false; };
-
-        titlebar.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.window-controls')) return;
-          onDragStart(e.clientX, e.clientY);
-        });
-
-        window.addEventListener('mousemove', (e) => onDragMove(e.clientX, e.clientY));
-        window.addEventListener('mouseup', onDragEnd);
-
-        // Touch Dragging Support
-        titlebar.addEventListener('touchstart', (e) => {
-          if (e.target.closest('.window-controls')) return;
-          const touch = e.touches[0];
-          onDragStart(touch.clientX, touch.clientY);
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-          if (!isDragging) return;
-          const touch = e.touches[0];
-          onDragMove(touch.clientX, touch.clientY);
-        }, { passive: true });
-
-        window.addEventListener('touchend', onDragEnd);
-
-        // Resizing Logic
-        this.setupWindowResizing(winObj);
-      }
-
-      setupWindowResizing(winObj) {
-        const { elem } = winObj;
-        const handles = {
-          right: elem.querySelector('.resize-right'),
-          bottom: elem.querySelector('.resize-bottom'),
-          corner: elem.querySelector('.resize-corner')
-        };
-
-        let isResizing = false;
-        let currentHandle = null;
-        let startWidth, startHeight, startMouseX, startMouseY;
-
-        const startResize = (handle, clientX, clientY) => {
-          if (winObj.isMaximized) return;
-          isResizing = true;
-          currentHandle = handle;
-          startWidth = elem.offsetWidth;
-          startHeight = elem.offsetHeight;
-          startMouseX = clientX;
-          startMouseY = clientY;
-        };
-
-        const performResize = (clientX, clientY) => {
-          if (!isResizing) return;
-          const dx = clientX - startMouseX;
-          const dy = clientY - startMouseY;
-
-          if (currentHandle === 'right' || currentHandle === 'corner') {
-            elem.style.width = `${Math.max(280, startWidth + dx)}px`;
-          }
-          if (currentHandle === 'bottom' || currentHandle === 'corner') {
-            elem.style.height = `${Math.max(180, startHeight + dy)}px`;
-          }
-        };
-
-        const endResize = () => { isResizing = false; };
-
-        handles.right.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('right', e.clientX, e.clientY); });
-        handles.bottom.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('bottom', e.clientX, e.clientY); });
-        handles.corner.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('corner', e.clientX, e.clientY); });
-
-        window.addEventListener('mousemove', (e) => performResize(e.clientX, e.clientY));
-        window.addEventListener('mouseup', endResize);
-      }
-
-      focusWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-
-        this.activeWindowId = winId;
-        this.windows.forEach(w => {
-          w.elem.classList.remove('active');
-        });
-
-        win.elem.classList.add('active');
-        win.elem.style.zIndex = ++this.zIndexCounter;
-        this.renderTaskbar();
-      }
-
-      minimizeWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-        win.isMinimized = true;
-        win.elem.style.display = 'none';
-        this.renderTaskbar();
-      }
-
-      restoreWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-        win.isMinimized = false;
-        win.elem.style.display = 'flex';
-        this.focusWindow(winId);
-      }
-
-      maximizeWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-
-        if (!win.isMaximized) {
-          win.prevRect = {
-            width: win.elem.style.width,
-            height: win.elem.style.height,
-            left: win.elem.style.left,
-            top: win.elem.style.top
-          };
-          win.elem.style.width = '100vw';
-          win.elem.style.height = `calc(100vh - var(--taskbar-height))`;
-          win.elem.style.left = '0px';
-          win.elem.style.top = '0px';
-          win.isMaximized = true;
-        } else {
-          win.elem.style.width = win.prevRect.width;
-          win.elem.style.height = win.prevRect.height;
-          win.elem.style.left = win.prevRect.left;
-          win.elem.style.top = win.prevRect.top;
-          win.isMaximized = false;
-        }
-      }
-
-      closeWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-
-        win.elem.remove();
-        this.windows.delete(winId);
-        this.renderTaskbar();
-      }
-
-      minimizeAllWindows() {
-        this.windows.forEach((win, id) => {
-          this.minimizeWindow(id);
-        });
-      }
-
-      arrangeWindows() {
-        let i = 0;
-        const total = this.windows.size;
-        if (total === 0) return;
-
-        const cols = total > 2 ? 2 : 1;
-        const rows = Math.ceil(total / cols);
-        const w = window.innerWidth / cols;
-        const h = (window.innerHeight - 40) / rows;
-
-        this.windows.forEach((win) => {
-          win.isMinimized = false;
-          win.elem.style.display = 'flex';
-          const r = Math.floor(i / cols);
-          const c = i % cols;
-          win.elem.style.left = `${c * w}px`;
-          win.elem.style.top = `${r * h}px`;
-          win.elem.style.width = `${w}px`;
-          win.elem.style.height = `${h}px`;
-          i++;
-        });
-      }
-
-      // ========================================================================
-      // DESKTOP & TASKBAR RENDERING
-      // ========================================================================
-      renderDesktop() {
-        const container = document.getElementById('desktop-icons-container');
-        container.innerHTML = '';
-
-        // Default System Shortcuts
-        const shortcuts = [
-          { id: 'explorer', name: 'This PC', icon: 'fa-solid fa-desktop' },
-          { id: 'notepad', name: 'Notepad', icon: 'fa-solid fa-file-lines' },
-          { id: 'calc', name: 'Calculator', icon: 'fa-solid fa-calculator' },
-          { id: 'cmd', name: 'Terminal', icon: 'fa-solid fa-terminal' },
-          { id: 'jrex_installer', name: 'JR Store', icon: 'fa-solid fa-box-open' },
-          { id: 'settings', name: 'Settings', icon: 'fa-solid fa-gear' },
-          { id: 'edge', name: 'Edge', icon: 'fa-brands fa-edge' }
-        ];
-
-        // Add custom installed .jrex apps to desktop
-        this.state.installedJREX.forEach(pkg => {
-          shortcuts.push({ id: pkg.id, name: pkg.name, icon: pkg.icon || 'fa-solid fa-cube' });
-        });
-
-        shortcuts.forEach(item => {
-          const iconElem = document.createElement('div');
-          iconElem.className = 'desktop-icon';
-          iconElem.innerHTML = `
-            <i class="${item.icon}"></i>
-            <span>${item.name}</span>
-          `;
-          iconElem.addEventListener('dblclick', () => this.openApp(item.id));
-          iconElem.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
-            iconElem.classList.add('selected');
-          });
-          container.appendChild(iconElem);
-        });
-
-        this.renderStartMenuApps();
-      }
-
-      renderStartMenuApps() {
-        const list = document.getElementById('start-apps-list');
-        list.innerHTML = '';
-
-        this.installedApps.forEach(app => {
-          const row = document.createElement('div');
-          row.className = 'start-app-row';
-          row.innerHTML = `<i class="${app.icon}"></i><span>${app.name}</span>`;
-          row.onclick = () => this.openApp(app.id);
-          list.appendChild(row);
-        });
-      }
-
-      renderTaskbar() {
-        const container = document.getElementById('taskbar-apps');
-        container.innerHTML = '';
-
-        this.installedApps.forEach((app, appId) => {
-          let runningWin = null;
-          for (const [, win] of this.windows) {
-            if (win.appId === appId) {
-              runningWin = win;
-              break;
-            }
-          }
-
-          const item = document.createElement('div');
-          item.className = `taskbar-app-item ${runningWin ? 'running' : ''} ${runningWin && this.activeWindowId === runningWin.id ? 'active' : ''}`;
-          item.innerHTML = `<i class="${app.icon}"></i>`;
-          item.title = app.name;
-
-          item.onclick = () => {
-            if (!runningWin) {
-              this.openApp(appId);
-            } else if (runningWin.isMinimized) {
-              this.restoreWindow(runningWin.id);
-            } else if (this.activeWindowId === runningWin.id) {
-              this.minimizeWindow(runningWin.id);
+            
+            if (parsedLyrics.length > 0) {
+                isSyncedLyrics = true;
+                lyricsStatusEl.innerText = `${source}`;
+                
+                parsedLyrics.sort((a, b) => a.time - b.time);
+                
+                lyricsContentEl.innerHTML = parsedLyrics.map((l, i) => 
+                    `<div class="lyric-line font-sans" id="lyric-${i}" data-time="${l.time}">
+                        <span class="block">${l.text}</span>
+                    </div>`
+                ).join('');
+                
+                lyricsContentEl.style.paddingTop = '40vh';
+                lyricsContentEl.style.paddingBottom = '60vh';
+                
+                lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => {
+                    el.onclick = () => {
+                        audio.currentTime = parseFloat(el.getAttribute('data-time'));
+                        if (audio.paused) audio.play();
+                    };
+                });
             } else {
-              this.focusWindow(runningWin.id);
+                isSyncedLyrics = false;
+                lyricsStatusEl.innerText = `TEXT [${source}]`;
+                lyricsContentEl.style.paddingTop = '10vh';
+                lyricsContentEl.style.paddingBottom = '10vh';
+                lyricsContentEl.innerHTML = `<div class="text-left text-white/50 text-xl whitespace-pre-wrap leading-loose px-2 font-sans">${cleanText}</div>`;
             }
-          };
+        }
 
-          container.appendChild(item);
-        });
-      }
+        // MediaSession API
+        const updateMediaSession = (lyricText = null) => {
+            if ('mediaSession' in navigator) {
+                const displayArtist = lyricText ? lyricText : currentTrackMeta.artist;
+                
+                navigator.mediaSession.metadata = new MediaMetadata({ 
+                    title: currentTrackMeta.title, 
+                    artist: displayArtist, 
+                    album: currentTrackMeta.album, 
+                    artwork: currentTrackMeta.coverUrl ? [{ src: currentTrackMeta.coverUrl, sizes: '512x512', type: 'image/jpeg' }] : [] 
+                });
+                
+                navigator.mediaSession.setActionHandler('play', () => audio.play());
+                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => btnPrev.click());
+                navigator.mediaSession.setActionHandler('nexttrack', () => btnNext.click());
+            }
+        };
 
-      // ========================================================================
-      // BUILT-IN APPLICATIONS IMPLEMENTATION
-      // ========================================================================
-      renderFileExplorer(win) {
-        win.content.innerHTML = `
-          <div class="explorer-container">
-            <div class="explorer-ribbon">
-              <button class="explorer-btn" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-file-import"></i> Import .jrex</button>
-              <button class="explorer-btn" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-floppy-disk"></i> Backup to iOS Files</button>
-              <button class="explorer-btn" onclick="Sys.openApp('notepad')"><i class="fa-solid fa-plus"></i> New Text Document</button>
-            </div>
-            <div class="explorer-address-bar">
-              <i class="fa-solid fa-arrow-left" style="cursor:pointer;"></i>
-              <i class="fa-solid fa-arrow-right" style="cursor:pointer;"></i>
-              <i class="fa-solid fa-arrow-up" style="cursor:pointer;"></i>
-              <input class="address-box" value="This PC > Local Storage (C:) > Documents" readonly />
-            </div>
-            <div class="explorer-body">
-              <div class="explorer-sidebar">
-                <div class="sidebar-folder active"><i class="fa-solid fa-desktop"></i> Desktop</div>
-                <div class="sidebar-folder"><i class="fa-solid fa-file"></i> Documents</div>
-                <div class="sidebar-folder"><i class="fa-solid fa-box-archive"></i> Installed JREX</div>
-                <div class="sidebar-folder"><i class="fa-solid fa-hard-drive"></i> Local Disk (C:)</div>
-              </div>
-              <div class="explorer-file-view" id="explorer-files-grid"></div>
-            </div>
-          </div>
-        `;
+        const filterAudio = (items) => {
+            const audioRegex = /\.(mp3|flac|wav|m4a)$/i;
+            const extRegex = /\.[^/.]+$/;
+            return items.filter(f => audioRegex.test(f.name)).map(f => ({
+                t: f.name.replace(extRegex, ''), u: f.download_url
+            }));
+        };
 
-        const grid = win.content.querySelector('#explorer-files-grid');
+        // Render Tabs
+        const renderNav = () => {
+            navContainer.innerHTML = Object.keys(playlists).map(name => {
+                const isActive = name === currentPlaylist;
+                const activeClass = isActive ? 'liquid-btn-active' : 'text-white/70 hover:text-white';
+                return `<button class="liquid-btn text-[11px] md:text-xs px-3.5 py-1 font-bold whitespace-nowrap btn-nav font-sans ${activeClass}" data-name="${name}">${name}</button>`;
+            }).join('');
+            navContainer.querySelectorAll('.btn-nav').forEach(btn => btn.onclick = () => switchPlaylist(btn.dataset.name));
+        };
+
+        // Render Track List
+        const renderList = () => {
+            listContainer.innerHTML = filteredTracks.map((s, i) => {
+                const isActive = curIdx === i;
+                const activeClass = isActive ? 'track-active' : 'text-white/70 hover:bg-white/10 hover:border-white/10 border border-transparent';
+                const playingAnim = isActive && !audio.paused ? `<span class="inline-block w-2 h-2 bg-[#fa233b] rounded-full animate-pulse ml-2 shadow-[0_0_8px_#fa233b]"></span>` : '';
+                return `<li class="p-2.5 md:p-3 text-xs md:text-sm rounded-2xl cursor-pointer transition-all duration-300 font-sans flex items-center justify-between ${activeClass}" data-idx="${i}">
+                    <div class="truncate flex items-center">
+                        <span class="opacity-40 mr-2.5 text-[11px] font-sans tracking-wider">${String(i + 1).padStart(2, '0')}</span>
+                        <span class="truncate">${s.t}</span>
+                    </div>
+                    ${playingAnim}
+                </li>`;
+            }).join('');
+            listContainer.querySelectorAll('li').forEach(item => item.onclick = () => executeLoad(parseInt(item.dataset.idx), true));
+        };
+
+        const switchPlaylist = (name) => {
+            currentPlaylist = name;
+            filteredTracks = [...playlists[name]];
+            renderNav();
+            renderList();
+            if (filteredTracks.length > 0) executeLoad(0, false);
+        };
+
+        const executeLoad = (idx, auto) => {
+            if (filteredTracks.length === 0) return;
+            curIdx = idx;
+            const song = filteredTracks[curIdx];
+            
+            audio.src = song.u;
+            audio.load();
+            titleEl.innerText = song.t;
+
+            currentTrackMeta = {
+                title: song.t,
+                artist: 'JRmusic',
+                album: currentPlaylist,
+                coverUrl: null
+            };
+
+            artEl.classList.remove('loaded', 'opacity-100');
+            artEl.classList.add('opacity-0');
+            artEl.style.backgroundImage = 'none';
+            dynBgEl.style.backgroundImage = 'none';
+            emjEl.style.opacity = '1';
+            
+            currentLyricIndex = -1;
+            processLyrics(null, '');
+            lyricsContainerEl.scrollTo({ top: 0, behavior: 'auto' });
+
+            if (currentCoverObjectURL) {
+                URL.revokeObjectURL(currentCoverObjectURL);
+                currentCoverObjectURL = null;
+            }
+
+            updateMediaSession();
+            if (auto) audio.play().catch(e => console.log('Wait gesture:', e));
+            else renderList();
+
+            let lyricsFound = false;
+
+            const lrcUrl = song.u.replace(/\.(mp3|flac|wav|m4a)$/i, '.lrc');
+            fetch(lrcUrl)
+                .then(res => { if (res.ok) return res.text(); throw new Error(); })
+                .then(lrcText => {
+                    if (lrcText && lrcText.trim()) {
+                        lyricsFound = true;
+                        processLyrics(lrcText, 'LRC FILE');
+                    }
+                })
+                .catch(e => {});
+
+            fetch(song.u)
+                .then(res => { if (!res.ok) throw new Error(); return res.blob(); })
+                .then(audioBlob => {
+                    if (!window.jsmediatags) return;
+                    new window.jsmediatags.Reader(audioBlob).read({
+                        onSuccess: (tag) => {
+                            if (tag.tags.title) {
+                                currentTrackMeta.title = tag.tags.title;
+                                titleEl.innerText = tag.tags.title;
+                            }
+                            if (tag.tags.artist) currentTrackMeta.artist = tag.tags.artist;
+                            if (tag.tags.album) currentTrackMeta.album = tag.tags.album;
+
+                            const pic = tag.tags.picture;
+                            if (pic) {
+                                const byteArray = new Uint8Array(pic.data);
+                                const coverBlob = new Blob([byteArray], { type: pic.format });
+                                currentCoverObjectURL = URL.createObjectURL(coverBlob);
+                                currentTrackMeta.coverUrl = currentCoverObjectURL;
+                                
+                                artEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
+                                dynBgEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
+                                
+                                artEl.classList.remove('opacity-0');
+                                artEl.classList.add('opacity-100');
+                                emjEl.style.opacity = '0';
+                            }
+                            
+                            updateMediaSession();
+
+                            if (!lyricsFound) {
+                                const aggressiveLrcText = aggressivelyFindLyrics(tag.tags);
+                                if (aggressiveLrcText) {
+                                    processLyrics(aggressiveLrcText, 'ID3 TAG');
+                                }
+                            }
+                        },
+                        onError: () => {}
+                    });
+                })
+                .catch(err => {});
+        };
+
+        // Scrubber / Seek events
+        seekBar.oninput = () => { isUserSeeking = true; };
+        seekBar.onchange = () => {
+            if (audio.duration) {
+                audio.currentTime = (seekBar.value / 100) * audio.duration;
+            }
+            isUserSeeking = false;
+        };
+
+        audio.onended = () => {
+            if (filteredTracks.length === 0) return;
+            if (loopMode === 'single') executeLoad(curIdx, true);
+            else if (loopMode === 'random') {
+                let nextIndex = Math.floor(Math.random() * filteredTracks.length);
+                if (filteredTracks.length > 1 && nextIndex === curIdx) nextIndex = (nextIndex + 1) % filteredTracks.length;
+                executeLoad(nextIndex, true);
+            } else {
+                executeLoad((curIdx + 1) % filteredTracks.length, true);
+            }
+        };
+
+        btnPlay.onclick = () => { audio.paused ? audio.play() : audio.pause(); };
+        btnPrev.onclick = () => { executeLoad((curIdx - 1 + filteredTracks.length) % filteredTracks.length, true); };
+        btnNext.onclick = () => { executeLoad((curIdx + 1 + filteredTracks.length) % filteredTracks.length, true); };
+
+        audio.onplay = () => { 
+            artEl.classList.add('playing');
+            playIcon.className = 'w-3.5 h-4 border-l-[4px] border-r-[4px] border-black ml-0'; 
+            renderList();
+        };
+        audio.onpause = () => { 
+            artEl.classList.remove('playing');
+            playIcon.className = 'w-0 h-0 border-y-[8px] border-y-transparent border-l-[14px] border-l-black ml-1'; 
+            renderList();
+        };
         
-        // Populate system documents
-        this.state.documents.forEach((doc, idx) => {
-          const item = document.createElement('div');
-          item.className = 'file-item';
-          item.innerHTML = `<i class="fa-solid fa-file-lines" style="color:#0078d7;"></i><span>${doc.name}</span>`;
-          item.ondblclick = () => this.openApp('notepad', { docIndex: idx });
-          grid.appendChild(item);
-        });
+        audio.ontimeupdate = () => {
+            let s = audio.currentTime;
+            let d = audio.duration;
 
-        // Populate installed .jrex applications
-        this.state.installedJREX.forEach(pkg => {
-          const item = document.createElement('div');
-          item.className = 'file-item';
-          item.innerHTML = `<i class="${pkg.icon || 'fa-solid fa-cube'}" style="color:#ffb900;"></i><span>${pkg.name}.jrex</span>`;
-          item.ondblclick = () => this.openApp(pkg.id);
-          grid.appendChild(item);
-        });
-      }
-
-      renderNotepad(win, args = {}) {
-        let currentDoc = { name: 'Untitled.txt', content: '' };
-        if (args.docIndex !== undefined && this.state.documents[args.docIndex]) {
-          currentDoc = this.state.documents[args.docIndex];
-        }
-
-        win.content.innerHTML = `
-          <div class="notepad-container">
-            <div class="notepad-menubar">
-              <span id="notepad-save-btn"><i class="fa-solid fa-floppy-disk"></i> Save</span>
-              <span id="notepad-export-btn"><i class="fa-solid fa-file-export"></i> Export .txt</span>
-            </div>
-            <textarea class="notepad-textarea" placeholder="Type your text here...">${currentDoc.content}</textarea>
-          </div>
-        `;
-
-        const textarea = win.content.querySelector('.notepad-textarea');
-        win.content.querySelector('#notepad-save-btn').onclick = () => {
-          currentDoc.content = textarea.value;
-          if (args.docIndex === undefined) {
-            const docName = prompt('Enter document name:', 'Document.txt') || 'Untitled.txt';
-            currentDoc.name = docName;
-            this.state.documents.push(currentDoc);
-          }
-          this.savePersistentState();
-          this.pushNotification('Notepad', `Saved ${currentDoc.name}`);
-        };
-
-        win.content.querySelector('#notepad-export-btn').onclick = () => {
-          const blob = new Blob([textarea.value], { type: 'text/plain;charset=utf-8' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = currentDoc.name;
-          a.click();
-        };
-      }
-
-      renderCalculator(win) {
-        win.content.innerHTML = `
-          <div class="calc-container">
-            <div class="calc-display">
-              <div class="calc-history" id="calc-hist"></div>
-              <div id="calc-val">0</div>
-            </div>
-            <div class="calc-grid">
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('C')">C</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('CE')">CE</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('%')">%</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('/')">÷</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('7')">7</button>
-              <button class="calc-btn" onclick="Sys.calcInput('8')">8</button>
-              <button class="calc-btn" onclick="Sys.calcInput('9')">9</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('*')">×</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('4')">4</button>
-              <button class="calc-btn" onclick="Sys.calcInput('5')">5</button>
-              <button class="calc-btn" onclick="Sys.calcInput('6')">6</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('-')">-</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('1')">1</button>
-              <button class="calc-btn" onclick="Sys.calcInput('2')">2</button>
-              <button class="calc-btn" onclick="Sys.calcInput('3')">3</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('+')">+</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('±')">±</button>
-              <button class="calc-btn" onclick="Sys.calcInput('0')">0</button>
-              <button class="calc-btn" onclick="Sys.calcInput('.')">.</button>
-              <button class="calc-btn equals-btn" onclick="Sys.calcInput('=')">=</button>
-            </div>
-          </div>
-        `;
-        this.calcState = { current: '0', expr: '' };
-      }
-
-      calcInput(val) {
-        const valElem = document.getElementById('calc-val');
-        const histElem = document.getElementById('calc-hist');
-        if (!valElem) return;
-
-        if (val === 'C') {
-          this.calcState = { current: '0', expr: '' };
-        } else if (val === 'CE') {
-          this.calcState.current = '0';
-        } else if (val === '=') {
-          try {
-            const sanitized = (this.calcState.expr + this.calcState.current).replace(/×/g, '*').replace(/÷/g, '/');
-            this.calcState.current = String(eval(sanitized));
-            this.calcState.expr = '';
-          } catch (e) {
-            this.calcState.current = 'Error';
-          }
-        } else if (['+', '-', '*', '/'].includes(val)) {
-          this.calcState.expr = `${this.calcState.current} ${val} `;
-          this.calcState.current = '0';
-        } else {
-          if (this.calcState.current === '0' && val !== '.') {
-            this.calcState.current = val;
-          } else {
-            this.calcState.current += val;
-          }
-        }
-
-        valElem.innerText = this.calcState.current;
-        histElem.innerText = this.calcState.expr;
-      }
-
-      renderCmd(win) {
-        win.content.innerHTML = `
-          <div class="cmd-container">
-            <div class="cmd-output" id="cmd-history">Microsoft Windows [Version 10.0.19045.2965]\n(c) Microsoft Corporation. All rights reserved.\n\nType 'help' for available commands.</div>
-            <div class="cmd-input-line">
-              <span class="cmd-prompt-text">C:\\Users\\Administrator&gt;</span>
-              <input type="text" class="cmd-input" id="cmd-cli" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-            </div>
-          </div>
-        `;
-
-        const cli = win.content.querySelector('#cmd-cli');
-        const history = win.content.querySelector('#cmd-history');
-
-        cli.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            const command = cli.value.trim();
-            history.innerText += `\nC:\\Users\\Administrator> ${command}\n`;
-            this.executeCommand(command, history);
-            cli.value = '';
-            win.content.querySelector('.cmd-container').scrollTop = win.content.querySelector('.cmd-container').scrollHeight;
-          }
-        });
-      }
-
-      executeCommand(cmd, outputElem) {
-        const parts = cmd.split(' ');
-        const main = parts[0].toLowerCase();
-
-        switch (main) {
-          case 'help':
-            outputElem.innerText += `\nSupported commands:\n  help        Display available terminal commands\n  dir         List all files, apps and directories\n  cls         Clear console output\n  backup      Export system data state for iOS Files\n  install     Trigger .jrex package installer\n  ver         Display Windows kernel version\n  reboot      Restart Windows Simulator session\n`;
-            break;
-          case 'dir':
-            outputElem.innerText += `\n Directory of C:\\Users\\Administrator\n\n`;
-            this.state.documents.forEach(d => outputElem.innerText += `08/31/2026  05:30 PM    <DOC>   ${d.name}\n`);
-            this.state.installedJREX.forEach(p => outputElem.innerText += `08/31/2026  05:30 PM    <JREX>  ${p.name}.jrex\n`);
-            break;
-          case 'cls':
-            outputElem.innerText = '';
-            break;
-          case 'backup':
-            this.exportToIOSFiles();
-            outputElem.innerText += `[SUCCESS] Snapshot initiated. File dispatched to iOS browser sandbox.\n`;
-            break;
-          case 'install':
-            this.promptImportJREX();
-            outputElem.innerText += `[INFO] File selector opened. Select a .jrex package.\n`;
-            break;
-          case 'ver':
-            outputElem.innerText += `\nMicrosoft Windows [Version 10.0.19045.2965 - JR AI Edition]\n`;
-            break;
-          case 'reboot':
-            this.reboot();
-            break;
-          case '':
-            break;
-          default:
-            outputElem.innerText += `'${main}' is not recognized as an internal or external command, operable program or batch file.\n`;
-        }
-      }
-
-      renderSettings(win) {
-        win.content.innerHTML = `
-          <div class="settings-container">
-            <div class="settings-sidebar">
-              <div class="settings-nav-item active"><i class="fa-solid fa-palette"></i> Personalization</div>
-              <div class="settings-nav-item"><i class="fa-solid fa-hard-drive"></i> Storage & Backup</div>
-              <div class="settings-nav-item"><i class="fa-solid fa-circle-info"></i> About Windows</div>
-            </div>
-            <div class="settings-page">
-              <div class="settings-group">
-                <div class="settings-title">Personalization</div>
-                <div class="settings-row">
-                  <div>
-                    <div style="font-size:13px; font-weight:500;">Desktop Wallpaper URL</div>
-                    <div style="font-size:11.5px; color:#999;">Set a custom image background for your workspace</div>
-                  </div>
-                  <input type="text" id="setting-wallpaper-input" value="${this.state.wallpaper}" style="background:#111; border:1px solid #444; color:#fff; padding:6px; font-size:12px; width:220px; border-radius:3px;">
-                </div>
-                <button class="setting-btn" onclick="Sys.updateWallpaper()">Apply Wallpaper</button>
-              </div>
-
-              <div class="settings-group">
-                <div class="settings-title">iOS Files Sync & Snapshot</div>
-                <div class="settings-row">
-                  <div>
-                    <div style="font-size:13px; font-weight:500;">Persistent Data Engine</div>
-                    <div style="font-size:11.5px; color:#999;">Sync all apps, desktop layout, and files directly to iOS Files app</div>
-                  </div>
-                  <button class="setting-btn" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-download"></i> Save to iOS Files</button>
-                </div>
-                <div class="settings-row">
-                  <div>
-                    <div style="font-size:13px; font-weight:500;">Import .jrex Package</div>
-                    <div style="font-size:11.5px; color:#999;">Install third-party applications into the system</div>
-                  </div>
-                  <button class="setting-btn" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-box-open"></i> Install JREX</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      renderJREXInstaller(win) {
-        win.content.innerHTML = `
-          <div style="padding:24px; color:#fff; height:100%; overflow-y:auto;">
-            <h2>JR Application Package Manager (.jrex)</h2>
-            <p style="font-size:12.5px; color:#aaa; margin:8px 0 20px 0;">
-              .jrex packages are sandboxed standalone applications containing HTML5, JavaScript logic, and styling.
-            </p>
-
-            <div style="border: 2px dashed #444; border-radius:6px; padding:30px; text-align:center; margin-bottom:20px; cursor:pointer;" onclick="Sys.promptImportJREX()">
-              <i class="fa-solid fa-cloud-arrow-up" style="font-size:36px; color:var(--accent-color); margin-bottom:12px;"></i>
-              <div style="font-weight:600; font-size:14px;">Click to Browse or Drop .jrex File</div>
-              <div style="font-size:11px; color:#888; margin-top:4px;">Supports all standard .jrex / .json application archives</div>
-            </div>
-
-            <h3>Sample Quick Install Packages</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
-              <div style="background:#252525; padding:12px; border:1px solid #333; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                  <div style="font-weight:600; font-size:13px;"><i class="fa-solid fa-palette"></i> Canvas Paint</div>
-                  <div style="font-size:11px; color:#888;">Drawing tool built for JREX</div>
-                </div>
-                <button class="setting-btn" onclick="Sys.installSamplePaint()">Install</button>
-              </div>
-
-              <div style="background:#252525; padding:12px; border:1px solid #333; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                  <div style="font-weight:600; font-size:13px;"><i class="fa-solid fa-clock"></i> Stopwatch Pro</div>
-                  <div style="font-size:11px; color:#888;">Precision timer app</div>
-                </div>
-                <button class="setting-btn" onclick="Sys.installSampleStopwatch()">Install</button>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      installSamplePaint() {
-        const paintPkg = {
-          id: 'jrex_paint',
-          name: 'Paint Studio',
-          icon: 'fa-solid fa-palette',
-          width: 640,
-          height: 460,
-          html: `
-            <div style="display:flex; flex-direction:column; height:100vh; background:#222; color:#fff;">
-              <div style="padding:8px; background:#333; display:flex; gap:10px; align-items:center;">
-                <input type="color" id="colorPicker" value="#0078d7">
-                <input type="range" id="brushSize" min="1" max="40" value="4">
-                <button id="clearBtn" style="background:#555; color:#fff; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Clear Canvas</button>
-              </div>
-              <canvas id="paintCanvas" style="flex:1; background:#fff; cursor:crosshair;"></canvas>
-            </div>
-          `,
-          js: `
-            const canvas = document.getElementById('paintCanvas');
-            const ctx = canvas.getContext('2d');
-            const colorPicker = document.getElementById('colorPicker');
-            const brushSize = document.getElementById('brushSize');
-            const clearBtn = document.getElementById('clearBtn');
-
-            function resize() {
-              canvas.width = canvas.parentElement.clientWidth;
-              canvas.height = canvas.parentElement.clientHeight - 45;
+            if (!isNaN(s)) {
+                let m = Math.floor(s / 60), sec = Math.floor(s % 60);
+                curTimeEl.innerText = m.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
+                
+                if (d && !isUserSeeking) {
+                    seekBar.value = (s / d) * 100;
+                }
             }
-            window.addEventListener('resize', resize);
-            setTimeout(resize, 50);
-
-            let painting = false;
-            canvas.addEventListener('mousedown', () => painting = true);
-            window.addEventListener('mouseup', () => { painting = false; ctx.beginPath(); });
-            canvas.addEventListener('mousemove', draw);
-
-            function draw(e) {
-              if (!painting) return;
-              ctx.lineWidth = brushSize.value;
-              ctx.lineCap = 'round';
-              ctx.strokeStyle = colorPicker.value;
-              const rect = canvas.getBoundingClientRect();
-              ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            if (!isNaN(d)) {
+                let dm = Math.floor(d / 60), dsec = Math.floor(d % 60);
+                durTimeEl.innerText = dm.toString().padStart(2, '0') + ':' + dsec.toString().padStart(2, '0');
             }
 
-            clearBtn.addEventListener('click', () => {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-            });
-          `
-        };
-        this.registerJREXPackage(paintPkg, true);
-      }
-
-      installSampleStopwatch() {
-        const timerPkg = {
-          id: 'jrex_stopwatch',
-          name: 'Stopwatch Pro',
-          icon: 'fa-solid fa-stopwatch',
-          width: 400,
-          height: 320,
-          html: `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#181818; color:#fff; font-family:'Product Sans', sans-serif;">
-              <h1 id="time-display" style="font-size:48px; font-weight:300; margin-bottom:24px; font-variant-numeric:tabular-nums;">00:00.00</h1>
-              <div style="display:flex; gap:12px;">
-                <button id="start-btn" style="background:#0078d7; color:#fff; border:none; padding:8px 24px; font-size:14px; border-radius:3px; cursor:pointer;">Start</button>
-                <button id="reset-btn" style="background:#333; color:#fff; border:none; padding:8px 24px; font-size:14px; border-radius:3px; cursor:pointer;">Reset</button>
-              </div>
-            </div>
-          `,
-          js: `
-            let startTime, interval;
-            let running = false;
-            let elapsed = 0;
-
-            const display = document.getElementById('time-display');
-            const startBtn = document.getElementById('start-btn');
-            const resetBtn = document.getElementById('reset-btn');
-
-            function formatTime(ms) {
-              const totalSec = Math.floor(ms / 1000);
-              const m = Math.floor(totalSec / 60);
-              const s = totalSec % 60;
-              const cs = Math.floor((ms % 1000) / 10);
-              return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(cs).padStart(2,'0');
+            if (isSyncedLyrics && parsedLyrics.length > 0) {
+                let activeIdx = -1;
+                for (let i = 0; i < parsedLyrics.length; i++) {
+                    if (s >= parsedLyrics[i].time) activeIdx = i;
+                    else break;
+                }
+                
+                if (activeIdx !== currentLyricIndex) {
+                    lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                    if (activeIdx !== -1) {
+                        const currEl = lyricsContentEl.querySelector(`#lyric-${activeIdx}`);
+                        if (currEl) {
+                            currEl.classList.add('active');
+                            const container = lyricsContainerEl;
+                            const scrollPos = currEl.offsetTop - (container.clientHeight / 2) + (currEl.clientHeight / 2);
+                            container.scrollTo({ top: scrollPos, behavior: 'smooth' });
+                            
+                            const currentLine = parsedLyrics[activeIdx];
+                            updateMediaSession(currentLine.text);
+                        }
+                    } else {
+                        updateMediaSession();
+                    }
+                    currentLyricIndex = activeIdx;
+                }
             }
-
-            startBtn.addEventListener('click', () => {
-              if (!running) {
-                startTime = Date.now() - elapsed;
-                interval = setInterval(() => {
-                  elapsed = Date.now() - startTime;
-                  display.innerText = formatTime(elapsed);
-                }, 10);
-                startBtn.innerText = 'Pause';
-                startBtn.style.background = '#d13438';
-                running = true;
-              } else {
-                clearInterval(interval);
-                startBtn.innerText = 'Start';
-                startBtn.style.background = '#0078d7';
-                running = false;
-              }
-            });
-
-            resetBtn.addEventListener('click', () => {
-              clearInterval(interval);
-              elapsed = 0;
-              running = false;
-              display.innerText = '00:00.00';
-              startBtn.innerText = 'Start';
-              startBtn.style.background = '#0078d7';
-            });
-          `
         };
-        this.registerJREXPackage(timerPkg, true);
-      }
 
-      // ========================================================================
-      // SYSTEM UTILITIES & SHELL CONTROLS
-      // ========================================================================
-      toggleStartMenu() {
-        const menu = document.getElementById('start-menu');
-        const isVisible = menu.style.display === 'flex';
-        menu.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) document.getElementById('action-center').style.display = 'none';
-      }
-
-      closeStartMenu() {
-        document.getElementById('start-menu').style.display = 'none';
-      }
-
-      toggleActionCenter() {
-        const ac = document.getElementById('action-center');
-        const isVisible = ac.style.display === 'flex';
-        ac.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) this.closeStartMenu();
-      }
-
-      pushNotification(title, msg) {
-        const feed = document.getElementById('notification-feed');
-        if (!feed) return;
-        if (feed.innerText.includes('No new notifications.')) {
-          feed.innerHTML = '';
-        }
-        const notif = document.createElement('div');
-        notif.style.cssText = 'background:rgba(255,255,255,0.06); padding:10px; border-radius:3px; margin-bottom:8px; border-left:3px solid var(--accent-color);';
-        notif.innerHTML = `<strong>${title}</strong><div style="margin-top:2px; font-size:11.5px; color:#ccc;">${msg}</div>`;
-        feed.prepend(notif);
-      }
-
-      clearNotifications() {
-        const feed = document.getElementById('notification-feed');
-        if (feed) feed.innerHTML = 'No new notifications.';
-      }
-
-      updateWallpaper() {
-        const input = document.getElementById('setting-wallpaper-input');
-        if (input && input.value) {
-          this.state.wallpaper = input.value;
-          this.savePersistentState();
-          this.applyPersonalization();
-          this.pushNotification('Wallpaper', 'Personalization settings updated.');
-        }
-      }
-
-      applyPersonalization() {
-        document.getElementById('desktop').style.backgroundImage = `url("${this.state.wallpaper}")`;
-      }
-
-      refreshDesktop() {
-        this.renderDesktop();
-        this.renderTaskbar();
-        this.pushNotification('System', 'Desktop refreshed.');
-      }
-
-      toggleFullscreen() {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(() => {});
-        } else {
-          document.exitFullscreen().catch(() => {});
-        }
-      }
-
-      reboot() {
-        location.reload();
-      }
-
-      startClock() {
-        const update = () => {
-          const now = new Date();
-          let hours = now.getHours();
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          hours = hours % 12 || 12;
-
-          const timeStr = `${hours}:${minutes} ${ampm}`;
-          const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
-
-          const tElem = document.getElementById('tray-time');
-          const dElem = document.getElementById('tray-date');
-          if (tElem) tElem.innerText = timeStr;
-          if (dElem) dElem.innerText = dateStr;
+        searchInput.oninput = () => {
+            const val = searchInput.value.toLowerCase();
+            filteredTracks = playlists[currentPlaylist].filter(s => s.t.toLowerCase().includes(val));
+            renderList();
         };
-        update();
-        setInterval(update, 1000);
-      }
 
-      setupEventListeners() {
-        // Close menus when clicking outside
-        window.addEventListener('click', (e) => {
-          const startMenu = document.getElementById('start-menu');
-          const startBtn = document.getElementById('start-btn');
-          if (startMenu && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
-            startMenu.style.display = 'none';
-          }
+        btnMode.onclick = () => { 
+            const modes = ['list', 'random', 'single']; 
+            loopMode = modes[(modes.indexOf(loopMode) + 1) % modes.length]; 
+            lcdMode.innerText = loopMode.toUpperCase();
+        };
 
-          const actionCenter = document.getElementById('action-center');
-          if (actionCenter && !actionCenter.contains(e.target) && !e.target.closest('.tray-item')) {
-            actionCenter.style.display = 'none';
-          }
+        async function loadLibrary(user, repo) {
+            try {
+                audio.pause(); audio.src = ''; curTimeEl.innerText = '00:00'; durTimeEl.innerText = '00:00';
+                playlists = {}; filteredTracks = []; listContainer.innerHTML = ''; navContainer.innerHTML = '';
+                titleEl.innerText = 'Loading Repo...'; netStatus.innerText = `CONNECTING...`;
+                
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/`);
+                if (!res.ok) throw new Error('API LIMIT OR REPO NOT FOUND');
+                
+                const items = await res.json();
+                playlists['Root'] = filterAudio(items);
+                
+                const folders = items.filter(i => i.type === 'dir');
+                for (let f of folders) {
+                    netStatus.innerText = `FETCHING DIR: ${f.name}`;
+                    const subData = await (await fetch(f.url)).json();
+                    const tracks = filterAudio(subData);
+                    if(tracks.length > 0) playlists[f.name] = tracks;
+                }
+                
+                netStatus.innerText = 'ONLINE';
+                localStorage.setItem('jrmusic_gh_user', user);
+                localStorage.setItem('jrmusic_gh_repo', repo);
+                
+                renderNav(); switchPlaylist('Root');
+            } catch (e) {
+                titleEl.innerText = 'Connection Error'; netStatus.innerText = 'SYNC FAILED - CHECK REPO OR API';
+            }
+        }
+        
+        btnSync.onclick = () => { const u = ghUserInp.value.trim(); const r = ghRepoInp.value.trim(); if(u && r) loadLibrary(u, r); };
+        loadLibrary(savedUser, savedRepo);
 
-          // Close context menu
-          document.getElementById('context-menu').style.display = 'none';
-          
-          // Deselect desktop icons
-          if (!e.target.closest('.desktop-icon')) {
-            document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
-          }
-        });
-
-        // Desktop Context Menu
-        const desktop = document.getElementById('desktop');
-        desktop.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          const menu = document.getElementById('context-menu');
-          menu.style.display = 'flex';
-          menu.style.left = `${Math.min(e.clientX, window.innerWidth - 220)}px`;
-          menu.style.top = `${Math.min(e.clientY, window.innerHeight - 200)}px`;
-        });
-
-        // Desktop Selection Box drag
-        let isSelecting = false;
-        let selectStart = { x: 0, y: 0 };
-        const selBox = document.getElementById('selection-box');
-
-        desktop.addEventListener('mousedown', (e) => {
-          if (e.target !== desktop && e.target !== document.getElementById('desktop-icons-container')) return;
-          isSelecting = true;
-          selectStart = { x: e.clientX, y: e.clientY };
-          selBox.style.left = `${e.clientX}px`;
-          selBox.style.top = `${e.clientY}px`;
-          selBox.style.width = '0px';
-          selBox.style.height = '0px';
-          selBox.style.display = 'block';
-        });
-
-        window.addEventListener('mousemove', (e) => {
-          if (!isSelecting) return;
-          const currentX = e.clientX;
-          const currentY = e.clientY;
-          const x = Math.min(selectStart.x, currentX);
-          const y = Math.min(selectStart.y, currentY);
-          const w = Math.abs(currentX - selectStart.x);
-          const h = Math.abs(currentY - selectStart.y);
-
-          selBox.style.left = `${x}px`;
-          selBox.style.top = `${y}px`;
-          selBox.style.width = `${w}px`;
-          selBox.style.height = `${h}px`;
-        });
-
-        window.addEventListener('mouseup', () => {
-          if (isSelecting) {
-            isSelecting = false;
-            selBox.style.display = 'none';
-          }
-        });
-      }
-    }
-
-    // Launch Operating System Instance
-    const Sys = new OperatingSystem();
-    window.Sys = Sys;
-  </script>
+        winObj.onDestroy = () => {
+            audio.pause(); audio.src = '';
+            if (currentCoverObjectURL) URL.revokeObjectURL(currentCoverObjectURL);
+        };
+    </script>
 </body>
 </html>
