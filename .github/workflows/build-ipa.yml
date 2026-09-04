@@ -38,8 +38,11 @@ jobs:
       - name: Build Libbox.xcframework
         working-directory: /tmp/sing-box
         run: |
+          # 1. 補全專案本身的常規模組依賴
           go mod tidy
-          # 注意：with_ech 已棄用，此處僅保留相容標籤
+          # 2. 注入 gomobile 所需的依賴（避免 missing golang.org/x/mobile dependency 報錯）
+          go get golang.org/x/mobile/cmd/gobind
+          # 3. 編譯 Framework（已移除已棄用的 with_ech）
           gomobile bind \
             -v -x \
             -target=ios,iossimulator \
