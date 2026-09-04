@@ -18,15 +18,50 @@ jobs:
 
       - name: Download Libbox Prebuilt Core
         run: |
-          echo ">>> 正在下载预编译 sing-box 核心 (Libbox.xcframework) ..."
-          curl -L -o libbox.tar.xz https://github.com/SagerNet/sing-box/releases/latest/download/libbox-darwin-arm64.tar.xz
-          tar -xf libbox.tar.xz
-          # 确保根目录存在 Libbox.xcframework 供 project.yml 链接
-          if [ ! -d "Libbox.xcframework" ]; then
-            echo "ERROR: Libbox.xcframework not found after extraction!"
-            ls -la
+          echo ">>> 正在查询 sing-box 最新 release 资源列表 ..."
+          
+          # 通过 GitHub API 动态匹配包含 libbox 且适用于 darwin 或 ios 的压缩包链接
+          DOWNLOAD_URL=$(curl -sL https://api.github.com/repos/SagerNet/sing-box/releases/latest | \
+            grep -Eo '"browser_download_url": *"[^"]*libbox[^"]*(darwin|ios)[^"]*\.(tar\.xz|zip)"' | \
+            head -n 1 | cut -d '"' -f 4)
+
+          if [ -z "$DOWNLOAD_URL" ]; then
+            echo ">>> 未在 latest 中匹配到，尝试搜索全部 releases ..."
+            DOWNLOAD_URL=$(curl -sL https://api.github.com/repos/SagerNet/sing-box/releases | \
+              grep -Eo '"browser_download_url": *"[^"]*libbox[^"]*\.(tar\.xz|zip)"' | \
+              head -n 1 | cut -d '"' -f 4)
+          fi
+
+          if [ -z "$DOWNLOAD_URL" ]; then
+            echo "ERROR: 找不到可用的 Libbox 下载资源，请检查 Releases 列表！"
             exit 1
           fi
+
+          echo ">>> 实际下载链接: $DOWNLOAD_URL"
+          
+          # -f 确保遇到 404 等 HTTP 错误时立即报错中断，不下载错误文本
+          if [[ "$DOWNLOAD_URL" == *.zip ]]; then
+            curl -fL -o libbox.zip "$DOWNLOAD_URL"
+            unzip -q libbox.zip
+          else
+            curl -fL -o libbox.tar.xz "$DOWNLOAD_URL"
+            tar -xf libbox.tar.xz
+          fi
+
+          # 确保解压出来的 Libbox.xcframework 位于项目根目录下
+          if [ ! -d "Libbox.xcframework" ]; then
+            FOUND_PATH=$(find . -maxdepth 3 -name "Libbox.xcframework" -type d | head -n 1)
+            if [ -n "$FOUND_PATH" ]; then
+              mv "$FOUND_PATH" ./Libbox.xcframework
+            else
+              echo "ERROR: 未能找到 Libbox.xcframework，请检查解压产物！"
+              ls -la
+              exit 1
+            fi
+          fi
+
+          echo ">>> Libbox.xcframework 准备完成！"
+          ls -ld Libbox.xcframework
 
       - name: Generate Xcode Project
         run: xcodegen generate
