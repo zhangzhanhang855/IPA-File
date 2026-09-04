@@ -1,21 +1,24 @@
 name: StockScope
 options:
-  bundleIdPrefix: com.yourdomain
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "13.0"
+packages: {}
 targets:
   StockScope:
     type: application
     platform: iOS
-    deploymentTarget: "15.0"
-    sources: [StockScope]
-    dependencies:
-      - target: PacketTunnel
-
-  PacketTunnel:
-    type: app-extension
-    platform: iOS
-    deploymentTarget: "15.0"
-    sources: [PacketTunnel]
-    dependencies:
-      - framework: Libbox.xcframework
-    info:
-      path: PacketTunnel/Info.plist
+    sources:
+      - path: StockScope
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.stockscope
+        INFOPLIST_FILE: StockScope/Info.plist
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "13.0"
+        # CI 流程以手动签名为主;本地 macOS Xcode 可切回 Automatic
+        CODE_SIGN_STYLE: "Automatic"
+        DEVELOPMENT_TEAM: ""
+        # 启用 AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
