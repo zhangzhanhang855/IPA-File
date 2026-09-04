@@ -16,20 +16,33 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Download Libbox Prebuilt Core
+        run: |
+          echo ">>> 正在下载预编译 sing-box 核心 (Libbox.xcframework) ..."
+          curl -L -o libbox.tar.xz https://github.com/SagerNet/sing-box/releases/latest/download/libbox-darwin-arm64.tar.xz
+          tar -xf libbox.tar.xz
+          # 确保根目录存在 Libbox.xcframework 供 project.yml 链接
+          if [ ! -d "Libbox.xcframework" ]; then
+            echo "ERROR: Libbox.xcframework not found after extraction!"
+            ls -la
+            exit 1
+          fi
+
       - name: Generate Xcode Project
         run: xcodegen generate
 
       - name: Build App with Xcode (arm64 Device)
         run: |
+          # 采用 Ad-Hoc 伪签名 ("-")，保证主 App 与 Extension 均能完成构建并正确嵌入
           xcodebuild clean build \
             -project StockScope.xcodeproj \
             -scheme StockScope \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -configuration Release \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_ALLOWED=YES \
             ARCHS="arm64" \
             ONLY_ACTIVE_ARCH=NO \
             CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
@@ -38,12 +51,22 @@ jobs:
         run: |
           APP_PATH="./build/Release-iphoneos/StockScope.app"
           
-          # 检查编译产物中是否存在可执行文件
+          # 检查主 App 可执行文件
           if [ ! -f "$APP_PATH/StockScope" ]; then
             echo "ERROR: StockScope binary executable not found in $APP_PATH!"
             ls -la "$APP_PATH"
             exit 1
           fi
+          
+          # 检查网络扩展插件目录
+          if [ ! -d "$APP_PATH/PlugIns" ]; then
+            echo "ERROR: PlugIns directory not found! PacketTunnel was not embedded."
+            ls -la "$APP_PATH"
+            exit 1
+          fi
+          
+          echo ">>> 验证 PlugIns 内容："
+          ls -la "$APP_PATH/PlugIns"
           
           # 检查架构是否包含 arm64
           lipo -info "$APP_PATH/StockScope"
