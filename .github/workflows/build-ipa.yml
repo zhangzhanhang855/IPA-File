@@ -1,19 +1,13 @@
-name: Build Libbox.xcframework
+name: Build Unsigned sing-box IPA
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: macos-15
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -31,33 +25,54 @@ jobs:
           go install golang.org/x/mobile/cmd/gobind@latest
           gomobile init
 
-      - name: Clone sing-box
+      - name: Clone sing-box core
         run: |
           git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
 
       - name: Build Libbox.xcframework
         working-directory: /tmp/sing-box
         run: |
-          # 1. 補全專案本身的常規模組依賴
           go mod tidy
-          # 2. 注入 gomobile 所需的依賴（避免 missing golang.org/x/mobile dependency 報錯）
           go get golang.org/x/mobile/cmd/gobind
-          # 3. 編譯 Framework（已移除已棄用的 with_ech）
           gomobile bind \
-            -v -x \
-            -target=ios,iossimulator \
+            -v \
+            -target=ios \
             -tags="with_clash_api,with_quic,with_wireguard" \
-            -o Libbox.xcframework \
+            -o /tmp/Libbox.xcframework \
             ./experimental/libbox
 
-      - name: Compress Framework
-        working-directory: /tmp/sing-box
+      - name: Clone sing-box-for-apple
         run: |
-          zip -r -9 Libbox.xcframework.zip Libbox.xcframework
+          git clone --depth=1 --recursive https://github.com/SagerNet/sing-box-for-apple.git /tmp/sing-box-for-apple
 
-      - name: Upload Artifact
+      - name: Copy Libbox.xcframework to Project
+        run: |
+          # 將編譯出的 Framework 複製到項目依賴路徑
+          cp -r /tmp/Libbox.xcframework /tmp/sing-box-for-apple/
+
+      - name: Build and Package Unsigned IPA
+        working-directory: /tmp/sing-box-for-apple
+        run: |
+          # 1. 禁用代碼簽名並編譯 Release 版本
+          xcodebuild build \
+            -project sing-box.xcodeproj \
+            -scheme "sing-box (iOS)" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+          # 2. 定位生成的 .app 文件並手動打包成 IPA 格式
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -r -9 /tmp/sing-box-unsigned.ipa Payload
+
+      - name: Upload Unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Libbox.xcframework
-          path: /tmp/sing-box/Libbox.xcframework.zip
+          name: sing-box-unsigned-ipa
+          path: /tmp/sing-box-unsigned.ipa
           retention-days: 7
