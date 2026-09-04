@@ -1,107 +1,60 @@
-name: Build Unsigned IPA
+name: Build Libbox.xcframework
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install XcodeGen & Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Set up Xcode
         run: |
-          brew install xcodegen go
+          sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
+          echo "SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)" >> $GITHUB_ENV
+
+      - name: Install gomobile & tools
+        run: |
           go install golang.org/x/mobile/cmd/gomobile@latest
           go install golang.org/x/mobile/cmd/gobind@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          gomobile init
+
+      - name: Clone sing-box
+        run: |
+          git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
 
       - name: Build Libbox.xcframework
+        working-directory: /tmp/sing-box
         run: |
-          echo ">>> 初始化 gomobile ..."
-          gomobile init
-          
-          echo ">>> 克隆 sing-box 源码 ..."
-          git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
-          cd /tmp/sing-box
-          
-          echo ">>> 补全 gomobile 模块依赖 ..."
-          go get golang.org/x/mobile
-          
-          echo ">>> 开始编译 Libbox.xcframework (iOS arm64) ..."
-          gomobile bind -v -target=ios -tags="with_clash_api,with_quic,with_wireguard,with_ech" -o "$GITHUB_WORKSPACE/Libbox.xcframework" ./experimental/libbox
-          
-          cd "$GITHUB_WORKSPACE"
-          if [ ! -d "Libbox.xcframework" ]; then
-            echo "ERROR: Libbox.xcframework 生成失败！"
-            exit 1
-          fi
-          echo ">>> Libbox.xcframework 编译完成！"
-          ls -ld Libbox.xcframework
+          go mod tidy
+          # 注意：with_ech 已棄用，此處僅保留相容標籤
+          gomobile bind \
+            -v -x \
+            -target=ios,iossimulator \
+            -tags="with_clash_api,with_quic,with_wireguard" \
+            -o Libbox.xcframework \
+            ./experimental/libbox
 
-      - name: Generate Xcode Project
-        run: xcodegen generate
-
-      - name: Build App with Xcode (arm64 Device)
+      - name: Compress Framework
+        working-directory: /tmp/sing-box
         run: |
-          # 采用 Ad-Hoc 伪签名 ("-")，保证主 App 与 Extension 均能完成构建并正确嵌入
-          xcodebuild clean build \
-            -project StockScope.xcodeproj \
-            -scheme StockScope \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES \
-            ARCHS="arm64" \
-            ONLY_ACTIVE_ARCH=NO \
-            CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
+          zip -r -9 Libbox.xcframework.zip Libbox.xcframework
 
-      - name: Verify Executable & Package IPA
-        run: |
-          APP_PATH="./build/Release-iphoneos/StockScope.app"
-          
-          # 检查主 App 可执行文件
-          if [ ! -f "$APP_PATH/StockScope" ]; then
-            echo "ERROR: StockScope binary executable not found in $APP_PATH!"
-            ls -la "$APP_PATH"
-            exit 1
-          fi
-          
-          # 检查网络扩展插件目录
-          if [ ! -d "$APP_PATH/PlugIns" ]; then
-            echo "ERROR: PlugIns directory not found! PacketTunnel was not embedded."
-            ls -la "$APP_PATH"
-            exit 1
-          fi
-          
-          echo ">>> 验证 PlugIns 内容："
-          ls -la "$APP_PATH/PlugIns"
-          
-          # 检查架构是否包含 arm64
-          lipo -info "$APP_PATH/StockScope"
-          
-          # 清理旧目录并创建 Payload
-          rm -rf Payload StockScope-unsigned.ipa
-          mkdir -p Payload
-          cp -r "$APP_PATH" Payload/
-          
-          # 确保 HTML 被放入 App 根目录
-          if [ -f "StockScope/index.html" ]; then
-            cp "StockScope/index.html" "Payload/StockScope.app/"
-          fi
-          
-          # 严格以标准 IPA 结构压缩
-          zip -qr StockScope-unsigned.ipa Payload
-
-      - name: Upload IPA Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: StockScope-unsigned-ipa
-          path: StockScope-unsigned.ipa
+          name: Libbox.xcframework
+          path: /tmp/sing-box/Libbox.xcframework.zip
           retention-days: 7
