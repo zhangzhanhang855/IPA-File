@@ -1,87 +1,69 @@
-name: Build Unsigned sing-box IPA
+name: Build Unsigned IPA
 
 on:
+  push:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-latest
 
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-          cache: false
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Xcode
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build App with Xcode (arm64 Device)
         run: |
-          sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
-          echo "SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)" >> $GITHUB_ENV
-
-      - name: Install gomobile & tools
-        run: |
-          go install golang.org/x/mobile/cmd/gomobile@latest
-          go install golang.org/x/mobile/cmd/gobind@latest
-          gomobile init
-
-      - name: Clone sing-box core
-        run: |
-          git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
-
-      - name: Build Libbox.xcframework
-        working-directory: /tmp/sing-box
-        run: |
-          go mod tidy
-          go get golang.org/x/mobile/cmd/gobind
-          gomobile bind \
-            -v \
-            -target=ios \
-            -tags="with_clash_api,with_quic,with_wireguard" \
-            -o /tmp/Libbox.xcframework \
-            ./experimental/libbox
-
-      - name: Clone sing-box-for-apple
-        run: |
-          git clone --depth=1 --recursive https://github.com/SagerNet/sing-box-for-apple.git /tmp/sing-box-for-apple
-
-      - name: Copy Libbox.xcframework to Project
-        run: |
-          mkdir -p /tmp/sing-box-for-apple/Frameworks
-          cp -r /tmp/Libbox.xcframework /tmp/sing-box-for-apple/Frameworks/
-          cp -r /tmp/Libbox.xcframework /tmp/sing-box-for-apple/
-
-      - name: Build and Package Unsigned IPA
-        working-directory: /tmp/sing-box-for-apple
-        run: |
-          TARGET_SCHEME=$(xcodebuild -project sing-box.xcodeproj -list | awk '/Schemes:/{flag=1;next} flag && /iOS/{print $1; exit}')
-          if [ -z "$TARGET_SCHEME" ]; then
-            TARGET_SCHEME="SFM"
-          fi
-          echo "Building with Scheme: $TARGET_SCHEME"
-
-          # 增加 -skipPackagePluginValidation 繞過 SwiftLint 驗證彈窗
-          xcodebuild build \
-            -project sing-box.xcodeproj \
-            -scheme "$TARGET_SCHEME" \
-            -configuration Release \
+          xcodebuild clean build \
+            -project StockScope.xcodeproj \
+            -scheme StockScope \
             -sdk iphoneos \
-            -derivedDataPath build \
-            -skipPackagePluginValidation \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
             CODE_SIGN_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS="arm64" \
+            ONLY_ACTIVE_ARCH=NO \
+            CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
 
+      - name: Verify Executable & Package IPA
+        run: |
+          APP_PATH="./build/Release-iphoneos/StockScope.app"
+          
+          # 检查编译产物中是否存在可执行文件
+          if [ ! -f "$APP_PATH/StockScope" ]; then
+            echo "ERROR: StockScope binary executable not found in $APP_PATH!"
+            ls -la "$APP_PATH"
+            exit 1
+          fi
+          
+          # 检查架构是否包含 arm64
+          lipo -info "$APP_PATH/StockScope"
+          
+          # 清理旧目录并创建 Payload
+          rm -rf Payload StockScope-unsigned.ipa
           mkdir -p Payload
-          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "*.app" -type d -maxdepth 1 | head -n 1)
-          echo "Found app bundle at: $APP_PATH"
           cp -r "$APP_PATH" Payload/
-          zip -r -9 /tmp/sing-box-unsigned.ipa Payload
+          
+          # 确保 HTML 被放入 App 根目录
+          if [ -f "StockScope/index.html" ]; then
+            cp "StockScope/index.html" "Payload/StockScope.app/"
+          fi
+          
+          # 严格以标准 IPA 结构压缩
+          zip -qr StockScope-unsigned.ipa Payload
 
-      - name: Upload Unsigned IPA
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sing-box-unsigned-ipa
-          path: /tmp/sing-box-unsigned.ipa
-          retention-days: 7
+          name: StockScope-unsigned-ipa
+          path: StockScope-unsigned.ipa
+          retention-days: 14
