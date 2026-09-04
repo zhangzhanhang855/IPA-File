@@ -22,18 +22,20 @@ jobs:
 
       - name: Build Libbox.xcframework
         run: |
-          echo ">>> 拉取 sing-box 源码并使用 gomobile 编译 iOS 核心 ..."
-          # 初始化 gomobile
+          echo ">>> 初始化 gomobile ..."
           gomobile init
           
-          # 克隆 sing-box 仓库
+          echo ">>> 克隆 sing-box 源码 ..."
           git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
           cd /tmp/sing-box
           
-          # 针对 iOS 编译 arm64 架构的 XCFramework
-          gomobile bind -v -target=ios -tags="with_clash_api,with_quic,with_wireguard,with_ech" -o $GITHUB_WORKSPACE/Libbox.xcframework ./experimental/libbox
+          echo ">>> 补全 gomobile 模块依赖 ..."
+          go get golang.org/x/mobile
           
-          cd $GITHUB_WORKSPACE
+          echo ">>> 开始编译 Libbox.xcframework (iOS arm64) ..."
+          gomobile bind -v -target=ios -tags="with_clash_api,with_quic,with_wireguard,with_ech" -o "$GITHUB_WORKSPACE/Libbox.xcframework" ./experimental/libbox
+          
+          cd "$GITHUB_WORKSPACE"
           if [ ! -d "Libbox.xcframework" ]; then
             echo "ERROR: Libbox.xcframework 生成失败！"
             exit 1
