@@ -47,16 +47,27 @@ jobs:
 
       - name: Copy Libbox.xcframework to Project
         run: |
-          # 將編譯出的 Framework 複製到項目依賴路徑
+          mkdir -p /tmp/sing-box-for-apple/Frameworks
+          cp -r /tmp/Libbox.xcframework /tmp/sing-box-for-apple/Frameworks/
           cp -r /tmp/Libbox.xcframework /tmp/sing-box-for-apple/
 
       - name: Build and Package Unsigned IPA
         working-directory: /tmp/sing-box-for-apple
         run: |
-          # 1. 禁用代碼簽名並編譯 Release 版本
+          # 1. 打印當前項目可用的 Schemes
+          xcodebuild -project sing-box.xcodeproj -list
+          
+          # 2. 自動識別包含 iOS 或 SFM 的 Scheme 名稱
+          TARGET_SCHEME=$(xcodebuild -project sing-box.xcodeproj -list | awk '/Schemes:/{flag=1;next} flag && /iOS/{print $1; exit}')
+          if [ -z "$TARGET_SCHEME" ]; then
+            TARGET_SCHEME="SFM"
+          fi
+          echo "Building with Scheme: $TARGET_SCHEME"
+
+          # 3. 禁用代碼簽名並編譯 Release
           xcodebuild build \
             -project sing-box.xcodeproj \
-            -scheme "sing-box (iOS)" \
+            -scheme "$TARGET_SCHEME" \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
@@ -65,9 +76,11 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES
 
-          # 2. 定位生成的 .app 文件並手動打包成 IPA 格式
+          # 4. 定位生成的 .app 並封裝成 IPA 格式
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "*.app" -type d -maxdepth 1 | head -n 1)
+          echo "Found app bundle at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
           zip -r -9 /tmp/sing-box-unsigned.ipa Payload
 
       - name: Upload Unsigned IPA
