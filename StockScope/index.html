@@ -1,2689 +1,1040 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Windows 10 OS Simulator</title>
-  
-  <!-- Typography & Icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Product+Sans:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
-  <style>
-    /* ==========================================================================
-       SYSTEM DESIGN TOKENS
-       ========================================================================== */
-    :root {
-      --font-main: 'Product Sans', 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: 'Roboto Mono', monospace;
-      --accent-color: #0078d7;
-      --accent-hover: #1084df;
-      --accent-glow: rgba(0, 120, 215, 0.4);
-      --taskbar-bg: rgba(16, 16, 16, 0.88);
-      --taskbar-blur: blur(28px);
-      --acrylic-bg: rgba(30, 30, 30, 0.94);
-      --acrylic-blur: blur(35px) saturate(140%);
-      --window-border: rgba(255, 255, 255, 0.12);
-      --window-active-border: var(--accent-color);
-      --text-main: #f3f3f3;
-      --text-muted: #a0a0a0;
-      --bg-dark: #1f1f1f;
-      --bg-light: #2d2d2d;
-      --taskbar-height: 40px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-
-    body, html {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      font-family: var(--font-main);
-      color: var(--text-main);
-      background-color: #000;
-    }
-
-    input, textarea, button {
-      font-family: inherit;
-      user-select: text;
-      -webkit-user-select: text;
-    }
-
-    /* Desktop Viewport */
-    #desktop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: calc(100vh - var(--taskbar-height));
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      overflow: hidden;
-      transition: background-image 0.25s ease-in-out;
-    }
-
-    #selection-box {
-      position: absolute;
-      border: 1px solid rgba(0, 120, 215, 0.85);
-      background: rgba(0, 120, 215, 0.22);
-      pointer-events: none;
-      display: none;
-      z-index: 5;
-    }
-
-    /* Fixed: Desktop Grid does not overlap with taskbar */
-    #desktop-icons-container {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      bottom: 12px;
-      width: calc(100vw - 20px);
-      height: calc(100vh - var(--taskbar-height) - 20px);
-      display: grid;
-      grid-auto-flow: column;
-      grid-template-rows: repeat(auto-fill, 86px);
-      grid-auto-columns: 82px;
-      gap: 10px;
-      z-index: 2;
-      align-content: start;
-    }
-
-    .desktop-icon {
-      width: 80px;
-      height: 86px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 4px;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-
-    .desktop-icon:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.25);
-    }
-
-    .desktop-icon.selected {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.4);
-    }
-
-    .desktop-icon i, .desktop-icon img {
-      font-size: 32px;
-      width: 36px;
-      height: 36px;
-      margin-bottom: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      object-fit: contain;
-      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));
-    }
-
-    .desktop-icon span {
-      font-size: 11.5px;
-      line-height: 1.25;
-      color: #ffffff;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-
-    /* Fixed: Notifications display cleanly above the taskbar */
-    #native-toast-container {
-      position: absolute;
-      bottom: calc(var(--taskbar-height) + 14px);
-      right: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 100002;
-      pointer-events: none;
-    }
-
-    .win10-toast {
-      width: 330px;
-      background: #1c1c1c;
-      border: 1px solid #333;
-      border-left: 4px solid var(--accent-color);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-      padding: 12px 16px;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      animation: toastSlideIn 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
-      pointer-events: auto;
-    }
-
-    .win10-toast.success { border-left-color: #107c10; }
-    .win10-toast.error { border-left-color: #e81123; }
-
-    .toast-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: #e0e0e0;
-    }
-
-    .toast-body {
-      font-size: 11.5px;
-      color: #b5b5b5;
-      line-height: 1.4;
-    }
-
-    @keyframes toastSlideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    /* ==========================================================================
-       APP LAUNCH SPLASH SCREEN (1s Windows Native Spinner)
-       ========================================================================== */
-    .app-splash-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #1c1c1c;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      opacity: 1;
-      transition: opacity 0.25s ease-out;
-    }
-
-    .app-splash-icon {
-      font-size: 48px;
-      color: var(--accent-color);
-      margin-bottom: 24px;
-      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
-    }
-
-    .app-splash-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid rgba(255, 255, 255, 0.15);
-      border-top-color: var(--accent-color);
-      border-radius: 50%;
-      animation: spinRing 0.85s linear infinite;
-    }
-
-    @keyframes spinRing {
-      to { transform: rotate(360deg); }
-    }
-
-    /* ==========================================================================
-       TASKBAR
-       ========================================================================== */
-    #taskbar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100vw;
-      height: var(--taskbar-height);
-      background: var(--taskbar-bg);
-      backdrop-filter: var(--taskbar-blur);
-      -webkit-backdrop-filter: var(--taskbar-blur);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 99999;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    #taskbar-left, #taskbar-tray {
-      display: flex;
-      height: 100%;
-      align-items: center;
-    }
-
-    .taskbar-btn {
-      width: 48px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #ffffff;
-      cursor: pointer;
-      position: relative;
-      transition: background 0.15s ease;
-    }
-
-    .taskbar-btn:hover { background: rgba(255, 255, 255, 0.12); }
-    .taskbar-btn:active { background: rgba(255, 255, 255, 0.2); }
-
-    #taskbar-apps {
-      display: flex;
-      height: 100%;
-      gap: 2px;
-    }
-
-    .taskbar-app-item {
-      width: 46px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      position: relative;
-      transition: background 0.15s;
-    }
-
-    .taskbar-app-item:hover { background: rgba(255, 255, 255, 0.1); }
-    .taskbar-app-item.active { background: rgba(255, 255, 255, 0.15); }
-
-    .taskbar-app-item.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 6px;
-      right: 6px;
-      height: 2px;
-      background: var(--accent-color);
-      box-shadow: 0 0 6px var(--accent-color);
-    }
-
-    .taskbar-app-item.running:not(.active)::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 18px;
-      right: 18px;
-      height: 2px;
-      background: #888;
-    }
-
-    .taskbar-app-item i, .taskbar-app-item img {
-      font-size: 18px;
-      width: 20px;
-      height: 20px;
-      object-fit: contain;
-    }
-
-    .tray-item {
-      padding: 0 8px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .tray-item:hover { background: rgba(255, 255, 255, 0.12); }
-
-    #clock-widget {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-end;
-      padding: 0 10px;
-      font-size: 11px;
-      line-height: 1.3;
-    }
-
-    #show-desktop-btn {
-      width: 6px;
-      height: 100%;
-      border-left: 1px solid rgba(255, 255, 255, 0.2);
-      cursor: pointer;
-    }
-
-    #show-desktop-btn:hover { background: rgba(255, 255, 255, 0.25); }
-
-    /* ==========================================================================
-       START MENU & ACTION CENTER
-       ========================================================================== */
-    #start-menu {
-      position: absolute;
-      bottom: var(--taskbar-height);
-      left: 0;
-      width: 640px;
-      height: 540px;
-      background: var(--acrylic-bg);
-      backdrop-filter: var(--acrylic-blur);
-      -webkit-backdrop-filter: var(--acrylic-blur);
-      border: 1px solid var(--window-border);
-      display: none;
-      flex-direction: row;
-      z-index: 99998;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
-      animation: startMenuSlide 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
-    }
-
-    @keyframes startMenuSlide {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    #start-left-bar {
-      width: 48px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .start-bar-btn {
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .start-bar-btn:hover { background: rgba(255, 255, 255, 0.15); }
-
-    #start-apps-list {
-      width: 240px;
-      height: 100%;
-      overflow-y: auto;
-      padding: 12px 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .start-app-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 12px;
-      border-radius: 2px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background 0.15s;
-    }
-
-    .start-app-row:hover { background: rgba(255, 255, 255, 0.12); }
-
-    .start-app-row i, .start-app-row img {
-      font-size: 18px;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      object-fit: contain;
-    }
-
-    #start-tiles-view {
-      flex: 1;
-      height: 100%;
-      overflow-y: auto;
-      padding: 16px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows: 95px;
-      gap: 8px;
-      background: rgba(0, 0, 0, 0.15);
-    }
-
-    .live-tile {
-      background: var(--accent-color);
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      cursor: pointer;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: transform 0.15s ease, filter 0.15s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .live-tile:hover {
-      transform: scale(0.98);
-      filter: brightness(1.15);
-    }
-
-    .live-tile i { font-size: 26px; }
-
-    .live-tile span {
-      font-size: 11.5px;
-      font-weight: 500;
-      color: #fff;
-    }
-
-    /* Action Center */
-    #action-center {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 360px;
-      height: calc(100vh - var(--taskbar-height));
-      background: var(--acrylic-bg);
-      backdrop-filter: var(--acrylic-blur);
-      -webkit-backdrop-filter: var(--acrylic-blur);
-      border-left: 1px solid var(--window-border);
-      display: none;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 18px;
-      z-index: 99998;
-      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-      animation: actionCenterSlide 0.22s ease-out;
-    }
-
-    @keyframes actionCenterSlide {
-      from { transform: translateX(100%); }
-      to { transform: translateX(0); }
-    }
-
-    .action-tiles-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-    }
-
-    .action-tile {
-      height: 60px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      cursor: pointer;
-      font-size: 10.5px;
-      color: #ddd;
-      border-radius: 2px;
-      transition: background 0.15s;
-    }
-
-    .action-tile.active {
-      background: var(--accent-color);
-      color: #fff;
-    }
-
-    .action-tile i { font-size: 16px; }
-
-    /* ==========================================================================
-       WINDOW MANAGER
-       ========================================================================== */
-    .win10-window {
-      position: absolute;
-      background: var(--bg-dark);
-      border: 1px solid var(--window-border);
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.65);
-      border-radius: 4px 4px 0 0;
-      display: flex;
-      flex-direction: column;
-      min-width: 320px;
-      min-height: 200px;
-      overflow: hidden;
-      z-index: 10;
-    }
-
-    .win10-window.active {
-      border-color: var(--window-active-border);
-      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85);
-    }
-
-    .window-titlebar {
-      height: 32px;
-      background: #181818;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-left: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      cursor: default;
-    }
-
-    .win10-window.active .window-titlebar { background: #202020; }
-
-    .window-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #e0e0e0;
-      pointer-events: none;
-    }
-
-    .window-title i, .window-title img {
-      width: 16px;
-      height: 16px;
-      font-size: 14px;
-      object-fit: contain;
-    }
-
-    .window-controls { display: flex; height: 100%; }
-
-    .win-control-btn {
-      width: 44px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      color: #ccc;
-      cursor: pointer;
-      transition: background 0.12s;
-    }
-
-    .win-control-btn:hover { background: rgba(255, 255, 255, 0.1); }
-    .win-control-btn.btn-close:hover { background: #e81123; color: #fff; }
-
-    .window-content {
-      flex: 1;
-      width: 100%;
-      height: calc(100% - 32px);
-      overflow: auto;
-      background: #252525;
-      position: relative;
-    }
-
-    .resize-handle { position: absolute; z-index: 100; }
-    .resize-right { right: 0; top: 0; width: 6px; height: 100%; cursor: ew-resize; }
-    .resize-bottom { bottom: 0; left: 0; height: 6px; width: 100%; cursor: ns-resize; }
-    .resize-corner { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
-
-    /* ==========================================================================
-       FILE EXPLORER (Interactive Folders)
-       ========================================================================== */
-    .explorer-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #1e1e1e;
-      color: #eee;
-    }
-    .explorer-ribbon {
-      padding: 6px 12px;
-      background: #2d2d2d;
-      border-bottom: 1px solid #3a3a3a;
-      display: flex;
-      gap: 8px;
-    }
-    .explorer-btn {
-      background: #3a3a3a;
-      border: 1px solid #4a4a4a;
-      color: #fff;
-      padding: 4px 10px;
-      font-size: 11.5px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .explorer-btn:hover { background: #484848; }
-    .explorer-address-bar {
-      padding: 4px 8px;
-      background: #252525;
-      border-bottom: 1px solid #333;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-    }
-    .address-box {
-      flex: 1;
-      background: #181818;
-      border: 1px solid #3c3c3c;
-      padding: 3px 8px;
-      color: #ddd;
-      font-size: 11.5px;
-      border-radius: 2px;
-    }
-    .explorer-body {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
-    .explorer-sidebar {
-      width: 190px;
-      background: #181818;
-      border-right: 1px solid #2d2d2d;
-      padding: 8px;
-      overflow-y: auto;
-      font-size: 12px;
-    }
-    .sidebar-folder {
-      padding: 7px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      color: #ccc;
-    }
-    .sidebar-folder:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
-    .sidebar-folder.active { background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 500; }
-
-    .explorer-file-view {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      grid-auto-rows: 90px;
-      gap: 10px;
-      align-content: start;
-    }
-    .file-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
-      border-radius: 3px;
-      cursor: pointer;
-      text-align: center;
-      border: 1px solid transparent;
-    }
-    .file-item:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-    .file-item i {
-      font-size: 32px;
-      margin-bottom: 4px;
-    }
-    .file-item span {
-      font-size: 11px;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* ==========================================================================
-       SETTINGS (Authentic Hub, Wallpaper Upload & Presets)
-       ========================================================================== */
-    .settings-window-body {
-      height: 100%;
-      background: #1f1f1f;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-
-    .settings-header-nav {
-      padding: 12px 20px;
-      background: #181818;
-      border-bottom: 1px solid #2d2d2d;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .settings-back-btn {
-      background: transparent;
-      border: 1px solid #444;
-      color: #fff;
-      padding: 4px 10px;
-      font-size: 11px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .settings-back-btn:hover { background: rgba(255, 255, 255, 0.1); }
-
-    .settings-main-hub {
-      padding: 30px 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .settings-hub-title {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-
-    .settings-grid-categories {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      width: 100%;
-      max-width: 780px;
-    }
-
-    .settings-card {
-      background: #252525;
-      border: 1px solid #333;
-      padding: 16px;
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-      border-radius: 2px;
-    }
-
-    .settings-card:hover {
-      background: #2e2e2e;
-      border-color: var(--accent-color);
-    }
-
-    .settings-card i {
-      font-size: 24px;
-      color: var(--accent-color);
-      margin-top: 2px;
-    }
-
-    .settings-card-title {
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .settings-card-desc {
-      font-size: 11px;
-      color: #999;
-      line-height: 1.3;
-    }
-
-    .settings-subpage {
-      padding: 24px 30px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .settings-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 0;
-      border-bottom: 1px solid #2d2d2d;
-    }
-
-    .setting-btn {
-      background: var(--accent-color);
-      border: none;
-      color: #fff;
-      padding: 7px 16px;
-      border-radius: 2px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: background 0.15s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .setting-btn:hover { background: var(--accent-hover); }
-
-    .wallpaper-preset-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .wallpaper-preset-thumb {
-      height: 70px;
-      border-radius: 3px;
-      background-size: cover;
-      background-position: center;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: border-color 0.15s, transform 0.15s;
-    }
-
-    .wallpaper-preset-thumb:hover {
-      border-color: var(--accent-color);
-      transform: scale(1.02);
-    }
-
-    /* Edge Browser Container */
-    .edge-browser-body {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #252525;
-    }
-
-    .edge-nav-bar {
-      display: flex;
-      gap: 8px;
-      padding: 8px 12px;
-      background: #1f1f1f;
-      border-bottom: 1px solid #333;
-      align-items: center;
-    }
-
-    .edge-url-bar {
-      flex: 1;
-      background: #121212;
-      border: 1px solid #444;
-      color: #fff;
-      padding: 6px 12px;
-      font-size: 12px;
-      border-radius: 20px;
-      outline: none;
-    }
-
-    .edge-nav-btn {
-      background: transparent;
-      border: none;
-      color: #ccc;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .edge-nav-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
-
-    /* Notepad */
-    .notepad-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #1e1e1e;
-    }
-    .notepad-menubar {
-      background: #252525;
-      padding: 2px 8px;
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      border-bottom: 1px solid #333;
-    }
-    .notepad-menubar span { padding: 3px 6px; cursor: pointer; }
-    .notepad-menubar span:hover { background: rgba(255,255,255,0.1); }
-    .notepad-textarea {
-      flex: 1;
-      background: #1e1e1e;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      resize: none;
-      outline: none;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    /* Calculator */
-    .calc-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #202020;
-      padding: 8px;
-    }
-    .calc-display {
-      height: 70px;
-      background: transparent;
-      color: #fff;
-      text-align: right;
-      padding: 10px;
-      font-size: 32px;
-      font-weight: 300;
-      overflow: hidden;
-    }
-    .calc-history { font-size: 12px; color: #888; height: 16px; }
-    .calc-grid {
-      flex: 1;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 3px;
-    }
-    .calc-btn {
-      background: #323232;
-      border: 1px solid rgba(255,255,255,0.03);
-      color: #fff;
-      font-size: 15px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .calc-btn:hover { background: #3e3e3e; }
-    .calc-btn.op-btn { background: #282828; font-weight: 500; }
-    .calc-btn.equals-btn { background: var(--accent-color); }
-    .calc-btn.equals-btn:hover { background: var(--accent-hover); }
-
-    /* Command Prompt */
-    .cmd-container {
-      height: 100%;
-      background: #0c0c0c;
-      color: #cccccc;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      padding: 10px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .cmd-output { white-space: pre-wrap; line-height: 1.4; margin-bottom: 6px; }
-    .cmd-input-line { display: flex; align-items: center; }
-    .cmd-prompt-text { color: #00ff66; margin-right: 6px; }
-    .cmd-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #fff;
-      font-family: inherit;
-      font-size: inherit;
-    }
-
-    /* Context Menu */
-    #context-menu {
-      position: absolute;
-      width: 220px;
-      background: #252525;
-      border: 1px solid #3c3c3c;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-      padding: 4px 0;
-      display: none;
-      flex-direction: column;
-      z-index: 100000;
-    }
-    .context-menu-item {
-      padding: 8px 16px;
-      font-size: 12px;
-      color: #eee;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-    }
-    .context-menu-item:hover { background: var(--accent-color); color: #fff; }
-    .context-divider { height: 1px; background: #3a3a3a; margin: 4px 0; }
-
-    #jrex-file-input, #wallpaper-file-input { display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Liquid Glass Music Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Google Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Sans Font Imports -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after, html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed, 
+        figure, figcaption, footer, header, hgroup, 
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video, input, button, select, textarea {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            -webkit-touch-callout: none;
+        }
+
+        :root {
+            --sat: env(safe-area-inset-top, 24px);
+            --sab: env(safe-area-inset-bottom, 20px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+        }
+
+        body { 
+            background: #050508; 
+            color: #ffffff; 
+            height: 100vh;
+            height: 100dvh;
+            margin: 0; 
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Safe Notch Offset */
+        #app-container { 
+            width: 100vw; 
+            height: 100vh; 
+            height: 100dvh; 
+            box-sizing: border-box;
+            padding-top: max(var(--sat), 16px);
+            padding-bottom: max(var(--sab), 14px);
+            padding-left: var(--sal);
+            padding-right: var(--sar);
+            overflow: hidden;
+            position: relative;
+        }
+        #win-content-main { width: 100%; height: 100%; position: relative; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(40px) saturate(210%);
+            -webkit-backdrop-filter: blur(40px) saturate(210%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        }
+
+        .liquid-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(30px) saturate(190%);
+            -webkit-backdrop-filter: blur(30px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+        }
+
+        .liquid-btn {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.3),
+                inset 0 1px 1.5px rgba(255, 255, 255, 0.45),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+            border-radius: 9999px;
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .liquid-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 48%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+            border-radius: 9999px 9999px 0 0;
+            pointer-events: none;
+        }
+
+        .liquid-btn:active {
+            transform: translateY(1px) scale(0.96);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.25),
+                inset 0 1px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        .liquid-btn-active {
+            background: linear-gradient(135deg, rgba(250, 35, 59, 0.85) 0%, rgba(250, 35, 59, 0.5) 100%) !important;
+            border-color: rgba(255, 150, 170, 0.7) !important;
+            box-shadow: 
+                0 8px 28px rgba(250, 35, 59, 0.5),
+                inset 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+            color: #ffffff !important;
+        }
+
+        .liquid-input {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .liquid-input:focus {
+            border-color: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .glass-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5), 0 0 8px rgba(250, 35, 59, 0.8);
+            cursor: pointer;
+        }
+
+        /* In-App Toast Container */
+        #notification-box {
+            position: fixed;
+            top: calc(max(var(--sat), 16px) + 8px);
+            right: calc(var(--sar) + 16px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .liquid-toast {
+            min-width: 200px;
+            max-width: 280px;
+            padding: 10px 14px;
+            border-radius: 16px;
+            background: rgba(20, 20, 30, 0.75);
+            backdrop-filter: blur(35px) saturate(200%);
+            -webkit-backdrop-filter: blur(35px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            font-size: 12px;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .liquid-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- DESKTOP WORKSPACE -->
-  <div id="desktop">
-    <div id="desktop-icons-container"></div>
-    <div id="selection-box"></div>
-    <div id="native-toast-container"></div>
-  </div>
+    <div id="notification-box"></div>
 
-  <!-- CONTEXT MENU -->
-  <div id="context-menu">
-    <div class="context-menu-item" onclick="Sys.openApp('explorer')"><i class="fa-solid fa-folder-open"></i> Open File Explorer</div>
-    <div class="context-menu-item" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-cloud-arrow-up"></i> Install .jrex Application</div>
-    <div class="context-menu-item" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-file-export"></i> Sync & Save to iOS Files</div>
-    <div class="context-divider"></div>
-    <div class="context-menu-item" onclick="Sys.openApp('notepad')"><i class="fa-solid fa-file-lines"></i> New Text Document</div>
-    <div class="context-menu-item" onclick="Sys.openApp('settings')"><i class="fa-solid fa-gear"></i> Windows Settings</div>
-    <div class="context-divider"></div>
-    <div class="context-menu-item" onclick="Sys.refreshDesktop()"><i class="fa-solid fa-rotate-right"></i> Refresh</div>
-  </div>
-
-  <!-- START MENU -->
-  <div id="start-menu">
-    <div id="start-left-bar">
-      <div class="start-bar-top">
-        <div class="start-bar-btn" title="User Account"><i class="fa-solid fa-circle-user"></i></div>
-      </div>
-      <div class="start-bar-bottom">
-        <div class="start-bar-btn" onclick="Sys.openApp('explorer')" title="Documents"><i class="fa-solid fa-file"></i></div>
-        <div class="start-bar-btn" onclick="Sys.openApp('settings')" title="Settings"><i class="fa-solid fa-gear"></i></div>
-        <div class="start-bar-btn" onclick="Sys.reboot()" title="Power"><i class="fa-solid fa-power-off"></i></div>
-      </div>
-    </div>
-    
-    <div id="start-apps-list"></div>
-
-    <div id="start-tiles-view">
-      <div class="live-tile" onclick="Sys.openApp('edge')">
-        <i class="fa-brands fa-edge" style="color: #4edaff;"></i>
-        <span>Microsoft Edge</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('jrex_installer')" style="background:#5c2d91;">
-        <i class="fa-solid fa-box-open" style="color:#ffb900;"></i>
-        <span>JR App Store</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('explorer')" style="background:#d13438;">
-        <i class="fa-solid fa-folder"></i>
-        <span>File Explorer</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('calc')" style="background:#008272;">
-        <i class="fa-solid fa-calculator"></i>
-        <span>Calculator</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('cmd')" style="background:#107c10;">
-        <i class="fa-solid fa-terminal"></i>
-        <span>Command Prompt</span>
-      </div>
-      <div class="live-tile" onclick="Sys.openApp('settings')" style="background:#0078d7;">
-        <i class="fa-solid fa-sliders"></i>
-        <span>Settings</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ACTION CENTER -->
-  <div id="action-center">
-    <div style="flex:1;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <span style="font-size:14px; font-weight:600;">Notifications</span>
-        <span style="font-size:11.5px; color:var(--accent-color); cursor:pointer;" onclick="Sys.clearNotifications()">Clear all</span>
-      </div>
-      <div id="notification-feed" style="font-size:12px; color:#aaa; line-height:1.5;">
-        No new notifications.
-      </div>
+    <div id="app-container">
+        <div id="win-content-main"></div>
     </div>
 
-    <div class="action-tiles-grid">
-      <div class="action-tile active" onclick="this.classList.toggle('active')"><i class="fa-solid fa-wifi"></i> Wi-Fi</div>
-      <div class="action-tile active" onclick="this.classList.toggle('active')"><i class="fa-brands fa-bluetooth-b"></i> Bluetooth</div>
-      <div class="action-tile" onclick="this.classList.toggle('active')"><i class="fa-solid fa-moon"></i> Night light</div>
-      <div class="action-tile active" onclick="Sys.openApp('settings')"><i class="fa-solid fa-gear"></i> All settings</div>
-      <div class="action-tile" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-floppy-disk"></i> Save iOS</div>
-      <div class="action-tile" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-file-import"></i> .JREX App</div>
-      <div class="action-tile" onclick="this.classList.toggle('active')"><i class="fa-solid fa-battery-half"></i> Saver</div>
-      <div class="action-tile" onclick="Sys.toggleFullscreen()"><i class="fa-solid fa-expand"></i> Fullscreen</div>
-    </div>
-  </div>
+    <script>
+        const winObj = { id: 'main', onDestroy: () => {} };
+        const content = document.getElementById('win-content-' + winObj.id);
 
-  <!-- TASKBAR -->
-  <div id="taskbar">
-    <div id="taskbar-left">
-      <div id="start-btn" class="taskbar-btn" title="Start" onclick="Sys.toggleStartMenu()">
-        <i class="fa-brands fa-windows" style="font-size:18px;"></i>
-      </div>
-      <div class="taskbar-btn" title="Type here to search" onclick="Sys.openApp('cmd')">
-        <i class="fa-solid fa-magnifying-glass"></i>
-      </div>
-      <div class="taskbar-btn" title="Task View" onclick="Sys.arrangeWindows()">
-        <i class="fa-solid fa-table-cells-large"></i>
-      </div>
-      <div id="taskbar-apps"></div>
-    </div>
-
-    <div id="taskbar-tray">
-      <div class="tray-item" title="Import .jrex app" onclick="Sys.promptImportJREX()">
-        <i class="fa-solid fa-cloud-arrow-up"></i>
-      </div>
-      <div class="tray-item" title="Audio / Volume">
-        <i class="fa-solid fa-volume-high"></i>
-      </div>
-      <div class="tray-item" title="Network Internet Access">
-        <i class="fa-solid fa-wifi"></i>
-      </div>
-      <div id="clock-widget" class="tray-item" title="Date and Time Settings" onclick="Sys.openApp('settings')">
-        <span id="tray-time">12:00 PM</span>
-        <span id="tray-date">2026/9/5</span>
-      </div>
-      <div class="tray-item" title="Action Center" onclick="Sys.toggleActionCenter()">
-        <i class="fa-regular fa-message"></i>
-      </div>
-      <div id="show-desktop-btn" title="Show Desktop" onclick="Sys.minimizeAllWindows()"></div>
-    </div>
-  </div>
-
-  <!-- Hidden Inputs -->
-  <input type="file" id="jrex-file-input" accept=".jrex,.json" />
-  <input type="file" id="wallpaper-file-input" accept="image/*" />
-
-  <!-- ==========================================================================
-       CORE OPERATING SYSTEM RUNTIME
-       ========================================================================== -->
-  <script>
-    class OperatingSystem {
-      constructor() {
-        this.storageKey = 'WIN10_SIMULATOR_STATE_V2';
-        this.windows = new Map();
-        this.installedApps = new Map();
-        this.activeWindowId = null;
-        this.zIndexCounter = 100;
-        this.currentExplorerFolder = 'desktop';
-
-        this.presetWallpapers = [
-          'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=2850&q=80',
-          'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2850&q=80',
-          'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2850&q=80',
-          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2850&q=80'
-        ];
-
-        this.state = {
-          wallpaper: this.presetWallpapers[0],
-          accentColor: '#0078d7',
-          installedJREX: [],
-          documents: [
-            { name: 'Welcome.txt', content: 'Welcome to Windows 10 OS Simulator!\n\nAll bugs resolved:\n- Real-time wallpaper upload & update.\n- Full native toast visibility.\n- Edge browser search engine fallback.\n- Clean non-overlapping desktop grid.\n- 1-second system app launch animations.\n- Fully interactive File Explorer folders.' }
-          ]
-        };
-
-        this.init();
-      }
-
-      async init() {
-        this.loadPersistentState();
-        this.setupSystemApps();
-        this.setupEventListeners();
-        this.renderDesktop();
-        this.renderTaskbar();
-        this.startClock();
-        this.applyPersonalization();
-      }
-
-      // ========================================================================
-      // IN-UI TOASTS (CORRECT ELEVATION)
-      // ========================================================================
-      showInUINativeToast(title, message, type = 'info') {
-        const container = document.getElementById('native-toast-container');
-        if (!container) return;
-
-        const toast = document.createElement('div');
-        toast.className = `win10-toast ${type}`;
-        
-        let iconMarkup = '<i class="fa-solid fa-circle-info" style="color:var(--accent-color);"></i>';
-        if (type === 'success') iconMarkup = '<i class="fa-solid fa-circle-check" style="color:#107c10;"></i>';
-        if (type === 'error') iconMarkup = '<i class="fa-solid fa-circle-exclamation" style="color:#e81123;"></i>';
-
-        toast.innerHTML = `
-          <div class="toast-header">
-            <span style="display:flex; align-items:center; gap:6px;">${iconMarkup} ${title}</span>
-            <i class="fa-solid fa-xmark" style="cursor:pointer; font-size:11px;" onclick="this.parentElement.parentElement.remove()"></i>
-          </div>
-          <div class="toast-body">${message}</div>
-        `;
-
-        container.appendChild(toast);
-        setTimeout(() => {
-          if (toast.parentElement) {
-            toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(50px)';
-            setTimeout(() => toast.remove(), 300);
-          }
-        }, 4000);
-
-        this.pushActionCenterNotification(title, message);
-      }
-
-      pushActionCenterNotification(title, msg) {
-        const feed = document.getElementById('notification-feed');
-        if (!feed) return;
-        if (feed.innerText.includes('No new notifications.')) {
-          feed.innerHTML = '';
-        }
-        const notif = document.createElement('div');
-        notif.style.cssText = 'background:rgba(255,255,255,0.06); padding:10px; border-radius:3px; margin-bottom:8px; border-left:3px solid var(--accent-color);';
-        notif.innerHTML = `<strong>${title}</strong><div style="margin-top:2px; font-size:11.5px; color:#ccc;">${msg}</div>`;
-        feed.prepend(notif);
-      }
-
-      clearNotifications() {
-        const feed = document.getElementById('notification-feed');
-        if (feed) feed.innerHTML = 'No new notifications.';
-      }
-
-      // ========================================================================
-      // PERSISTENCE ENGINE
-      // ========================================================================
-      loadPersistentState() {
-        try {
-          const raw = localStorage.getItem(this.storageKey);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            this.state = { ...this.state, ...parsed };
-          }
-        } catch (e) {
-          console.warn('Could not read state from localStorage', e);
-        }
-      }
-
-      savePersistentState() {
-        try {
-          localStorage.setItem(this.storageKey, JSON.stringify(this.state));
-        } catch (e) {
-          console.error('Failed to save state to localStorage', e);
-        }
-      }
-
-      exportToIOSFiles() {
-        try {
-          this.savePersistentState();
-          const exportData = {
-            system: 'Windows 10 Simulator (iOS Edition)',
-            exportDate: new Date().toISOString(),
-            version: '2.0.0',
-            data: this.state
-          };
-
-          const jsonString = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-          const downloadAnchor = document.createElement('a');
-          const filename = `Win10_Snapshot_${new Date().toISOString().slice(0, 10)}.json`;
-          
-          downloadAnchor.setAttribute('href', jsonString);
-          downloadAnchor.setAttribute('download', filename);
-          document.body.appendChild(downloadAnchor);
-          downloadAnchor.click();
-          downloadAnchor.remove();
-
-          this.showInUINativeToast('Export Successful', `Snapshot "${filename}" dispatched to iOS Files.`, 'success');
-        } catch (err) {
-          this.showInUINativeToast('Export Error', 'Failed to generate JSON snapshot.', 'error');
-        }
-      }
-
-      // ========================================================================
-      // BUILT-IN APPLICATIONS SETUP
-      // ========================================================================
-      setupSystemApps() {
-        // 1. File Explorer
-        this.registerApp({
-          id: 'explorer',
-          name: 'File Explorer',
-          icon: 'fa-solid fa-folder',
-          width: 760,
-          height: 480,
-          splash: true,
-          render: (win) => this.renderFileExplorer(win)
-        });
-
-        // 2. Notepad
-        this.registerApp({
-          id: 'notepad',
-          name: 'Notepad',
-          icon: 'fa-solid fa-file-lines',
-          width: 600,
-          height: 420,
-          splash: false,
-          render: (win, args) => this.renderNotepad(win, args)
-        });
-
-        // 3. Calculator
-        this.registerApp({
-          id: 'calc',
-          name: 'Calculator',
-          icon: 'fa-solid fa-calculator',
-          width: 320,
-          height: 460,
-          splash: false,
-          render: (win) => this.renderCalculator(win)
-        });
-
-        // 4. Command Prompt
-        this.registerApp({
-          id: 'cmd',
-          name: 'Command Prompt',
-          icon: 'fa-solid fa-terminal',
-          width: 640,
-          height: 380,
-          splash: true,
-          render: (win) => this.renderCmd(win)
-        });
-
-        // 5. Settings
-        this.registerApp({
-          id: 'settings',
-          name: 'Settings',
-          icon: 'fa-solid fa-gear',
-          width: 760,
-          height: 520,
-          splash: true,
-          render: (win) => this.renderSettings(win)
-        });
-
-        // 6. Microsoft Edge (Fixed Browser with search & fallback)
-        this.registerApp({
-          id: 'edge',
-          name: 'Microsoft Edge',
-          icon: 'fa-brands fa-edge',
-          width: 820,
-          height: 540,
-          splash: true,
-          render: (win) => this.renderEdgeBrowser(win)
-        });
-
-        // 7. JR App Store
-        this.registerApp({
-          id: 'jrex_installer',
-          name: 'JR App Store',
-          icon: 'fa-solid fa-box-open',
-          width: 640,
-          height: 480,
-          splash: true,
-          render: (win) => this.renderJREXInstaller(win)
-        });
-
-        // Register custom JREX packages
-        this.state.installedJREX.forEach(pkg => {
-          this.registerJREXPackage(pkg, false);
-        });
-      }
-
-      registerApp(appConfig) {
-        this.installedApps.set(appConfig.id, appConfig);
-      }
-
-      registerJREXPackage(pkg, persist = true) {
-        if (!pkg.id || !pkg.name) {
-          this.showInUINativeToast('Install Error', 'Invalid package format: missing ID or Name.', 'error');
-          return;
-        }
-
-        this.installedApps.set(pkg.id, {
-          id: pkg.id,
-          name: pkg.name,
-          icon: pkg.icon || 'fa-solid fa-cube',
-          width: pkg.width || 640,
-          height: pkg.height || 480,
-          isJREX: true,
-          splash: true,
-          render: (win) => {
-            const container = document.createElement('div');
-            container.style.cssText = 'width:100%; height:100%; background:#181818;';
-            const iframe = document.createElement('iframe');
-            iframe.style.cssText = 'width:100%; height:100%; border:none; background:#fff;';
-            iframe.sandbox = 'allow-scripts allow-modals allow-forms allow-same-origin';
-
-            const bundleHtml = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body { font-family: 'Product Sans', -apple-system, sans-serif; margin: 0; padding: 14px; box-sizing: border-box; }
-                  ${pkg.css || ''}
-                </style>
-              </head>
-              <body>
-                ${pkg.html || '<div style="padding:20px;">No user interface provided.</div>'}
-                <script>
-                  try {
-                    ${pkg.js || ''}
-                  } catch(err) {
-                    console.error('JREX Runtime Error:', err);
-                  }
-                <\/script>
-              </body>
-              </html>
+        // In-App Toast Engine
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('notification-box');
+            const toast = document.createElement('div');
+            toast.className = 'liquid-toast';
+            
+            let icon = 'ℹ️';
+            if (type === 'success') icon = '✅';
+            if (type === 'loading') icon = '⏳';
+            if (type === 'error') icon = '⚠️';
+            
+            toast.innerHTML = `
+                <span class="text-base">${icon}</span>
+                <div class="flex-1 font-medium leading-tight">${message}</div>
             `;
+            
+            toastContainer.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
 
-            container.appendChild(iframe);
-            win.content.innerHTML = '';
-            win.content.appendChild(container);
-            iframe.srcdoc = bundleHtml;
-          }
-        });
-
-        if (persist) {
-          const exists = this.state.installedJREX.findIndex(item => item.id === pkg.id);
-          if (exists >= 0) {
-            this.state.installedJREX[exists] = pkg;
-          } else {
-            this.state.installedJREX.push(pkg);
-          }
-          this.savePersistentState();
-          this.renderDesktop();
-          this.renderStartMenuApps();
-          this.showInUINativeToast('Application Installed', `"${pkg.name}" added to desktop.`, 'success');
-        }
-      }
-
-      promptImportJREX() {
-        const fileInput = document.getElementById('jrex-file-input');
-        fileInput.onchange = (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            try {
-              const parsed = JSON.parse(event.target.result);
-              if (parsed.system && parsed.data) {
-                this.state = parsed.data;
-                this.savePersistentState();
-                this.showInUINativeToast('System Restored', 'Reloading system...', 'success');
-                setTimeout(() => location.reload(), 1000);
-                return;
-              }
-              this.registerJREXPackage(parsed, true);
-            } catch (err) {
-              this.showInUINativeToast('Import Failed', 'Invalid JSON syntax.', 'error');
-            }
-          };
-          reader.readAsText(file);
-        };
-        fileInput.click();
-      }
-
-      // ========================================================================
-      // WINDOW MANAGER WITH 1-SECOND STARTUP ANIMATION
-      // ========================================================================
-      openApp(appId, args = {}) {
-        const app = this.installedApps.get(appId);
-        if (!app) return;
-
-        for (const [winId, win] of this.windows) {
-          if (win.appId === appId) {
-            if (win.isMinimized) this.restoreWindow(winId);
-            this.focusWindow(winId);
-            return;
-          }
-        }
-
-        const winId = `win_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-        const winElem = document.createElement('div');
-        winElem.className = 'win10-window';
-        winElem.id = winId;
-
-        const startX = Math.max(40, 80 + (this.windows.size * 25) % (window.innerWidth - app.width - 80));
-        const startY = Math.max(30, 40 + (this.windows.size * 25) % (window.innerHeight - app.height - 100));
-
-        winElem.style.width = `${app.width}px`;
-        winElem.style.height = `${app.height}px`;
-        winElem.style.left = `${startX}px`;
-        winElem.style.top = `${startY}px`;
-        winElem.style.zIndex = ++this.zIndexCounter;
-
-        winElem.innerHTML = `
-          <div class="window-titlebar">
-            <div class="window-title">
-              <i class="${app.icon}"></i>
-              <span>${app.name}</span>
-            </div>
-            <div class="window-controls">
-              <div class="win-control-btn btn-min" onclick="Sys.minimizeWindow('${winId}')"><i class="fa-solid fa-minus"></i></div>
-              <div class="win-control-btn btn-max" onclick="Sys.maximizeWindow('${winId}')"><i class="fa-regular fa-square"></i></div>
-              <div class="win-control-btn btn-close" onclick="Sys.closeWindow('${winId}')"><i class="fa-solid fa-xmark"></i></div>
-            </div>
-          </div>
-          <div class="window-content"></div>
-          <div class="resize-handle resize-right"></div>
-          <div class="resize-handle resize-bottom"></div>
-          <div class="resize-handle resize-corner"></div>
-        `;
-
-        document.getElementById('desktop').appendChild(winElem);
-
-        const winObj = {
-          id: winId,
-          appId: appId,
-          elem: winElem,
-          content: winElem.querySelector('.window-content'),
-          isMaximized: false,
-          isMinimized: false,
-          prevRect: null
-        };
-
-        this.windows.set(winId, winObj);
-        this.setupWindowInteractions(winObj);
-        this.focusWindow(winId);
-
-        // Native 1-Second Loading Splash Feature
-        if (app.splash) {
-          const splash = document.createElement('div');
-          splash.className = 'app-splash-overlay';
-          splash.innerHTML = `
-            <div class="app-splash-icon"><i class="${app.icon}"></i></div>
-            <div class="app-splash-spinner"></div>
-          `;
-          winObj.content.appendChild(splash);
-
-          setTimeout(() => {
-            splash.style.opacity = '0';
             setTimeout(() => {
-              splash.remove();
-              app.render(winObj, args);
-            }, 250);
-          }, 1000);
-        } else {
-          app.render(winObj, args);
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 2600);
         }
 
-        this.renderTaskbar();
-        this.closeStartMenu();
-      }
+        // IndexedDB Offline Audio Engine
+        const DB_NAME = 'JRMusicAppDB';
+        const STORE_NAME = 'tracks';
+        let dbInstance = null;
 
-      setupWindowInteractions(winObj) {
-        const { elem } = winObj;
-        const titlebar = elem.querySelector('.window-titlebar');
-
-        elem.addEventListener('mousedown', () => this.focusWindow(winObj.id));
-        elem.addEventListener('touchstart', () => this.focusWindow(winObj.id), { passive: true });
-
-        let isDragging = false;
-        let dragOffset = { x: 0, y: 0 };
-
-        const onDragStart = (clientX, clientY) => {
-          if (winObj.isMaximized) return;
-          isDragging = true;
-          dragOffset.x = clientX - elem.offsetLeft;
-          dragOffset.y = clientY - elem.offsetTop;
-          this.focusWindow(winObj.id);
-        };
-
-        const onDragMove = (clientX, clientY) => {
-          if (!isDragging) return;
-          let newX = clientX - dragOffset.x;
-          let newY = clientY - dragOffset.y;
-          newY = Math.max(0, Math.min(newY, window.innerHeight - 80));
-          elem.style.left = `${newX}px`;
-          elem.style.top = `${newY}px`;
-        };
-
-        const onDragEnd = () => { isDragging = false; };
-
-        titlebar.addEventListener('mousedown', (e) => {
-          if (e.target.closest('.window-controls')) return;
-          onDragStart(e.clientX, e.clientY);
-        });
-
-        window.addEventListener('mousemove', (e) => onDragMove(e.clientX, e.clientY));
-        window.addEventListener('mouseup', onDragEnd);
-
-        titlebar.addEventListener('touchstart', (e) => {
-          if (e.target.closest('.window-controls')) return;
-          const touch = e.touches[0];
-          onDragStart(touch.clientX, touch.clientY);
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-          if (!isDragging) return;
-          const touch = e.touches[0];
-          onDragMove(touch.clientX, touch.clientY);
-        }, { passive: true });
-
-        window.addEventListener('touchend', onDragEnd);
-
-        this.setupWindowResizing(winObj);
-      }
-
-      setupWindowResizing(winObj) {
-        const { elem } = winObj;
-        const handles = {
-          right: elem.querySelector('.resize-right'),
-          bottom: elem.querySelector('.resize-bottom'),
-          corner: elem.querySelector('.resize-corner')
-        };
-
-        let isResizing = false;
-        let currentHandle = null;
-        let startWidth, startHeight, startMouseX, startMouseY;
-
-        const startResize = (handle, clientX, clientY) => {
-          if (winObj.isMaximized) return;
-          isResizing = true;
-          currentHandle = handle;
-          startWidth = elem.offsetWidth;
-          startHeight = elem.offsetHeight;
-          startMouseX = clientX;
-          startMouseY = clientY;
-        };
-
-        const performResize = (clientX, clientY) => {
-          if (!isResizing) return;
-          const dx = clientX - startMouseX;
-          const dy = clientY - startMouseY;
-
-          if (currentHandle === 'right' || currentHandle === 'corner') {
-            elem.style.width = `${Math.max(320, startWidth + dx)}px`;
-          }
-          if (currentHandle === 'bottom' || currentHandle === 'corner') {
-            elem.style.height = `${Math.max(200, startHeight + dy)}px`;
-          }
-        };
-
-        const endResize = () => { isResizing = false; };
-
-        handles.right.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('right', e.clientX, e.clientY); });
-        handles.bottom.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('bottom', e.clientX, e.clientY); });
-        handles.corner.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize('corner', e.clientX, e.clientY); });
-
-        window.addEventListener('mousemove', (e) => performResize(e.clientX, e.clientY));
-        window.addEventListener('mouseup', endResize);
-      }
-
-      focusWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-
-        this.activeWindowId = winId;
-        this.windows.forEach(w => w.elem.classList.remove('active'));
-        win.elem.classList.add('active');
-        win.elem.style.zIndex = ++this.zIndexCounter;
-        this.renderTaskbar();
-      }
-
-      minimizeWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-        win.isMinimized = true;
-        win.elem.style.display = 'none';
-        this.renderTaskbar();
-      }
-
-      restoreWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-        win.isMinimized = false;
-        win.elem.style.display = 'flex';
-        this.focusWindow(winId);
-      }
-
-      maximizeWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-
-        if (!win.isMaximized) {
-          win.prevRect = {
-            width: win.elem.style.width,
-            height: win.elem.style.height,
-            left: win.elem.style.left,
-            top: win.elem.style.top
-          };
-          win.elem.style.width = '100vw';
-          win.elem.style.height = `calc(100vh - var(--taskbar-height))`;
-          win.elem.style.left = '0px';
-          win.elem.style.top = '0px';
-          win.isMaximized = true;
-        } else {
-          win.elem.style.width = win.prevRect.width;
-          win.elem.style.height = win.prevRect.height;
-          win.elem.style.left = win.prevRect.left;
-          win.elem.style.top = win.prevRect.top;
-          win.isMaximized = false;
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'name' });
+                    }
+                };
+                req.onsuccess = () => {
+                    dbInstance = req.result;
+                    resolve(dbInstance);
+                };
+                req.onerror = () => reject(req.error);
+            });
         }
-      }
 
-      closeWindow(winId) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-        win.elem.remove();
-        this.windows.delete(winId);
-        this.renderTaskbar();
-      }
+        async function saveAudioLocally(trackName, blob) {
+            return new Promise((resolve, reject) => {
+                if (!dbInstance) return reject('DB not ready');
+                const tx = dbInstance.transaction([STORE_NAME], 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                store.put({ name: trackName, data: blob, timestamp: Date.now() });
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => reject(tx.error);
+            });
+        }
 
-      minimizeAllWindows() {
-        this.windows.forEach((win, id) => this.minimizeWindow(id));
-      }
+        async function getLocalAudio(trackName) {
+            return new Promise((resolve) => {
+                if (!dbInstance) return resolve(null);
+                const tx = dbInstance.transaction([STORE_NAME], 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.get(trackName);
+                req.onsuccess = () => resolve(req.result ? req.result.data : null);
+                req.onerror = () => resolve(null);
+            });
+        }
 
-      arrangeWindows() {
-        let i = 0;
-        const total = this.windows.size;
-        if (total === 0) return;
+        async function getAllSavedNames() {
+            return new Promise((resolve) => {
+                if (!dbInstance) return resolve([]);
+                const tx = dbInstance.transaction([STORE_NAME], 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.getAllKeys();
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = () => resolve([]);
+            });
+        }
 
-        const cols = total > 2 ? 2 : 1;
-        const rows = Math.ceil(total / cols);
-        const w = window.innerWidth / cols;
-        const h = (window.innerHeight - 40) / rows;
-
-        this.windows.forEach((win) => {
-          win.isMinimized = false;
-          win.elem.style.display = 'flex';
-          const r = Math.floor(i / cols);
-          const c = i % cols;
-          win.elem.style.left = `${c * w}px`;
-          win.elem.style.top = `${r * h}px`;
-          win.elem.style.width = `${w}px`;
-          win.elem.style.height = `${h}px`;
-          i++;
-        });
-      }
-
-      // ========================================================================
-      // DESKTOP ICONS & SHELL
-      // ========================================================================
-      renderDesktop() {
-        const container = document.getElementById('desktop-icons-container');
-        container.innerHTML = '';
-
-        const shortcuts = [
-          { id: 'explorer', name: 'This PC', icon: 'fa-solid fa-desktop' },
-          { id: 'notepad', name: 'Notepad', icon: 'fa-solid fa-file-lines' },
-          { id: 'calc', name: 'Calculator', icon: 'fa-solid fa-calculator' },
-          { id: 'cmd', name: 'Terminal', icon: 'fa-solid fa-terminal' },
-          { id: 'jrex_installer', name: 'JR Store', icon: 'fa-solid fa-box-open' },
-          { id: 'settings', name: 'Settings', icon: 'fa-solid fa-gear' },
-          { id: 'edge', name: 'Edge', icon: 'fa-brands fa-edge' }
-        ];
-
-        this.state.installedJREX.forEach(pkg => {
-          shortcuts.push({ id: pkg.id, name: pkg.name, icon: pkg.icon || 'fa-solid fa-cube' });
-        });
-
-        shortcuts.forEach(item => {
-          const iconElem = document.createElement('div');
-          iconElem.className = 'desktop-icon';
-          iconElem.innerHTML = `
-            <i class="${item.icon}"></i>
-            <span>${item.name}</span>
-          `;
-          iconElem.addEventListener('dblclick', () => this.openApp(item.id));
-          iconElem.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
-            iconElem.classList.add('selected');
-          });
-          container.appendChild(iconElem);
-        });
-
-        this.renderStartMenuApps();
-      }
-
-      renderStartMenuApps() {
-        const list = document.getElementById('start-apps-list');
-        list.innerHTML = '';
-
-        this.installedApps.forEach(app => {
-          const row = document.createElement('div');
-          row.className = 'start-app-row';
-          row.innerHTML = `<i class="${app.icon}"></i><span>${app.name}</span>`;
-          row.onclick = () => this.openApp(app.id);
-          list.appendChild(row);
-        });
-      }
-
-      renderTaskbar() {
-        const container = document.getElementById('taskbar-apps');
-        container.innerHTML = '';
-
-        this.installedApps.forEach((app, appId) => {
-          let runningWin = null;
-          for (const [, win] of this.windows) {
-            if (win.appId === appId) {
-              runningWin = win;
-              break;
+        // Dynamic CSS Setup
+        const styleEl = document.createElement('style');
+        styleEl.innerHTML = `
+            #win-content-${winObj.id} {
+                --am-red: #fa233b;
+                --am-bg: rgba(10, 10, 16, 0.45);
+                height: 100%; 
+                font-family: 'Google Sans', sans-serif !important;
             }
-          }
-
-          const item = document.createElement('div');
-          item.className = `taskbar-app-item ${runningWin ? 'running' : ''} ${runningWin && this.activeWindowId === runningWin.id ? 'active' : ''}`;
-          item.innerHTML = `<i class="${app.icon}"></i>`;
-          item.title = app.name;
-
-          item.onclick = () => {
-            if (!runningWin) {
-              this.openApp(appId);
-            } else if (runningWin.isMinimized) {
-              this.restoreWindow(runningWin.id);
-            } else if (this.activeWindowId === runningWin.id) {
-              this.minimizeWindow(runningWin.id);
-            } else {
-              this.focusWindow(runningWin.id);
+            
+            .am-bg-blur {
+                position: absolute;
+                inset: -15%;
+                background-size: cover;
+                background-position: center;
+                filter: blur(80px) brightness(0.32) saturate(1.8);
+                z-index: 0;
+                transition: background-image 1.2s cubic-bezier(0.25, 1, 0.5, 1);
             }
-          };
 
-          container.appendChild(item);
-        });
-      }
+            .am-layout {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                width: 100%;
+                overflow-y: auto;
+                overflow-x: hidden;
+                font-family: 'Google Sans', sans-serif !important;
+            }
+            @media (min-width: 768px) {
+                .am-layout { 
+                    flex-direction: row; 
+                    overflow-y: hidden; 
+                }
+            }
 
-      // ========================================================================
-      // INTERACTIVE FILE EXPLORER
-      // ========================================================================
-      renderFileExplorer(win) {
-        win.content.innerHTML = `
-          <div class="explorer-container">
-            <div class="explorer-ribbon">
-              <button class="explorer-btn" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-file-import"></i> Import .jrex</button>
-              <button class="explorer-btn" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-floppy-disk"></i> Backup to iOS Files</button>
-              <button class="explorer-btn" onclick="Sys.openApp('notepad')"><i class="fa-solid fa-plus"></i> New Text Doc</button>
-            </div>
-            <div class="explorer-address-bar">
-              <i class="fa-solid fa-arrow-left" style="cursor:pointer;" onclick="Sys.switchExplorerFolder('${win.id}', 'desktop')"></i>
-              <i class="fa-solid fa-arrow-up" style="cursor:pointer;" onclick="Sys.switchExplorerFolder('${win.id}', 'c_drive')"></i>
-              <input class="address-box" id="explorer-address-input" value="This PC > Desktop" readonly />
-            </div>
-            <div class="explorer-body">
-              <div class="explorer-sidebar">
-                <div class="sidebar-folder active" id="side-btn-desktop" onclick="Sys.switchExplorerFolder('${win.id}', 'desktop')"><i class="fa-solid fa-desktop"></i> Desktop</div>
-                <div class="sidebar-folder" id="side-btn-documents" onclick="Sys.switchExplorerFolder('${win.id}', 'documents')"><i class="fa-solid fa-file"></i> Documents</div>
-                <div class="sidebar-folder" id="side-btn-jrex" onclick="Sys.switchExplorerFolder('${win.id}', 'jrex')"><i class="fa-solid fa-box-archive"></i> JREX Packages</div>
-                <div class="sidebar-folder" id="side-btn-c_drive" onclick="Sys.switchExplorerFolder('${win.id}', 'c_drive')"><i class="fa-solid fa-hard-drive"></i> Local Disk (C:)</div>
-              </div>
-              <div class="explorer-file-view" id="explorer-files-grid"></div>
-            </div>
-          </div>
+            .am-player-panel {
+                background: var(--am-bg);
+                backdrop-filter: blur(45px) saturate(210%);
+                -webkit-backdrop-filter: blur(45px) saturate(210%);
+                border-right: 1px solid rgba(255, 255, 255, 0.08);
+                display: flex;
+                flex-direction: column;
+            }
+
+            .am-cover-art {
+                width: 100%;
+                aspect-ratio: 1/1;
+                border-radius: 28px;
+                background-color: rgba(255, 255, 255, 0.03);
+                background-size: cover;
+                background-position: center;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12);
+                transition: opacity 0.6s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                position: relative;
+                overflow: hidden;
+            }
+            .am-cover-art.playing {
+                transform: scale(1.03);
+                box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.85), 0 0 35px rgba(250, 35, 59, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.25);
+            }
+
+            .lyrics-mask { 
+                -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%); 
+                mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%); 
+            }
+
+            .lyric-line { 
+                font-family: 'Google Sans', sans-serif !important;
+                transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+                color: rgba(255, 255, 255, 0.35); 
+                padding: 12px 0; 
+                font-size: 20px; 
+                font-weight: 500;
+                line-height: 1.4; 
+                cursor: pointer; 
+                transform-origin: left center;
+                filter: blur(0.4px);
+                text-align: left;
+                width: 100%;
+            }
+            @media (min-width: 768px) {
+                .lyric-line { font-size: 32px; padding: 14px 0; line-height: 1.35; letter-spacing: -0.02em; }
+            }
+            
+            .lyric-line:hover { 
+                color: rgba(255, 255, 255, 0.8); 
+                filter: blur(0px);
+            }
+            
+            .lyric-line.active { 
+                color: #ffffff; 
+                font-size: 26px; 
+                font-weight: 700;
+                transform: scale(1.03); 
+                filter: blur(0px);
+                text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 255, 255, 0.25);
+            }
+            @media (min-width: 768px) {
+                .lyric-line.active { font-size: 42px; transform: scale(1.04); }
+            }
+            
+            .track-active {
+                background: linear-gradient(135deg, rgba(250, 35, 59, 0.25) 0%, rgba(250, 35, 59, 0.08) 100%);
+                border: 1px solid rgba(250, 35, 59, 0.35);
+                color: #ffffff;
+                font-weight: 600;
+                box-shadow: 0 4px 18px rgba(250, 35, 59, 0.2);
+            }
         `;
+        content.appendChild(styleEl);
 
-        this.switchExplorerFolder(win.id, this.currentExplorerFolder || 'desktop');
-      }
-
-      switchExplorerFolder(winId, folderKey) {
-        this.currentExplorerFolder = folderKey;
-        const win = this.windows.get(winId);
-        if (!win) return;
-
-        const grid = win.content.querySelector('#explorer-files-grid');
-        const addr = win.content.querySelector('#explorer-address-input');
-        if (!grid || !addr) return;
-
-        win.content.querySelectorAll('.sidebar-folder').forEach(el => el.classList.remove('active'));
-        const activeBtn = win.content.querySelector(`#side-btn-${folderKey}`);
-        if (activeBtn) activeBtn.classList.add('active');
-
-        grid.innerHTML = '';
-
-        if (folderKey === 'desktop') {
-          addr.value = 'This PC > Desktop';
-          this.installedApps.forEach((app) => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            item.innerHTML = `<i class="${app.icon}" style="color:var(--accent-color);"></i><span>${app.name}</span>`;
-            item.ondblclick = () => this.openApp(app.id);
-            grid.appendChild(item);
-          });
-        } else if (folderKey === 'documents') {
-          addr.value = 'This PC > Documents';
-          this.state.documents.forEach((doc, idx) => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            item.innerHTML = `<i class="fa-solid fa-file-lines" style="color:#0078d7;"></i><span>${doc.name}</span>`;
-            item.ondblclick = () => this.openApp('notepad', { docIndex: idx });
-            grid.appendChild(item);
-          });
-        } else if (folderKey === 'jrex') {
-          addr.value = 'This PC > JREX Packages';
-          if (this.state.installedJREX.length === 0) {
-            grid.innerHTML = '<div style="font-size:12px; color:#888; grid-column:1/-1; padding:20px;">No custom .jrex applications installed.</div>';
-          }
-          this.state.installedJREX.forEach(pkg => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            item.innerHTML = `<i class="${pkg.icon || 'fa-solid fa-cube'}" style="color:#ffb900;"></i><span>${pkg.name}.jrex</span>`;
-            item.ondblclick = () => this.openApp(pkg.id);
-            grid.appendChild(item);
-          });
-        } else if (folderKey === 'c_drive') {
-          addr.value = 'This PC > Local Disk (C:)';
-          const folders = [
-            { name: 'Windows', icon: 'fa-solid fa-folder' },
-            { name: 'Program Files', icon: 'fa-solid fa-folder' },
-            { name: 'Users', icon: 'fa-solid fa-folder' }
-          ];
-          folders.forEach(f => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            item.innerHTML = `<i class="${f.icon}" style="color:#f3c834;"></i><span>${f.name}</span>`;
-            item.ondblclick = () => alert(`Access denied to system directory C:\\${f.name}`);
-            grid.appendChild(item);
-          });
-        }
-      }
-
-      // ========================================================================
-      // MICROSOFT EDGE (FIXED BROWSING CAPABILITIES)
-      // ========================================================================
-      renderEdgeBrowser(win) {
-        win.content.innerHTML = `
-          <div class="edge-browser-body">
-            <div class="edge-nav-bar">
-              <button class="edge-nav-btn" onclick="const iframe = document.getElementById('edge-frame-${win.id}'); try { iframe.contentWindow.history.back(); } catch(e){}"><i class="fa-solid fa-arrow-left"></i></button>
-              <button class="edge-nav-btn" onclick="const iframe = document.getElementById('edge-frame-${win.id}'); try { iframe.contentWindow.history.forward(); } catch(e){}"><i class="fa-solid fa-arrow-right"></i></button>
-              <button class="edge-nav-btn" onclick="Sys.navigateEdge('${win.id}')"><i class="fa-solid fa-rotate-right"></i></button>
-              <input type="text" id="edge-url-${win.id}" class="edge-url-bar" value="https://duckduckgo.com" placeholder="Search the web or type a URL" />
-              <button class="edge-nav-btn" onclick="Sys.navigateEdge('${win.id}')"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
-            </div>
-            <div style="flex:1; position:relative; background:#fff;">
-              <iframe id="edge-frame-${win.id}" src="https://duckduckgo.com" style="width:100%; height:100%; border:none;" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-            </div>
-          </div>
-        `;
-
-        const input = win.content.querySelector(`#edge-url-${win.id}`);
-        input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') Sys.navigateEdge(win.id);
-        });
-      }
-
-      navigateEdge(winId) {
-        const input = document.getElementById(`edge-url-${winId}`);
-        const iframe = document.getElementById(`edge-frame-${winId}`);
-        if (!input || !iframe) return;
-
-        let query = input.value.trim();
-        if (!query) return;
-
-        if (!query.startsWith('http://') && !query.startsWith('https://')) {
-          if (query.includes('.') && !query.includes(' ')) {
-            query = 'https://' + query;
-          } else {
-            // Search query fallback
-            query = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
-          }
-        }
-
-        input.value = query;
-        iframe.src = query;
-        this.showInUINativeToast('Edge Browser', `Navigating to: ${query}`, 'info');
-      }
-
-      // ========================================================================
-      // SETTINGS & WALLPAPER UPDATE FIX
-      // ========================================================================
-      renderSettings(win) {
-        const showHub = () => {
-          win.content.innerHTML = `
-            <div class="settings-window-body">
-              <div class="settings-main-hub">
-                <div class="settings-hub-title">Windows Settings</div>
-                <div class="settings-grid-categories">
-                  
-                  <div class="settings-card" onclick="Sys.showSettingsPage('${win.id}', 'personalization')">
-                    <i class="fa-solid fa-palette"></i>
-                    <div>
-                      <div class="settings-card-title">Personalization</div>
-                      <div class="settings-card-desc">Background wallpapers, custom images</div>
-                    </div>
-                  </div>
-
-                  <div class="settings-card" onclick="Sys.showSettingsPage('${win.id}', 'storage')">
-                    <i class="fa-solid fa-hard-drive"></i>
-                    <div>
-                      <div class="settings-card-title">Storage & iOS Files</div>
-                      <div class="settings-card-desc">Save snapshot, state backup and restore</div>
-                    </div>
-                  </div>
-
-                  <div class="settings-card" onclick="Sys.showSettingsPage('${win.id}', 'apps')">
-                    <i class="fa-solid fa-box-open"></i>
-                    <div>
-                      <div class="settings-card-title">Apps & JREX</div>
-                      <div class="settings-card-desc">Manage installed packages, store apps</div>
-                    </div>
-                  </div>
-
-                  <div class="settings-card" onclick="Sys.showSettingsPage('${win.id}', 'about')">
-                    <i class="fa-solid fa-circle-info"></i>
-                    <div>
-                      <div class="settings-card-title">System & Specs</div>
-                      <div class="settings-card-desc">Build info, typography, engine details</div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          `;
-        };
-
-        win.showHub = showHub;
-        showHub();
-      }
-
-      showSettingsPage(winId, page) {
-        const win = this.windows.get(winId);
-        if (!win) return;
-
-        let contentHtml = '';
-
-        if (page === 'personalization') {
-          const presetThumbs = this.presetWallpapers.map((url, i) => `
-            <div class="wallpaper-preset-thumb" style="background-image:url('${url}');" onclick="Sys.setWallpaper('${url}')" title="Theme ${i+1}"></div>
-          `).join('');
-
-          contentHtml = `
-            <div class="settings-header-nav">
-              <button class="settings-back-btn" onclick="Sys.windows.get('${winId}').showHub()"><i class="fa-solid fa-arrow-left"></i> Home</button>
-              <span style="font-size:13px; font-weight:600;">Personalization & Wallpaper</span>
-            </div>
-            <div class="settings-subpage">
-              <div>
-                <h3 style="font-size:16px;">Desktop Background</h3>
-                <p style="font-size:12px; color:#aaa; margin-top:2px;">Select from high-definition presets or upload your own file</p>
-              </div>
-
-              <div>
-                <div style="font-size:12.5px; font-weight:500; margin-bottom:6px;">Preset Themes:</div>
-                <div class="wallpaper-preset-grid">${presetThumbs}</div>
-              </div>
-
-              <div class="settings-row">
-                <div>
-                  <div style="font-size:13px; font-weight:500;">Custom Wallpaper URL</div>
-                  <div style="font-size:11px; color:#888;">Paste direct image link (JPEG, PNG, WebP)</div>
-                </div>
-                <div style="display:flex; gap:6px;">
-                  <input type="text" id="setting-wallpaper-input" value="${this.state.wallpaper.startsWith('data:') ? 'Custom Local Image' : this.state.wallpaper}" style="background:#111; border:1px solid #444; color:#fff; padding:6px 10px; font-size:12px; width:220px; border-radius:3px;">
-                  <button class="setting-btn" onclick="Sys.updateWallpaperFromInput()"><i class="fa-solid fa-check"></i> Apply</button>
-                </div>
-              </div>
-
-              <div class="settings-row">
-                <div>
-                  <div style="font-size:13px; font-weight:500;">Upload Local Image File</div>
-                  <div style="font-size:11px; color:#888;">Select an image directly from your local device or iOS Files</div>
-                </div>
-                <button class="setting-btn" onclick="document.getElementById('wallpaper-file-input').click()"><i class="fa-solid fa-upload"></i> Browse Image</button>
-              </div>
-            </div>
-          `;
-        } else if (page === 'storage') {
-          contentHtml = `
-            <div class="settings-header-nav">
-              <button class="settings-back-btn" onclick="Sys.windows.get('${winId}').showHub()"><i class="fa-solid fa-arrow-left"></i> Home</button>
-              <span style="font-size:13px; font-weight:600;">Storage & iOS Files Sync</span>
-            </div>
-            <div class="settings-subpage">
-              <div>
-                <h3 style="font-size:16px;">iOS Persistent Storage</h3>
-                <p style="font-size:12px; color:#aaa; margin-top:2px;">Save full state directly into iOS Files document directory</p>
-              </div>
-              <div class="settings-row">
-                <div>
-                  <div style="font-size:13px; font-weight:500;">Create Full System Snapshot</div>
-                  <div style="font-size:11px; color:#888;">Export all documents, settings, and custom .jrex apps</div>
-                </div>
-                <button class="setting-btn" onclick="Sys.exportToIOSFiles()"><i class="fa-solid fa-download"></i> Save to iOS Files</button>
-              </div>
-              <div class="settings-row">
-                <div>
-                  <div style="font-size:13px; font-weight:500;">Import / Restore State</div>
-                  <div style="font-size:11px; color:#888;">Load an existing .json backup snapshot</div>
-                </div>
-                <button class="setting-btn" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-upload"></i> Restore Backup</button>
-              </div>
-            </div>
-          `;
-        } else if (page === 'apps') {
-          let appListHtml = this.state.installedJREX.map(pkg => `
-            <div class="settings-row">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <i class="${pkg.icon || 'fa-solid fa-cube'}" style="font-size:18px; color:var(--accent-color);"></i>
-                <div>
-                  <div style="font-size:13px; font-weight:500;">${pkg.name}</div>
-                  <div style="font-size:11px; color:#888;">ID: ${pkg.id}</div>
-                </div>
-              </div>
-              <button class="setting-btn" style="background:#d13438;" onclick="Sys.uninstallJREX('${pkg.id}')"><i class="fa-solid fa-trash"></i> Uninstall</button>
-            </div>
-          `).join('');
-
-          if (this.state.installedJREX.length === 0) {
-            appListHtml = '<div style="font-size:12px; color:#888; padding:16px 0;">No custom .jrex packages installed.</div>';
-          }
-
-          contentHtml = `
-            <div class="settings-header-nav">
-              <button class="settings-back-btn" onclick="Sys.windows.get('${winId}').showHub()"><i class="fa-solid fa-arrow-left"></i> Home</button>
-              <span style="font-size:13px; font-weight:600;">Apps & JREX Packages</span>
-            </div>
-            <div class="settings-subpage">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                  <h3 style="font-size:16px;">Installed Applications</h3>
-                  <p style="font-size:12px; color:#aaa; margin-top:2px;">Manage installed programs</p>
-                </div>
-                <button class="setting-btn" onclick="Sys.promptImportJREX()"><i class="fa-solid fa-plus"></i> Install .jrex</button>
-              </div>
-              <div>${appListHtml}</div>
-            </div>
-          `;
-        } else if (page === 'about') {
-          contentHtml = `
-            <div class="settings-header-nav">
-              <button class="settings-back-btn" onclick="Sys.windows.get('${winId}').showHub()"><i class="fa-solid fa-arrow-left"></i> Home</button>
-              <span style="font-size:13px; font-weight:600;">About Windows</span>
-            </div>
-            <div class="settings-subpage">
-              <div>
-                <h3 style="font-size:16px;">Device Specifications</h3>
-                <p style="font-size:12px; color:#aaa; margin-top:2px;">Windows 10 Pro Simulator</p>
-              </div>
-              <div style="background:#181818; padding:16px; border:1px solid #333; font-size:12px; line-height:1.8; border-radius:3px;">
-                <div><strong>Edition:</strong> Windows 10 Pro (22H2)</div>
-                <div><strong>Typography:</strong> Google Sans (Product Sans)</div>
-                <div><strong>Target Architecture:</strong> Single-File IPA WebKit Container</div>
-                <div><strong>Packaging API:</strong> JREX Virtual App Container</div>
-              </div>
-            </div>
-          `;
-        }
-
-        win.content.innerHTML = `<div class="settings-window-body">${contentHtml}</div>`;
-      }
-
-      setWallpaper(url) {
-        this.state.wallpaper = url;
-        this.savePersistentState();
-        this.applyPersonalization();
-        this.showInUINativeToast('Wallpaper Updated', 'Desktop background refreshed.', 'success');
-      }
-
-      updateWallpaperFromInput() {
-        const input = document.getElementById('setting-wallpaper-input');
-        if (input && input.value && !input.value.includes('Custom Local Image')) {
-          this.setWallpaper(input.value);
-        }
-      }
-
-      applyPersonalization() {
-        const desktop = document.getElementById('desktop');
-        desktop.style.backgroundImage = `url("${this.state.wallpaper}")`;
-      }
-
-      uninstallJREX(appId) {
-        this.state.installedJREX = this.state.installedJREX.filter(p => p.id !== appId);
-        this.installedApps.delete(appId);
-        this.savePersistentState();
-        this.renderDesktop();
-        this.renderStartMenuApps();
-        this.renderTaskbar();
-        this.showInUINativeToast('Application Removed', `Package ${appId} uninstalled.`, 'info');
+        // Layout Construction
+        content.innerHTML += `
+        <div id="dynamic-bg" class="am-bg-blur"></div>
         
-        for (const [, win] of this.windows) {
-          if (win.appId === 'settings') {
-            this.showSettingsPage(win.id, 'apps');
-          }
-        }
-      }
-
-      // ========================================================================
-      // BUILT-IN APPLICATIONS (NOTEPAD, CALC, CMD, JREX STORE)
-      // ========================================================================
-      renderNotepad(win, args = {}) {
-        let currentDoc = { name: 'Untitled.txt', content: '' };
-        if (args.docIndex !== undefined && this.state.documents[args.docIndex]) {
-          currentDoc = this.state.documents[args.docIndex];
-        }
-
-        win.content.innerHTML = `
-          <div class="notepad-container">
-            <div class="notepad-menubar">
-              <span id="notepad-save-btn"><i class="fa-solid fa-floppy-disk"></i> Save</span>
-              <span id="notepad-export-btn"><i class="fa-solid fa-file-export"></i> Export .txt</span>
-            </div>
-            <textarea class="notepad-textarea" placeholder="Type your text here...">${currentDoc.content}</textarea>
-          </div>
-        `;
-
-        const textarea = win.content.querySelector('.notepad-textarea');
-        win.content.querySelector('#notepad-save-btn').onclick = () => {
-          currentDoc.content = textarea.value;
-          if (args.docIndex === undefined) {
-            const docName = prompt('Enter document name:', 'Document.txt') || 'Untitled.txt';
-            currentDoc.name = docName;
-            this.state.documents.push(currentDoc);
-          }
-          this.savePersistentState();
-          this.showInUINativeToast('Notepad', `Document "${currentDoc.name}" saved.`, 'success');
-        };
-
-        win.content.querySelector('#notepad-export-btn').onclick = () => {
-          const blob = new Blob([textarea.value], { type: 'text/plain;charset=utf-8' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = currentDoc.name;
-          a.click();
-          this.showInUINativeToast('File Exported', `"${currentDoc.name}" exported to storage.`, 'info');
-        };
-      }
-
-      renderCalculator(win) {
-        win.content.innerHTML = `
-          <div class="calc-container">
-            <div class="calc-display">
-              <div class="calc-history" id="calc-hist"></div>
-              <div id="calc-val">0</div>
-            </div>
-            <div class="calc-grid">
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('C')">C</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('CE')">CE</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('%')">%</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('/')">÷</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('7')">7</button>
-              <button class="calc-btn" onclick="Sys.calcInput('8')">8</button>
-              <button class="calc-btn" onclick="Sys.calcInput('9')">9</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('*')">×</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('4')">4</button>
-              <button class="calc-btn" onclick="Sys.calcInput('5')">5</button>
-              <button class="calc-btn" onclick="Sys.calcInput('6')">6</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('-')">-</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('1')">1</button>
-              <button class="calc-btn" onclick="Sys.calcInput('2')">2</button>
-              <button class="calc-btn" onclick="Sys.calcInput('3')">3</button>
-              <button class="calc-btn op-btn" onclick="Sys.calcInput('+')">+</button>
-              
-              <button class="calc-btn" onclick="Sys.calcInput('±')">±</button>
-              <button class="calc-btn" onclick="Sys.calcInput('0')">0</button>
-              <button class="calc-btn" onclick="Sys.calcInput('.')">.</button>
-              <button class="calc-btn equals-btn" onclick="Sys.calcInput('=')">=</button>
-            </div>
-          </div>
-        `;
-        this.calcState = { current: '0', expr: '' };
-      }
-
-      calcInput(val) {
-        const valElem = document.getElementById('calc-val');
-        const histElem = document.getElementById('calc-hist');
-        if (!valElem) return;
-
-        if (val === 'C') {
-          this.calcState = { current: '0', expr: '' };
-        } else if (val === 'CE') {
-          this.calcState.current = '0';
-        } else if (val === '=') {
-          try {
-            const sanitized = (this.calcState.expr + this.calcState.current).replace(/×/g, '*').replace(/÷/g, '/');
-            this.calcState.current = String(eval(sanitized));
-            this.calcState.expr = '';
-          } catch (e) {
-            this.calcState.current = 'Error';
-          }
-        } else if (['+', '-', '*', '/'].includes(val)) {
-          this.calcState.expr = `${this.calcState.current} ${val} `;
-          this.calcState.current = '0';
-        } else {
-          if (this.calcState.current === '0' && val !== '.') {
-            this.calcState.current = val;
-          } else {
-            this.calcState.current += val;
-          }
-        }
-
-        valElem.innerText = this.calcState.current;
-        histElem.innerText = this.calcState.expr;
-      }
-
-      renderCmd(win) {
-        win.content.innerHTML = `
-          <div class="cmd-container">
-            <div class="cmd-output" id="cmd-history">Microsoft Windows [Version 10.0.19045.2965]\n(c) Microsoft Corporation. All rights reserved.\n\nType 'help' for commands.</div>
-            <div class="cmd-input-line">
-              <span class="cmd-prompt-text">C:\\Users\\Administrator&gt;</span>
-              <input type="text" class="cmd-input" id="cmd-cli" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-            </div>
-          </div>
-        `;
-
-        const cli = win.content.querySelector('#cmd-cli');
-        const history = win.content.querySelector('#cmd-history');
-
-        cli.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            const command = cli.value.trim();
-            history.innerText += `\nC:\\Users\\Administrator> ${command}\n`;
-            this.executeCommand(command, history);
-            cli.value = '';
-            win.content.querySelector('.cmd-container').scrollTop = win.content.querySelector('.cmd-container').scrollHeight;
-          }
-        });
-      }
-
-      executeCommand(cmd, outputElem) {
-        const parts = cmd.split(' ');
-        const main = parts[0].toLowerCase();
-
-        switch (main) {
-          case 'help':
-            outputElem.innerText += `\nCommands:\n  help        Display terminal commands\n  dir         List files and apps\n  cls         Clear console output\n  backup      Export snapshot for iOS Files\n  install     Trigger .jrex package installer\n  ver         Display Windows version\n  reboot      Restart session\n`;
-            break;
-          case 'dir':
-            outputElem.innerText += `\n Directory of C:\\Users\\Administrator\n\n`;
-            this.state.documents.forEach(d => outputElem.innerText += `09/05/2026  08:40 AM    <DOC>   ${d.name}\n`);
-            this.state.installedJREX.forEach(p => outputElem.innerText += `09/05/2026  08:40 AM    <JREX>  ${p.name}.jrex\n`);
-            break;
-          case 'cls':
-            outputElem.innerText = '';
-            break;
-          case 'backup':
-            this.exportToIOSFiles();
-            outputElem.innerText += `[SUCCESS] Snapshot initiated to iOS Files.\n`;
-            break;
-          case 'install':
-            this.promptImportJREX();
-            outputElem.innerText += `[INFO] File selector opened.\n`;
-            break;
-          case 'ver':
-            outputElem.innerText += `\nMicrosoft Windows [Version 10.0.19045.2965 - JR AI Simulator]\n`;
-            break;
-          case 'reboot':
-            this.reboot();
-            break;
-          case '':
-            break;
-          default:
-            outputElem.innerText += `'${main}' is not recognized as an internal or external command.\n`;
-        }
-      }
-
-      renderJREXInstaller(win) {
-        win.content.innerHTML = `
-          <div style="padding:24px; color:#fff; height:100%; overflow-y:auto;">
-            <h2>JR Application Package Manager (.jrex)</h2>
-            <p style="font-size:12.5px; color:#aaa; margin:8px 0 20px 0;">
-              .jrex packages are sandboxed standalone applications containing HTML5, JavaScript logic, and styling.
-            </p>
-
-            <div style="border: 2px dashed #444; border-radius:6px; padding:30px; text-align:center; margin-bottom:20px; cursor:pointer;" onclick="Sys.promptImportJREX()">
-              <i class="fa-solid fa-cloud-arrow-up" style="font-size:36px; color:var(--accent-color); margin-bottom:12px;"></i>
-              <div style="font-weight:600; font-size:14px;">Click to Browse or Drop .jrex File</div>
-              <div style="font-size:11px; color:#888; margin-top:4px;">Supports standard JSON app archives</div>
-            </div>
-
-            <h3>Featured Packages</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
-              <div style="background:#252525; padding:12px; border:1px solid #333; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                  <div style="font-weight:600; font-size:13px;"><i class="fa-solid fa-palette"></i> Paint Studio</div>
-                  <div style="font-size:11px; color:#888;">Drawing canvas application</div>
+        <div class="am-layout no-scrollbar">
+            <!-- Left Panel -->
+            <section class="am-player-panel w-full md:w-[390px] lg:w-[430px] flex-shrink-0 p-4 md:p-6 flex flex-col min-h-full md:h-full z-10">
+                
+                <!-- Cover Art -->
+                <div class="relative w-[48%] sm:w-[55%] md:w-full max-w-[220px] md:max-w-[260px] mx-auto mb-3 md:mb-4">
+                    <div id="cover-art-${winObj.id}" class="am-cover-art opacity-0"></div>
+                    <span class="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl pointer-events-none drop-shadow-xl" id="cover-emoji">🎵</span>
                 </div>
-                <button class="setting-btn" onclick="Sys.installSamplePaint()">Install</button>
-              </div>
 
-              <div style="background:#252525; padding:12px; border:1px solid #333; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                  <div style="font-weight:600; font-size:13px;"><i class="fa-solid fa-stopwatch"></i> Stopwatch Pro</div>
-                  <div style="font-size:11px; color:#888;">High-precision timer utility</div>
+                <!-- Track Info -->
+                <div class="mb-2 md:mb-3 text-center md:text-left">
+                    <h2 class="text-lg md:text-xl font-bold text-white truncate tracking-tight font-sans" id="title">Not Playing</h2>
+                    <div class="flex items-center justify-center md:justify-start gap-2 mt-1">
+                        <span class="text-[10px] md:text-xs font-bold text-white/80 bg-white/15 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/10 font-sans" id="lcd-mode">LIST</span>
+                        <span class="text-[10px] md:text-xs font-medium text-white/50 font-sans" id="storage-status">Checking Cache...</span>
+                    </div>
                 </div>
-                <button class="setting-btn" onclick="Sys.installSampleStopwatch()">Install</button>
-              </div>
-            </div>
-          </div>
-        `;
-      }
 
-      installSamplePaint() {
-        const paintPkg = {
-          id: 'jrex_paint',
-          name: 'Paint Studio',
-          icon: 'fa-solid fa-palette',
-          width: 640,
-          height: 460,
-          html: `
-            <div style="display:flex; flex-direction:column; height:100vh; background:#222; color:#fff;">
-              <div style="padding:8px; background:#333; display:flex; gap:10px; align-items:center;">
-                <input type="color" id="colorPicker" value="#0078d7">
-                <input type="range" id="brushSize" min="1" max="40" value="4">
-                <button id="clearBtn" style="background:#555; color:#fff; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Clear</button>
-              </div>
-              <canvas id="paintCanvas" style="flex:1; background:#fff; cursor:crosshair;"></canvas>
-            </div>
-          `,
-          js: `
-            const canvas = document.getElementById('paintCanvas');
-            const ctx = canvas.getContext('2d');
-            const colorPicker = document.getElementById('colorPicker');
-            const brushSize = document.getElementById('brushSize');
-            const clearBtn = document.getElementById('clearBtn');
+                <!-- Progress Scrubber -->
+                <div class="mb-2 px-1">
+                    <input type="range" id="seek-bar" class="glass-slider" value="0" min="0" max="100" step="0.1">
+                    <div class="flex justify-between items-center text-[10px] text-white/50 font-medium mt-1 font-sans">
+                        <span id="cur-time">00:00</span>
+                        <span id="dur-time">00:00</span>
+                    </div>
+                </div>
 
-            function resize() {
-              canvas.width = canvas.parentElement.clientWidth;
-              canvas.height = canvas.parentElement.clientHeight - 45;
-            }
-            window.addEventListener('resize', resize);
-            setTimeout(resize, 50);
+                <!-- Controls with Download Button -->
+                <div class="flex flex-col mb-3 md:mb-4">
+                    <div class="flex justify-center items-center gap-3.5 md:gap-4">
+                        <button class="liquid-btn w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-white/70 hover:text-white font-sans" id="btn-prev" title="Previous Track">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12l10-8v16zM5 4h4v16H5z"/></svg>
+                        </button>
+                        
+                        <button class="liquid-btn w-12 h-12 md:w-14 md:h-14 !bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-2xl font-sans" id="btn-play">
+                            <div class="w-0 h-0 border-y-[7px] border-y-transparent border-l-[12px] border-l-black ml-1" id="play-icon"></div>
+                        </button>
+                        
+                        <button class="liquid-btn w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-white/70 hover:text-white font-sans" id="btn-next" title="Next Track">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4z"/><path d="M15 4h4v16h-4z"/></svg>
+                        </button>
 
-            let painting = false;
-            canvas.addEventListener('mousedown', () => painting = true);
-            window.addEventListener('mouseup', () => { painting = false; ctx.beginPath(); });
-            canvas.addEventListener('mousemove', draw);
+                        <button id="mode-btn" class="liquid-btn text-[10px] md:text-xs px-2.5 py-1.5 font-bold text-white/80 hover:text-white font-sans">
+                            MODE
+                        </button>
 
-            function draw(e) {
-              if (!painting) return;
-              ctx.lineWidth = brushSize.value;
-              ctx.lineCap = 'round';
-              ctx.strokeStyle = colorPicker.value;
-              const rect = canvas.getBoundingClientRect();
-              ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-            }
+                        <button id="btn-download" class="liquid-btn text-[10px] md:text-xs px-3 py-1.5 font-bold text-white/90 bg-white/10 hover:text-white font-sans flex items-center gap-1.5" title="Download song for offline use">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span id="download-text">SAVE</span>
+                        </button>
+                    </div>
+                </div>
 
-            clearBtn.addEventListener('click', () => {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-            });
-          `
-        };
-        this.registerJREXPackage(paintPkg, true);
-      }
+                <!-- Playlist & GitHub Sync Card -->
+                <div class="flex-1 flex flex-col min-h-[220px] md:min-h-0 liquid-card overflow-hidden border border-white/10 p-2.5">
+                    <div class="mb-2 pb-2 border-b border-white/10">
+                        <div class="flex gap-1.5">
+                            <input class="flex-1 min-w-0 liquid-input rounded-xl px-2.5 py-1 text-[11px] outline-none text-white placeholder-white/30 font-sans" id="gh-user" placeholder="GitHub User" type="text">
+                            <input class="flex-1 min-w-0 liquid-input rounded-xl px-2.5 py-1 text-[11px] outline-none text-white placeholder-white/30 font-sans" id="gh-repo" placeholder="Repository" type="text">
+                            <button class="liquid-btn liquid-btn-active px-2.5 py-1 text-[11px] font-bold shrink-0 font-sans" id="btn-sync">SYNC</button>
+                        </div>
+                    </div>
+                    
+                    <div class="px-0.5 mb-1.5">
+                        <input class="w-full liquid-input rounded-xl px-2.5 py-1 text-xs outline-none text-white placeholder-white/30 font-sans" id="search-input" placeholder="Search tracks..." type="text">
+                        <div class="flex gap-1.5 overflow-x-auto no-scrollbar mt-1.5 pb-1" id="playlist-nav"></div>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto no-scrollbar pr-0.5">
+                        <ul id="track-list" class="space-y-1 font-sans"></ul>
+                    </div>
+                    
+                    <div class="pt-1.5 mt-1 border-t border-white/5 text-center">
+                        <p class="text-[10px] text-white/40 font-medium flex justify-center items-center gap-1 font-sans tracking-wide" id="net-status">Ready</p>
+                    </div>
+                </div>
+            </section>
 
-      installSampleStopwatch() {
-        const timerPkg = {
-          id: 'jrex_stopwatch',
-          name: 'Stopwatch Pro',
-          icon: 'fa-solid fa-stopwatch',
-          width: 400,
-          height: 320,
-          html: `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#181818; color:#fff; font-family:'Product Sans', sans-serif;">
-              <h1 id="time-display" style="font-size:48px; font-weight:300; margin-bottom:24px; font-variant-numeric:tabular-nums;">00:00.00</h1>
-              <div style="display:flex; gap:12px;">
-                <button id="start-btn" style="background:#0078d7; color:#fff; border:none; padding:8px 24px; font-size:14px; border-radius:3px; cursor:pointer;">Start</button>
-                <button id="reset-btn" style="background:#333; color:#fff; border:none; padding:8px 24px; font-size:14px; border-radius:3px; cursor:pointer;">Reset</button>
-              </div>
-            </div>
-          `,
-          js: `
-            let startTime, interval;
-            let running = false;
-            let elapsed = 0;
+            <!-- Right Panel: Lyrics -->
+            <section class="am-lyrics-panel flex-1 flex flex-col min-h-[60vh] md:min-h-0 md:h-full relative z-10 p-4 md:pl-10 md:pr-10 md:pt-6">
+                <div class="flex justify-end mb-2">
+                    <span class="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-widest liquid-btn px-3 py-1 rounded-full font-sans" id="lyrics-status">LYRICS SYSTEM</span>
+                </div>
+                
+                <div class="flex-1 relative w-full overflow-hidden lyrics-mask">
+                    <div id="lyrics-container-${winObj.id}" class="absolute inset-0 overflow-y-auto no-scrollbar" style="scroll-behavior: smooth;">
+                        <div id="lyrics-content-${winObj.id}" class="w-full max-w-3xl mx-auto pb-[50vh] pt-[30vh] flex flex-col px-0 md:px-3">
+                            <div class="text-left text-white/30 text-lg md:text-xl font-medium mt-10 tracking-widest font-sans">
+                                Loading Lyrics...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <audio id="player-audio-${winObj.id}" playsinline preload="auto"></audio>`;
 
-            const display = document.getElementById('time-display');
-            const startBtn = document.getElementById('start-btn');
-            const resetBtn = document.getElementById('reset-btn');
+        // UI Element References
+        const audio = content.querySelector('#player-audio-' + winObj.id);
+        const titleEl = content.querySelector('#title');
+        const curTimeEl = content.querySelector('#cur-time');
+        const durTimeEl = content.querySelector('#dur-time');
+        const seekBar = content.querySelector('#seek-bar');
+        const playIcon = content.querySelector('#play-icon');
+        const btnPlay = content.querySelector('#btn-play');
+        const btnPrev = content.querySelector('#btn-prev');
+        const btnNext = content.querySelector('#btn-next');
+        const btnMode = content.querySelector('#mode-btn');
+        const btnDownload = content.querySelector('#btn-download');
+        const downloadText = content.querySelector('#download-text');
+        const lcdMode = content.querySelector('#lcd-mode');
+        const storageStatus = content.querySelector('#storage-status');
+        const navContainer = content.querySelector('#playlist-nav');
+        const listContainer = content.querySelector('#track-list');
+        const searchInput = content.querySelector('#search-input');
+        const artEl = content.querySelector('#cover-art-' + winObj.id);
+        const dynBgEl = content.querySelector('#dynamic-bg');
+        const emjEl = content.querySelector('#cover-emoji');
+        const netStatus = content.querySelector('#net-status');
+        const ghUserInp = content.querySelector('#gh-user');
+        const ghRepoInp = content.querySelector('#gh-repo');
+        const btnSync = content.querySelector('#btn-sync');
+        
+        const lyricsContainerEl = content.querySelector(`#lyrics-container-${winObj.id}`);
+        const lyricsContentEl = content.querySelector(`#lyrics-content-${winObj.id}`);
+        const lyricsStatusEl = content.querySelector('#lyrics-status');
 
-            function formatTime(ms) {
-              const totalSec = Math.floor(ms / 1000);
-              const m = Math.floor(totalSec / 60);
-              const s = totalSec % 60;
-              const cs = Math.floor((ms % 1000) / 10);
-              return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + String(cs).padStart(2,'0');
-            }
+        let playlists = {};
+        let currentPlaylist = 'Root';
+        let filteredTracks = [];
+        let curIdx = 0;
+        let loopMode = 'list';
+        let currentCoverObjectURL = null;
+        let currentAudioBlobURL = null;
+        let downloadedTracksSet = new Set();
+        
+        let parsedLyrics = [];
+        let currentLyricIndex = -1;
+        let isSyncedLyrics = false;
+        let isUserSeeking = false;
 
-            startBtn.addEventListener('click', () => {
-              if (!running) {
-                startTime = Date.now() - elapsed;
-                interval = setInterval(() => {
-                  elapsed = Date.now() - startTime;
-                  display.innerText = formatTime(elapsed);
-                }, 10);
-                startBtn.innerText = 'Pause';
-                startBtn.style.background = '#d13438';
-                running = true;
-              } else {
-                clearInterval(interval);
-                startBtn.innerText = 'Start';
-                startBtn.style.background = '#0078d7';
-                running = false;
-              }
-            });
+        let currentTrackMeta = { title: '', artist: 'JRmusic', album: 'Local Music', coverUrl: null };
 
-            resetBtn.addEventListener('click', () => {
-              clearInterval(interval);
-              elapsed = 0;
-              running = false;
-              display.innerText = '00:00.00';
-              startBtn.innerText = 'Start';
-              startBtn.style.background = '#0078d7';
-            });
-          `
-        };
-        this.registerJREXPackage(timerPkg, true);
-      }
+        const savedUser = localStorage.getItem('jrmusic_gh_user') || 'zhangzhanhang855';
+        const savedRepo = localStorage.getItem('jrmusic_gh_repo') || 'musiconly';
+        ghUserInp.value = savedUser;
+        ghRepoInp.value = savedRepo;
 
-      // ========================================================================
-      // SYSTEM UTILITIES
-      // ========================================================================
-      toggleStartMenu() {
-        const menu = document.getElementById('start-menu');
-        const isVisible = menu.style.display === 'flex';
-        menu.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) document.getElementById('action-center').style.display = 'none';
-      }
-
-      closeStartMenu() {
-        document.getElementById('start-menu').style.display = 'none';
-      }
-
-      toggleActionCenter() {
-        const ac = document.getElementById('action-center');
-        const isVisible = ac.style.display === 'flex';
-        ac.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) this.closeStartMenu();
-      }
-
-      refreshDesktop() {
-        this.renderDesktop();
-        this.renderTaskbar();
-        this.showInUINativeToast('System Refreshed', 'Desktop icons and views reset.', 'info');
-      }
-
-      toggleFullscreen() {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(() => {});
-        } else {
-          document.exitFullscreen().catch(() => {});
+        if (!window.jsmediatags) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js';
+            document.head.appendChild(script);
         }
-      }
 
-      reboot() {
-        location.reload();
-      }
+        // Lyric Processing
+        function aggressivelyFindLyrics(tags) {
+            if (!tags) return "";
+            const extract = (obj) => {
+                if (!obj) return "";
+                if (typeof obj === 'string') return obj;
+                if (typeof obj.text === 'string') return obj.text;
+                if (typeof obj.lyrics === 'string') return obj.lyrics;
+                if (obj.data) {
+                    if (typeof obj.data === 'string') return obj.data;
+                    if (typeof obj.data.text === 'string') return obj.data.text;
+                }
+                return "";
+            };
 
-      startClock() {
-        const update = () => {
-          const now = new Date();
-          let hours = now.getHours();
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          hours = hours % 12 || 12;
+            let primary = extract(tags.lyrics) || extract(tags.USLT) || extract(tags.SYLT);
+            if (primary && primary.includes('[')) return primary;
 
-          const timeStr = `${hours}:${minutes} ${ampm}`;
-          const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+            for (let key in tags) {
+                const item = tags[key];
+                const arr = Array.isArray(item) ? item : [item];
+                for (let i of arr) {
+                    let txt = extract(i);
+                    if (typeof txt === 'string' && txt.includes('[00:')) return txt;
+                    if (i && i.data) {
+                        let deepTxt = extract(i.data.data) || extract(i.data);
+                        if (typeof deepTxt === 'string' && deepTxt.includes('[00:')) return deepTxt;
+                    }
+                }
+            }
+            return primary; 
+        }
 
-          const tElem = document.getElementById('tray-time');
-          const dElem = document.getElementById('tray-date');
-          if (tElem) tElem.innerText = timeStr;
-          if (dElem) dElem.innerText = dateStr;
+        function processLyrics(rawText, source) {
+            if (!rawText || typeof rawText !== 'string') {
+                parsedLyrics = [];
+                isSyncedLyrics = false;
+                lyricsStatusEl.innerText = "INSTRUMENTAL";
+                lyricsContentEl.innerHTML = '<div class="text-left text-white/30 text-xl font-medium mt-10 tracking-widest font-sans">Instrumental</div>';
+                return;
+            }
+            
+            const cleanText = rawText.replace(/\0/g, '').trim();
+            const lines = cleanText.split(/\r?\n/);
+            const timeReg = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
+            parsedLyrics = [];
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                let match;
+                let timeTags = [];
+                timeReg.lastIndex = 0; 
+                
+                while ((match = timeReg.exec(line)) !== null) {
+                    const m = parseInt(match[1], 10);
+                    const s = parseInt(match[2], 10);
+                    const msStr = match[3] || '0';
+                    const ms = parseInt(msStr.padEnd(3, '0').slice(0, 3), 10);
+                    timeTags.push(m * 60 + s + ms / 1000);
+                }
+                
+                if (timeTags.length > 0) {
+                    let text = line.replace(/\[\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?\]/g, '').trim();
+                    text = text.replace(/[（(](?:翻译|translation)[：:].*?[）)]/gi, '').trim();
+                    for (let t of timeTags) {
+                        parsedLyrics.push({ time: t, text: text || '...' });
+                    }
+                }
+            }
+            
+            if (parsedLyrics.length > 0) {
+                isSyncedLyrics = true;
+                lyricsStatusEl.innerText = `${source}`;
+                parsedLyrics.sort((a, b) => a.time - b.time);
+                
+                lyricsContentEl.innerHTML = parsedLyrics.map((l, i) => 
+                    `<div class="lyric-line font-sans" id="lyric-${i}" data-time="${l.time}">
+                        <span class="block">${l.text}</span>
+                    </div>`
+                ).join('');
+                
+                lyricsContentEl.style.paddingTop = '30vh';
+                lyricsContentEl.style.paddingBottom = '50vh';
+                
+                lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => {
+                    el.onclick = () => {
+                        audio.currentTime = parseFloat(el.getAttribute('data-time'));
+                        if (audio.paused) audio.play();
+                    };
+                });
+            } else {
+                isSyncedLyrics = false;
+                lyricsStatusEl.innerText = `TEXT [${source}]`;
+                lyricsContentEl.style.paddingTop = '10vh';
+                lyricsContentEl.style.paddingBottom = '10vh';
+                lyricsContentEl.innerHTML = `<div class="text-left text-white/50 text-xl whitespace-pre-wrap leading-loose px-2 font-sans">${cleanText}</div>`;
+            }
+        }
+
+        const updateMediaSession = (lyricText = null) => {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({ 
+                    title: currentTrackMeta.title, 
+                    artist: lyricText || currentTrackMeta.artist, 
+                    album: currentTrackMeta.album, 
+                    artwork: currentTrackMeta.coverUrl ? [{ src: currentTrackMeta.coverUrl, sizes: '512x512', type: 'image/jpeg' }] : [] 
+                });
+                navigator.mediaSession.setActionHandler('play', () => audio.play());
+                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => btnPrev.click());
+                navigator.mediaSession.setActionHandler('nexttrack', () => btnNext.click());
+            }
         };
-        update();
-        setInterval(update, 1000);
-      }
 
-      setupEventListeners() {
-        // Wallpaper local file upload input
-        const wpInput = document.getElementById('wallpaper-file-input');
-        wpInput.onchange = (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            this.setWallpaper(event.target.result);
-          };
-          reader.readAsDataURL(file);
+        const filterAudio = (items) => {
+            const audioRegex = /\.(mp3|flac|wav|m4a)$/i;
+            const extRegex = /\.[^/.]+$/;
+            return items.filter(f => audioRegex.test(f.name)).map(f => ({
+                t: f.name.replace(extRegex, ''), 
+                u: f.download_url,
+                fileName: f.name
+            }));
         };
 
-        window.addEventListener('click', (e) => {
-          const startMenu = document.getElementById('start-menu');
-          const startBtn = document.getElementById('start-btn');
-          if (startMenu && !startMenu.contains(e.target) && !startBtn.contains(e.target)) {
-            startMenu.style.display = 'none';
-          }
+        const renderNav = () => {
+            navContainer.innerHTML = Object.keys(playlists).map(name => {
+                const isActive = name === currentPlaylist;
+                const activeClass = isActive ? 'liquid-btn-active' : 'text-white/70 hover:text-white';
+                return `<button class="liquid-btn text-[11px] md:text-xs px-3 py-1 font-bold whitespace-nowrap btn-nav font-sans ${activeClass}" data-name="${name}">${name}</button>`;
+            }).join('');
+            navContainer.querySelectorAll('.btn-nav').forEach(btn => btn.onclick = () => switchPlaylist(btn.dataset.name));
+        };
 
-          const actionCenter = document.getElementById('action-center');
-          if (actionCenter && !actionCenter.contains(e.target) && !e.target.closest('.tray-item')) {
-            actionCenter.style.display = 'none';
-          }
+        const renderList = () => {
+            listContainer.innerHTML = filteredTracks.map((s, i) => {
+                const isActive = curIdx === i;
+                const isCached = downloadedTracksSet.has(s.t);
+                const activeClass = isActive ? 'track-active' : 'text-white/70 hover:bg-white/10 hover:border-white/10 border border-transparent';
+                const playingAnim = isActive && !audio.paused ? `<span class="inline-block w-2 h-2 bg-[#fa233b] rounded-full animate-pulse ml-2 shadow-[0_0_8px_#fa233b]"></span>` : '';
+                const cachedBadge = isCached ? `<span class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-md font-sans">OFFLINE</span>` : '';
 
-          document.getElementById('context-menu').style.display = 'none';
-          
-          if (!e.target.closest('.desktop-icon')) {
-            document.querySelectorAll('.desktop-icon').forEach(el => el.classList.remove('selected'));
-          }
-        });
+                return `<li class="p-2 md:p-2.5 text-xs rounded-2xl cursor-pointer transition-all duration-300 font-sans flex items-center justify-between ${activeClass}" data-idx="${i}">
+                    <div class="truncate flex items-center gap-2">
+                        <span class="opacity-40 text-[10px] font-sans tracking-wider">${String(i + 1).padStart(2, '0')}</span>
+                        <span class="truncate">${s.t}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        ${cachedBadge}
+                        ${playingAnim}
+                    </div>
+                </li>`;
+            }).join('');
+            listContainer.querySelectorAll('li').forEach(item => item.onclick = () => executeLoad(parseInt(item.dataset.idx), true));
+        };
 
-        const desktop = document.getElementById('desktop');
-        desktop.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          const menu = document.getElementById('context-menu');
-          menu.style.display = 'flex';
-          menu.style.left = `${Math.min(e.clientX, window.innerWidth - 230)}px`;
-          menu.style.top = `${Math.min(e.clientY, window.innerHeight - 220)}px`;
-        });
+        const switchPlaylist = (name) => {
+            currentPlaylist = name;
+            filteredTracks = [...playlists[name]];
+            renderNav();
+            renderList();
+            if (filteredTracks.length > 0) executeLoad(0, false);
+        };
 
-        let isSelecting = false;
-        let selectStart = { x: 0, y: 0 };
-        const selBox = document.getElementById('selection-box');
+        async function executeLoad(idx, auto) {
+            if (filteredTracks.length === 0) return;
+            curIdx = idx;
+            const song = filteredTracks[curIdx];
 
-        desktop.addEventListener('mousedown', (e) => {
-          if (e.target !== desktop && e.target !== document.getElementById('desktop-icons-container')) return;
-          isSelecting = true;
-          selectStart = { x: e.clientX, y: e.clientY };
-          selBox.style.left = `${e.clientX}px`;
-          selBox.style.top = `${e.clientY}px`;
-          selBox.style.width = '0px';
-          selBox.style.height = '0px';
-          selBox.style.display = 'block';
-        });
+            titleEl.innerText = song.t;
+            currentTrackMeta = {
+                title: song.t,
+                artist: 'JRmusic',
+                album: currentPlaylist,
+                coverUrl: null
+            };
 
-        window.addEventListener('mousemove', (e) => {
-          if (!isSelecting) return;
-          const currentX = e.clientX;
-          const currentY = e.clientY;
-          const x = Math.min(selectStart.x, currentX);
-          const y = Math.min(selectStart.y, currentY);
-          const w = Math.abs(currentX - selectStart.x);
-          const h = Math.abs(currentY - selectStart.y);
+            artEl.classList.remove('loaded', 'opacity-100');
+            artEl.classList.add('opacity-0');
+            artEl.style.backgroundImage = 'none';
+            dynBgEl.style.backgroundImage = 'none';
+            emjEl.style.opacity = '1';
+            
+            currentLyricIndex = -1;
+            processLyrics(null, '');
+            lyricsContainerEl.scrollTo({ top: 0, behavior: 'auto' });
 
-          selBox.style.left = `${x}px`;
-          selBox.style.top = `${y}px`;
-          selBox.style.width = `${w}px`;
-          selBox.style.height = `${h}px`;
-        });
+            if (currentCoverObjectURL) {
+                URL.revokeObjectURL(currentCoverObjectURL);
+                currentCoverObjectURL = null;
+            }
+            if (currentAudioBlobURL) {
+                URL.revokeObjectURL(currentAudioBlobURL);
+                currentAudioBlobURL = null;
+            }
 
-        window.addEventListener('mouseup', () => {
-          if (isSelecting) {
-            isSelecting = false;
-            selBox.style.display = 'none';
-          }
-        });
-      }
-    }
+            // Check if downloaded locally
+            const localBlob = await getLocalAudio(song.t);
+            let audioBlobToTag = null;
 
-    const Sys = new OperatingSystem();
-    window.Sys = Sys;
-  </script>
+            if (localBlob) {
+                storageStatus.innerText = 'LOCAL STORAGE (OFFLINE)';
+                downloadText.innerText = 'SAVED';
+                btnDownload.classList.add('liquid-btn-active');
+                
+                currentAudioBlobURL = URL.createObjectURL(localBlob);
+                audio.src = currentAudioBlobURL;
+                audioBlobToTag = localBlob;
+            } else {
+                storageStatus.innerText = 'REMOTE STREAM';
+                downloadText.innerText = 'SAVE';
+                btnDownload.classList.remove('liquid-btn-active');
+                audio.src = song.u;
+            }
+
+            audio.load();
+            updateMediaSession();
+            
+            if (auto) audio.play().catch(e => console.log('Gesture needed:', e));
+            renderList();
+
+            // Fetch Lyrics (.lrc)
+            const lrcUrl = song.u.replace(/\.(mp3|flac|wav|m4a)$/i, '.lrc');
+            fetch(lrcUrl)
+                .then(res => { if (res.ok) return res.text(); throw new Error(); })
+                .then(lrcText => {
+                    if (lrcText && lrcText.trim()) processLyrics(lrcText, 'LRC FILE');
+                })
+                .catch(() => {});
+
+            // Parse ID3 Tags
+            const inspectBlob = audioBlobToTag ? Promise.resolve(audioBlobToTag) : fetch(song.u).then(r => r.ok ? r.blob() : Promise.reject());
+            inspectBlob.then(blob => {
+                if (!window.jsmediatags) return;
+                new window.jsmediatags.Reader(blob).read({
+                    onSuccess: (tag) => {
+                        if (tag.tags.title) {
+                            currentTrackMeta.title = tag.tags.title;
+                            titleEl.innerText = tag.tags.title;
+                        }
+                        if (tag.tags.artist) currentTrackMeta.artist = tag.tags.artist;
+                        if (tag.tags.album) currentTrackMeta.album = tag.tags.album;
+
+                        const pic = tag.tags.picture;
+                        if (pic) {
+                            const byteArray = new Uint8Array(pic.data);
+                            const coverBlob = new Blob([byteArray], { type: pic.format });
+                            currentCoverObjectURL = URL.createObjectURL(coverBlob);
+                            currentTrackMeta.coverUrl = currentCoverObjectURL;
+                            
+                            artEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
+                            dynBgEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
+                            artEl.classList.remove('opacity-0');
+                            artEl.classList.add('opacity-100');
+                            emjEl.style.opacity = '0';
+                        }
+                        
+                        updateMediaSession();
+
+                        if (!isSyncedLyrics) {
+                            const aggressiveLrcText = aggressivelyFindLyrics(tag.tags);
+                            if (aggressiveLrcText) processLyrics(aggressiveLrcText, 'ID3 TAG');
+                        }
+                    },
+                    onError: () => {}
+                });
+            }).catch(() => {});
+        }
+
+        // Trigger Download to App's Sandbox Storage
+        btnDownload.onclick = async () => {
+            if (filteredTracks.length === 0) return;
+            const song = filteredTracks[curIdx];
+
+            const alreadySaved = await getLocalAudio(song.t);
+            if (alreadySaved) {
+                showToast(`"${song.t}" is already stored locally.`, 'info');
+                return;
+            }
+
+            showToast(`Starting download: ${song.t}`, 'loading');
+            downloadText.innerText = 'DOWNLOADING...';
+
+            try {
+                const response = await fetch(song.u);
+                if (!response.ok) throw new Error('Network transfer failed');
+                
+                const blob = await response.blob();
+                await saveAudioLocally(song.t, blob);
+                
+                downloadedTracksSet.add(song.t);
+                storageStatus.innerText = 'LOCAL STORAGE (OFFLINE)';
+                downloadText.innerText = 'SAVED';
+                btnDownload.classList.add('liquid-btn-active');
+                
+                showToast(`Downloaded successfully! Offline ready.`, 'success');
+                renderList();
+            } catch (err) {
+                downloadText.innerText = 'SAVE';
+                showToast(`Download failed: Check connection`, 'error');
+            }
+        };
+
+        // Scrubber
+        seekBar.oninput = () => { isUserSeeking = true; };
+        seekBar.onchange = () => {
+            if (audio.duration) audio.currentTime = (seekBar.value / 100) * audio.duration;
+            isUserSeeking = false;
+        };
+
+        audio.onended = () => {
+            if (filteredTracks.length === 0) return;
+            if (loopMode === 'single') executeLoad(curIdx, true);
+            else if (loopMode === 'random') {
+                let nextIndex = Math.floor(Math.random() * filteredTracks.length);
+                if (filteredTracks.length > 1 && nextIndex === curIdx) nextIndex = (nextIndex + 1) % filteredTracks.length;
+                executeLoad(nextIndex, true);
+            } else {
+                executeLoad((curIdx + 1) % filteredTracks.length, true);
+            }
+        };
+
+        btnPlay.onclick = () => { audio.paused ? audio.play() : audio.pause(); };
+        btnPrev.onclick = () => { executeLoad((curIdx - 1 + filteredTracks.length) % filteredTracks.length, true); };
+        btnNext.onclick = () => { executeLoad((curIdx + 1 + filteredTracks.length) % filteredTracks.length, true); };
+
+        audio.onplay = () => { 
+            artEl.classList.add('playing');
+            playIcon.className = 'w-3 h-3.5 border-l-[3.5px] border-r-[3.5px] border-black ml-0'; 
+            renderList();
+        };
+        audio.onpause = () => { 
+            artEl.classList.remove('playing');
+            playIcon.className = 'w-0 h-0 border-y-[7px] border-y-transparent border-l-[12px] border-l-black ml-1'; 
+            renderList();
+        };
+        
+        audio.ontimeupdate = () => {
+            let s = audio.currentTime;
+            let d = audio.duration;
+
+            if (!isNaN(s)) {
+                let m = Math.floor(s / 60), sec = Math.floor(s % 60);
+                curTimeEl.innerText = m.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
+                if (d && !isUserSeeking) seekBar.value = (s / d) * 100;
+            }
+            if (!isNaN(d)) {
+                let dm = Math.floor(d / 60), dsec = Math.floor(d % 60);
+                durTimeEl.innerText = dm.toString().padStart(2, '0') + ':' + dsec.toString().padStart(2, '0');
+            }
+
+            if (isSyncedLyrics && parsedLyrics.length > 0) {
+                let activeIdx = -1;
+                for (let i = 0; i < parsedLyrics.length; i++) {
+                    if (s >= parsedLyrics[i].time) activeIdx = i;
+                    else break;
+                }
+                
+                if (activeIdx !== currentLyricIndex) {
+                    lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                    if (activeIdx !== -1) {
+                        const currEl = lyricsContentEl.querySelector(`#lyric-${activeIdx}`);
+                        if (currEl) {
+                            currEl.classList.add('active');
+                            const container = lyricsContainerEl;
+                            const scrollPos = currEl.offsetTop - (container.clientHeight / 2) + (currEl.clientHeight / 2);
+                            container.scrollTo({ top: scrollPos, behavior: 'smooth' });
+                            updateMediaSession(parsedLyrics[activeIdx].text);
+                        }
+                    } else {
+                        updateMediaSession();
+                    }
+                    currentLyricIndex = activeIdx;
+                }
+            }
+        };
+
+        searchInput.oninput = () => {
+            const val = searchInput.value.toLowerCase();
+            filteredTracks = playlists[currentPlaylist].filter(s => s.t.toLowerCase().includes(val));
+            renderList();
+        };
+
+        btnMode.onclick = () => { 
+            const modes = ['list', 'random', 'single']; 
+            loopMode = modes[(modes.indexOf(loopMode) + 1) % modes.length]; 
+            lcdMode.innerText = loopMode.toUpperCase();
+        };
+
+        async function loadLibrary(user, repo) {
+            try {
+                audio.pause(); audio.src = ''; curTimeEl.innerText = '00:00'; durTimeEl.innerText = '00:00';
+                playlists = {}; filteredTracks = []; listContainer.innerHTML = ''; navContainer.innerHTML = '';
+                titleEl.innerText = 'Syncing Repo...'; netStatus.innerText = `CONNECTING...`;
+                
+                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/`);
+                if (!res.ok) throw new Error('API limit reached or repo unreachable');
+                
+                const items = await res.json();
+                playlists['Root'] = filterAudio(items);
+                
+                const folders = items.filter(i => i.type === 'dir');
+                for (let f of folders) {
+                    netStatus.innerText = `DIR: ${f.name}`;
+                    const subData = await (await fetch(f.url)).json();
+                    const tracks = filterAudio(subData);
+                    if(tracks.length > 0) playlists[f.name] = tracks;
+                }
+                
+                netStatus.innerText = 'ONLINE';
+                localStorage.setItem('jrmusic_gh_user', user);
+                localStorage.setItem('jrmusic_gh_repo', repo);
+                
+                renderNav(); 
+                switchPlaylist('Root');
+            } catch (e) {
+                titleEl.innerText = 'Offline Mode'; 
+                netStatus.innerText = 'STANDALONE OFFLINE READY';
+                
+                // Fallback: Populate library with locally stored offline songs
+                const cachedKeys = await getAllSavedNames();
+                if (cachedKeys.length > 0) {
+                    playlists['Offline'] = cachedKeys.map(k => ({ t: k, u: '' }));
+                    renderNav();
+                    switchPlaylist('Offline');
+                    showToast('Loaded offline library', 'info');
+                } else {
+                    showToast('Connection failed and no offline music found', 'error');
+                }
+            }
+        }
+        
+        btnSync.onclick = () => { 
+            const u = ghUserInp.value.trim(); 
+            const r = ghRepoInp.value.trim(); 
+            if(u && r) loadLibrary(u, r); 
+        };
+
+        // Initialize DB & Startup Flow
+        (async () => {
+            try {
+                await initIndexedDB();
+                const savedKeys = await getAllSavedNames();
+                downloadedTracksSet = new Set(savedKeys);
+                storageStatus.innerText = `${savedKeys.length} Cached Song(s)`;
+            } catch (e) {
+                console.error('Storage initialization failed:', e);
+            }
+            loadLibrary(savedUser, savedRepo);
+        })();
+
+        winObj.onDestroy = () => {
+            audio.pause(); audio.src = '';
+            if (currentCoverObjectURL) URL.revokeObjectURL(currentCoverObjectURL);
+            if (currentAudioBlobURL) URL.revokeObjectURL(currentAudioBlobURL);
+        };
+    </script>
 </body>
 </html>
