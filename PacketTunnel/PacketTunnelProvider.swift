@@ -12,15 +12,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
-        // 2. 读取配置文件 config.json
-        let configFile = containerURL.appendingPathComponent("config.json")
-        guard let configData = try? Data(contentsOf: configFile),
-              let configString = String(data: configData, encoding: .utf8), !configString.isEmpty else {
-            completionHandler(NSError(domain: "PacketTunnel", code: 2, userInfo: [NSLocalizedDescriptionKey: "未找到有效的代理配置文件"]))
-            return
-        }
-
-        // 3. 配置虚拟网卡 (TUN)
+        // 2. 配置虚拟网卡 (TUN)
         let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         let ipv4Settings = NEIPv4Settings(addresses: ["172.19.0.1"], subnetMasks: ["255.255.255.0"])
         ipv4Settings.includedRoutes = [NEIPv4Route.default()]
@@ -37,9 +29,19 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
-            // 4. 初始化基础环境并加载配置
-            // LibboxSetup 参数: baseDir, workingDir, tempDir, isLogOutput
-            LibboxSetup(containerURL.path, containerURL.path, containerURL.path, false)
+            // 3. 构造 LibboxSetupOptions 并初始化核心
+            let setupOptions = LibboxSetupOptions()
+            setupOptions.basePath = containerURL.path
+            setupOptions.workingPath = containerURL.path
+            setupOptions.tempPath = containerURL.path
+
+            var setupErr: NSError?
+            LibboxSetup(setupOptions, &setupErr)
+
+            if let err = setupErr {
+                completionHandler(err)
+                return
+            }
 
             completionHandler(nil)
         }
