@@ -16,12 +16,39 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      # 动态引入 Libbox.xcframework (如果仓库没用 Git LFS 提交)
+      - name: Setup Libbox Core Framework
+        run: |
+          mkdir -p Frameworks
+          if [ ! -d "Frameworks/Libbox.xcframework" ]; then
+            echo ">>> Libbox.xcframework not found in repository. Fetching prebuilt core..."
+            # 此处替换为你存放含 AnyTLS 的 Libbox.xcframework 压缩包直链
+            # curl -L -o Libbox.xcframework.zip "https://github.com/your-org/your-repo/releases/download/v1.0.0/Libbox.xcframework.zip"
+            # unzip -q Libbox.xcframework.zip -d Frameworks/
+            # rm -f Libbox.xcframework.zip
+          fi
+
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: Build App with Xcode (arm64 Device)
+      - name: Build Main App & PacketTunnel Extension
         run: |
+          # 1. 编译 PacketTunnel Network Extension Target
           xcodebuild clean build \
+            -project StockScope.xcodeproj \
+            -target PacketTunnel \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS="arm64" \
+            ONLY_ACTIVE_ARCH=NO \
+            CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
+
+          # 2. 编译主宿主 App
+          xcodebuild build \
             -project StockScope.xcodeproj \
             -scheme StockScope \
             -sdk iphoneos \
@@ -34,32 +61,42 @@ jobs:
             ONLY_ACTIVE_ARCH=NO \
             CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
 
-      - name: Verify Executable & Package IPA
+      - name: Verify Executable & Package IPA with PlugIns
         run: |
           APP_PATH="./build/Release-iphoneos/StockScope.app"
+          EXT_PATH="./build/Release-iphoneos/PacketTunnel.appex"
           
-          # 检查编译产物中是否存在可执行文件
+          # 验证主二进制文件
           if [ ! -f "$APP_PATH/StockScope" ]; then
             echo "ERROR: StockScope binary executable not found in $APP_PATH!"
             ls -la "$APP_PATH"
             exit 1
           fi
           
-          # 检查架构是否包含 arm64
+          # 验证扩展是否存在
+          if [ ! -d "$EXT_PATH" ]; then
+            echo "ERROR: PacketTunnel.appex not found in ./build/Release-iphoneos/!"
+            exit 1
+          fi
+
           lipo -info "$APP_PATH/StockScope"
           
-          # 清理旧目录并创建 Payload
+          # 构造标准 IPA 目录
           rm -rf Payload StockScope-unsigned.ipa
           mkdir -p Payload
-          cp -r "$APP_PATH" Payload/
+          cp -R "$APP_PATH" Payload/
           
-          # 确保 HTML 被放入 App 根目录
+          # 将 Network Extension 嵌入主包 PlugIns/ 目录
+          mkdir -p "Payload/StockScope.app/PlugIns"
+          cp -R "$EXT_PATH" "Payload/StockScope.app/PlugIns/"
+
+          # 确保嵌入 HTML
           if [ -f "StockScope/index.html" ]; then
             cp "StockScope/index.html" "Payload/StockScope.app/"
           fi
           
           # 严格以标准 IPA 结构压缩
-          zip -qr StockScope-unsigned.ipa Payload
+          zip -qry StockScope-unsigned.ipa Payload/
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
