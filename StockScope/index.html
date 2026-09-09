@@ -1,1040 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Liquid Glass Music Player</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Google Sans"', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Google Sans Font Imports -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>StockScope Proxy</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card: #141721;
+      --input-bg: #1c2130;
+      --border: #262c3d;
+      --text: #f0f3f8;
+      --muted: #7e8b9f;
+      --accent: #3b82f6;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 4px 20px;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .status-disconnected .badge-dot { background: var(--muted); }
+    .status-connecting .badge-dot { background: var(--yellow); }
+    .status-connected .badge-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .status-disconnecting .badge-dot { background: var(--red); }
 
-    <style>
-        *, *::before, *::after, html, body, div, span, applet, object, iframe,
-        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-        a, abbr, acronym, address, big, cite, code,
-        del, dfn, em, img, ins, kbd, q, s, samp,
-        small, strike, strong, sub, sup, tt, var,
-        b, u, i, center,
-        dl, dt, dd, ol, ul, li,
-        fieldset, form, label, legend,
-        table, caption, tbody, tfoot, thead, tr, th, td,
-        article, aside, canvas, details, embed, 
-        figure, figcaption, footer, header, hgroup, 
-        menu, nav, output, ruby, section, summary,
-        time, mark, audio, video, input, button, select, textarea {
-            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-            -webkit-touch-callout: none;
-        }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      user-select: text;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .flex-1 { flex: 1; }
+    .flex-2 { flex: 2; }
 
-        :root {
-            --sat: env(safe-area-inset-top, 24px);
-            --sab: env(safe-area-inset-bottom, 20px);
-            --sal: env(safe-area-inset-left, 0px);
-            --sar: env(safe-area-inset-right, 0px);
-        }
-
-        body { 
-            background: #050508; 
-            color: #ffffff; 
-            height: 100vh;
-            height: 100dvh;
-            margin: 0; 
-            overflow: hidden; 
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* Safe Notch Offset */
-        #app-container { 
-            width: 100vw; 
-            height: 100vh; 
-            height: 100dvh; 
-            box-sizing: border-box;
-            padding-top: max(var(--sat), 16px);
-            padding-bottom: max(var(--sab), 14px);
-            padding-left: var(--sal);
-            padding-right: var(--sar);
-            overflow: hidden;
-            position: relative;
-        }
-        #win-content-main { width: 100%; height: 100%; position: relative; }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(40px) saturate(210%);
-            -webkit-backdrop-filter: blur(40px) saturate(210%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25);
-        }
-
-        .liquid-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-            backdrop-filter: blur(30px) saturate(190%);
-            -webkit-backdrop-filter: blur(30px) saturate(190%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.3);
-            border-radius: 24px;
-        }
-
-        .liquid-btn {
-            position: relative;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
-            backdrop-filter: blur(25px) saturate(200%);
-            -webkit-backdrop-filter: blur(25px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 
-                0 8px 24px rgba(0, 0, 0, 0.3),
-                inset 0 1px 1.5px rgba(255, 255, 255, 0.45),
-                inset 0 -1px 2px rgba(0, 0, 0, 0.25);
-            border-radius: 9999px;
-            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-            overflow: hidden;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .liquid-btn::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 48%;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
-            border-radius: 9999px 9999px 0 0;
-            pointer-events: none;
-        }
-
-        .liquid-btn:active {
-            transform: translateY(1px) scale(0.96);
-            box-shadow: 
-                0 4px 12px rgba(0, 0, 0, 0.25),
-                inset 0 1px 1px rgba(0, 0, 0, 0.3);
-        }
-
-        .liquid-btn-active {
-            background: linear-gradient(135deg, rgba(250, 35, 59, 0.85) 0%, rgba(250, 35, 59, 0.5) 100%) !important;
-            border-color: rgba(255, 150, 170, 0.7) !important;
-            box-shadow: 
-                0 8px 28px rgba(250, 35, 59, 0.5),
-                inset 0 1px 2px rgba(255, 255, 255, 0.8) !important;
-            color: #ffffff !important;
-        }
-
-        .liquid-input {
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-        }
-        .liquid-input:focus {
-            border-color: rgba(255, 255, 255, 0.35);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.2);
-        }
-
-        .glass-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 6px;
-            border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.15);
-            outline: none;
-            backdrop-filter: blur(10px);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .glass-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #ffffff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5), 0 0 8px rgba(250, 35, 59, 0.8);
-            cursor: pointer;
-        }
-
-        /* In-App Toast Container */
-        #notification-box {
-            position: fixed;
-            top: calc(max(var(--sat), 16px) + 8px);
-            right: calc(var(--sar) + 16px);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-        }
-
-        .liquid-toast {
-            min-width: 200px;
-            max-width: 280px;
-            padding: 10px 14px;
-            border-radius: 16px;
-            background: rgba(20, 20, 30, 0.75);
-            backdrop-filter: blur(35px) saturate(200%);
-            -webkit-backdrop-filter: blur(35px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
-            color: #ffffff;
-            font-size: 12px;
-            transform: translateY(-20px);
-            opacity: 0;
-            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            pointer-events: auto;
-        }
-
-        .liquid-toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    </style>
+    .btn-toggle {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: var(--accent);
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: auto;
+    }
+    .btn-toggle:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+    .btn-toggle.active {
+      background: var(--red);
+    }
+  </style>
 </head>
 <body>
 
-    <div id="notification-box"></div>
-
-    <div id="app-container">
-        <div id="win-content-main"></div>
+  <div class="header">
+    <div class="title">StockScope Proxy</div>
+    <div id="statusBadge" class="badge status-disconnected">
+      <span class="badge-dot"></span>
+      <span id="statusText">Disconnected</span>
     </div>
+  </div>
 
-    <script>
-        const winObj = { id: 'main', onDestroy: () => {} };
-        const content = document.getElementById('win-content-' + winObj.id);
+  <div class="card">
+    <div class="card-title">AnyTLS Endpoint</div>
+    <div class="row form-group">
+      <div class="flex-2">
+        <label>Server Host / IP</label>
+        <input id="server" type="text" placeholder="1.2.3.4">
+      </div>
+      <div class="flex-1">
+        <label>Port</label>
+        <input id="port" type="number" placeholder="443" value="443">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Password / Token</label>
+      <input id="password" type="text" placeholder="anytls password">
+    </div>
+    <div class="form-group">
+      <label>SNI (Optional)</label>
+      <input id="sni" type="text" placeholder="example.com">
+    </div>
+  </div>
 
-        // In-App Toast Engine
-        function showToast(message, type = 'info') {
-            const toastContainer = document.getElementById('notification-box');
-            const toast = document.createElement('div');
-            toast.className = 'liquid-toast';
-            
-            let icon = 'ℹ️';
-            if (type === 'success') icon = '✅';
-            if (type === 'loading') icon = '⏳';
-            if (type === 'error') icon = '⚠️';
-            
-            toast.innerHTML = `
-                <span class="text-base">${icon}</span>
-                <div class="flex-1 font-medium leading-tight">${message}</div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.add('show'));
+  <div class="card">
+    <div class="card-title">Network Setting</div>
+    <div class="row form-group">
+      <div class="flex-1">
+        <label>Virtual TUN IP</label>
+        <input id="tunIp" type="text" value="172.19.0.1">
+      </div>
+      <div class="flex-1">
+        <label>DNS Server</label>
+        <input id="dnsServer" type="text" value="1.1.1.1">
+      </div>
+    </div>
+  </div>
 
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 2600);
+  <button id="toggleBtn" class="btn-toggle" onclick="toggleProxy()">Start Proxy</button>
+
+  <script>
+    let currentStatus = "disconnected";
+
+    // 载入本地配置
+    window.onload = function() {
+      const saved = localStorage.getItem("anytls_config");
+      if (saved) {
+        try {
+          const cfg = JSON.parse(saved);
+          document.getElementById("server").value = cfg.server || "";
+          document.getElementById("port").value = cfg.port || 443;
+          document.getElementById("password").value = cfg.password || "";
+          document.getElementById("sni").value = cfg.sni || "";
+          document.getElementById("tunIp").value = cfg.tunIp || "172.19.0.1";
+          document.getElementById("dnsServer").value = cfg.dnsServer || "1.1.1.1";
+        } catch (e) {}
+      }
+      postNativeMessage("getProxyStatus", null);
+    };
+
+    function saveInputs() {
+      const cfg = {
+        server: document.getElementById("server").value.trim(),
+        port: parseInt(document.getElementById("port").value) || 443,
+        password: document.getElementById("password").value.trim(),
+        sni: document.getElementById("sni").value.trim(),
+        tunIp: document.getElementById("tunIp").value.trim() || "172.19.0.1",
+        dnsServer: document.getElementById("dnsServer").value.trim() || "1.1.1.1"
+      };
+      localStorage.setItem("anytls_config", JSON.stringify(cfg));
+      return cfg;
+    }
+
+    function buildSingBoxConfig(c) {
+      return {
+        "log": { "level": "warn" },
+        "dns": {
+          "servers": [{ "tag": "dns-remote", "address": c.dnsServer, "detour": "proxy" }]
+        },
+        "inbounds": [
+          {
+            "type": "tun",
+            "tag": "tun-in",
+            "interface_name": "utun",
+            "inet4_address": `${c.tunIp}/24`,
+            "auto_route": true,
+            "strict_route": false,
+            "sniff": true
+          }
+        ],
+        "outbounds": [
+          {
+            "type": "anytls",
+            "tag": "proxy",
+            "server": c.server,
+            "server_port": c.port,
+            "password": c.password,
+            "tls": {
+              "enabled": true,
+              "server_name": c.sni || c.server
+            }
+          },
+          { "type": "direct", "tag": "direct" }
+        ],
+        "route": {
+          "rules": [{ "outbound": "proxy" }],
+          "auto_detect_interface": true
         }
+      };
+    }
 
-        // IndexedDB Offline Audio Engine
-        const DB_NAME = 'JRMusicAppDB';
-        const STORE_NAME = 'tracks';
-        let dbInstance = null;
-
-        function initIndexedDB() {
-            return new Promise((resolve, reject) => {
-                const req = indexedDB.open(DB_NAME, 1);
-                req.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME, { keyPath: 'name' });
-                    }
-                };
-                req.onsuccess = () => {
-                    dbInstance = req.result;
-                    resolve(dbInstance);
-                };
-                req.onerror = () => reject(req.error);
-            });
+    function toggleProxy() {
+      if (currentStatus === "connected") {
+        postNativeMessage("stopProxy", null);
+      } else {
+        const c = saveInputs();
+        if (!c.server || !c.password) {
+          alert("Server and Password cannot be empty.");
+          return;
         }
+        const singBoxJSON = JSON.stringify(buildSingBoxConfig(c), null, 2);
+        postNativeMessage("startProxy", singBoxJSON);
+      }
+    }
 
-        async function saveAudioLocally(trackName, blob) {
-            return new Promise((resolve, reject) => {
-                if (!dbInstance) return reject('DB not ready');
-                const tx = dbInstance.transaction([STORE_NAME], 'readwrite');
-                const store = tx.objectStore(STORE_NAME);
-                store.put({ name: trackName, data: blob, timestamp: Date.now() });
-                tx.oncomplete = () => resolve(true);
-                tx.onerror = () => reject(tx.error);
-            });
-        }
+    function postNativeMessage(name, body) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name]) {
+        window.webkit.messageHandlers[name].postMessage(body);
+      }
+    }
 
-        async function getLocalAudio(trackName) {
-            return new Promise((resolve) => {
-                if (!dbInstance) return resolve(null);
-                const tx = dbInstance.transaction([STORE_NAME], 'readonly');
-                const store = tx.objectStore(STORE_NAME);
-                const req = store.get(trackName);
-                req.onsuccess = () => resolve(req.result ? req.result.data : null);
-                req.onerror = () => resolve(null);
-            });
-        }
+    // 由 Native 的 evaluateJavaScript 调用
+    window.onProxyStatusChange = function(status) {
+      currentStatus = status;
+      const badge = document.getElementById("statusBadge");
+      const statusText = document.getElementById("statusText");
+      const btn = document.getElementById("toggleBtn");
 
-        async function getAllSavedNames() {
-            return new Promise((resolve) => {
-                if (!dbInstance) return resolve([]);
-                const tx = dbInstance.transaction([STORE_NAME], 'readonly');
-                const store = tx.objectStore(STORE_NAME);
-                const req = store.getAllKeys();
-                req.onsuccess = () => resolve(req.result || []);
-                req.onerror = () => resolve([]);
-            });
-        }
+      badge.className = `badge status-${status}`;
+      statusText.innerText = status.charAt(0).toUpperCase() + status.slice(1);
 
-        // Dynamic CSS Setup
-        const styleEl = document.createElement('style');
-        styleEl.innerHTML = `
-            #win-content-${winObj.id} {
-                --am-red: #fa233b;
-                --am-bg: rgba(10, 10, 16, 0.45);
-                height: 100%; 
-                font-family: 'Google Sans', sans-serif !important;
-            }
-            
-            .am-bg-blur {
-                position: absolute;
-                inset: -15%;
-                background-size: cover;
-                background-position: center;
-                filter: blur(80px) brightness(0.32) saturate(1.8);
-                z-index: 0;
-                transition: background-image 1.2s cubic-bezier(0.25, 1, 0.5, 1);
-            }
-
-            .am-layout {
-                position: relative;
-                z-index: 10;
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-                width: 100%;
-                overflow-y: auto;
-                overflow-x: hidden;
-                font-family: 'Google Sans', sans-serif !important;
-            }
-            @media (min-width: 768px) {
-                .am-layout { 
-                    flex-direction: row; 
-                    overflow-y: hidden; 
-                }
-            }
-
-            .am-player-panel {
-                background: var(--am-bg);
-                backdrop-filter: blur(45px) saturate(210%);
-                -webkit-backdrop-filter: blur(45px) saturate(210%);
-                border-right: 1px solid rgba(255, 255, 255, 0.08);
-                display: flex;
-                flex-direction: column;
-            }
-
-            .am-cover-art {
-                width: 100%;
-                aspect-ratio: 1/1;
-                border-radius: 28px;
-                background-color: rgba(255, 255, 255, 0.03);
-                background-size: cover;
-                background-position: center;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12);
-                transition: opacity 0.6s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-                position: relative;
-                overflow: hidden;
-            }
-            .am-cover-art.playing {
-                transform: scale(1.03);
-                box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.85), 0 0 35px rgba(250, 35, 59, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.25);
-            }
-
-            .lyrics-mask { 
-                -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%); 
-                mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%); 
-            }
-
-            .lyric-line { 
-                font-family: 'Google Sans', sans-serif !important;
-                transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
-                color: rgba(255, 255, 255, 0.35); 
-                padding: 12px 0; 
-                font-size: 20px; 
-                font-weight: 500;
-                line-height: 1.4; 
-                cursor: pointer; 
-                transform-origin: left center;
-                filter: blur(0.4px);
-                text-align: left;
-                width: 100%;
-            }
-            @media (min-width: 768px) {
-                .lyric-line { font-size: 32px; padding: 14px 0; line-height: 1.35; letter-spacing: -0.02em; }
-            }
-            
-            .lyric-line:hover { 
-                color: rgba(255, 255, 255, 0.8); 
-                filter: blur(0px);
-            }
-            
-            .lyric-line.active { 
-                color: #ffffff; 
-                font-size: 26px; 
-                font-weight: 700;
-                transform: scale(1.03); 
-                filter: blur(0px);
-                text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 255, 255, 0.25);
-            }
-            @media (min-width: 768px) {
-                .lyric-line.active { font-size: 42px; transform: scale(1.04); }
-            }
-            
-            .track-active {
-                background: linear-gradient(135deg, rgba(250, 35, 59, 0.25) 0%, rgba(250, 35, 59, 0.08) 100%);
-                border: 1px solid rgba(250, 35, 59, 0.35);
-                color: #ffffff;
-                font-weight: 600;
-                box-shadow: 0 4px 18px rgba(250, 35, 59, 0.2);
-            }
-        `;
-        content.appendChild(styleEl);
-
-        // Layout Construction
-        content.innerHTML += `
-        <div id="dynamic-bg" class="am-bg-blur"></div>
-        
-        <div class="am-layout no-scrollbar">
-            <!-- Left Panel -->
-            <section class="am-player-panel w-full md:w-[390px] lg:w-[430px] flex-shrink-0 p-4 md:p-6 flex flex-col min-h-full md:h-full z-10">
-                
-                <!-- Cover Art -->
-                <div class="relative w-[48%] sm:w-[55%] md:w-full max-w-[220px] md:max-w-[260px] mx-auto mb-3 md:mb-4">
-                    <div id="cover-art-${winObj.id}" class="am-cover-art opacity-0"></div>
-                    <span class="absolute inset-0 flex items-center justify-center text-4xl md:text-5xl pointer-events-none drop-shadow-xl" id="cover-emoji">🎵</span>
-                </div>
-
-                <!-- Track Info -->
-                <div class="mb-2 md:mb-3 text-center md:text-left">
-                    <h2 class="text-lg md:text-xl font-bold text-white truncate tracking-tight font-sans" id="title">Not Playing</h2>
-                    <div class="flex items-center justify-center md:justify-start gap-2 mt-1">
-                        <span class="text-[10px] md:text-xs font-bold text-white/80 bg-white/15 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/10 font-sans" id="lcd-mode">LIST</span>
-                        <span class="text-[10px] md:text-xs font-medium text-white/50 font-sans" id="storage-status">Checking Cache...</span>
-                    </div>
-                </div>
-
-                <!-- Progress Scrubber -->
-                <div class="mb-2 px-1">
-                    <input type="range" id="seek-bar" class="glass-slider" value="0" min="0" max="100" step="0.1">
-                    <div class="flex justify-between items-center text-[10px] text-white/50 font-medium mt-1 font-sans">
-                        <span id="cur-time">00:00</span>
-                        <span id="dur-time">00:00</span>
-                    </div>
-                </div>
-
-                <!-- Controls with Download Button -->
-                <div class="flex flex-col mb-3 md:mb-4">
-                    <div class="flex justify-center items-center gap-3.5 md:gap-4">
-                        <button class="liquid-btn w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-white/70 hover:text-white font-sans" id="btn-prev" title="Previous Track">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12l10-8v16zM5 4h4v16H5z"/></svg>
-                        </button>
-                        
-                        <button class="liquid-btn w-12 h-12 md:w-14 md:h-14 !bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-2xl font-sans" id="btn-play">
-                            <div class="w-0 h-0 border-y-[7px] border-y-transparent border-l-[12px] border-l-black ml-1" id="play-icon"></div>
-                        </button>
-                        
-                        <button class="liquid-btn w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-white/70 hover:text-white font-sans" id="btn-next" title="Next Track">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4z"/><path d="M15 4h4v16h-4z"/></svg>
-                        </button>
-
-                        <button id="mode-btn" class="liquid-btn text-[10px] md:text-xs px-2.5 py-1.5 font-bold text-white/80 hover:text-white font-sans">
-                            MODE
-                        </button>
-
-                        <button id="btn-download" class="liquid-btn text-[10px] md:text-xs px-3 py-1.5 font-bold text-white/90 bg-white/10 hover:text-white font-sans flex items-center gap-1.5" title="Download song for offline use">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            <span id="download-text">SAVE</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Playlist & GitHub Sync Card -->
-                <div class="flex-1 flex flex-col min-h-[220px] md:min-h-0 liquid-card overflow-hidden border border-white/10 p-2.5">
-                    <div class="mb-2 pb-2 border-b border-white/10">
-                        <div class="flex gap-1.5">
-                            <input class="flex-1 min-w-0 liquid-input rounded-xl px-2.5 py-1 text-[11px] outline-none text-white placeholder-white/30 font-sans" id="gh-user" placeholder="GitHub User" type="text">
-                            <input class="flex-1 min-w-0 liquid-input rounded-xl px-2.5 py-1 text-[11px] outline-none text-white placeholder-white/30 font-sans" id="gh-repo" placeholder="Repository" type="text">
-                            <button class="liquid-btn liquid-btn-active px-2.5 py-1 text-[11px] font-bold shrink-0 font-sans" id="btn-sync">SYNC</button>
-                        </div>
-                    </div>
-                    
-                    <div class="px-0.5 mb-1.5">
-                        <input class="w-full liquid-input rounded-xl px-2.5 py-1 text-xs outline-none text-white placeholder-white/30 font-sans" id="search-input" placeholder="Search tracks..." type="text">
-                        <div class="flex gap-1.5 overflow-x-auto no-scrollbar mt-1.5 pb-1" id="playlist-nav"></div>
-                    </div>
-                    
-                    <div class="flex-1 overflow-y-auto no-scrollbar pr-0.5">
-                        <ul id="track-list" class="space-y-1 font-sans"></ul>
-                    </div>
-                    
-                    <div class="pt-1.5 mt-1 border-t border-white/5 text-center">
-                        <p class="text-[10px] text-white/40 font-medium flex justify-center items-center gap-1 font-sans tracking-wide" id="net-status">Ready</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Right Panel: Lyrics -->
-            <section class="am-lyrics-panel flex-1 flex flex-col min-h-[60vh] md:min-h-0 md:h-full relative z-10 p-4 md:pl-10 md:pr-10 md:pt-6">
-                <div class="flex justify-end mb-2">
-                    <span class="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-widest liquid-btn px-3 py-1 rounded-full font-sans" id="lyrics-status">LYRICS SYSTEM</span>
-                </div>
-                
-                <div class="flex-1 relative w-full overflow-hidden lyrics-mask">
-                    <div id="lyrics-container-${winObj.id}" class="absolute inset-0 overflow-y-auto no-scrollbar" style="scroll-behavior: smooth;">
-                        <div id="lyrics-content-${winObj.id}" class="w-full max-w-3xl mx-auto pb-[50vh] pt-[30vh] flex flex-col px-0 md:px-3">
-                            <div class="text-left text-white/30 text-lg md:text-xl font-medium mt-10 tracking-widest font-sans">
-                                Loading Lyrics...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-        <audio id="player-audio-${winObj.id}" playsinline preload="auto"></audio>`;
-
-        // UI Element References
-        const audio = content.querySelector('#player-audio-' + winObj.id);
-        const titleEl = content.querySelector('#title');
-        const curTimeEl = content.querySelector('#cur-time');
-        const durTimeEl = content.querySelector('#dur-time');
-        const seekBar = content.querySelector('#seek-bar');
-        const playIcon = content.querySelector('#play-icon');
-        const btnPlay = content.querySelector('#btn-play');
-        const btnPrev = content.querySelector('#btn-prev');
-        const btnNext = content.querySelector('#btn-next');
-        const btnMode = content.querySelector('#mode-btn');
-        const btnDownload = content.querySelector('#btn-download');
-        const downloadText = content.querySelector('#download-text');
-        const lcdMode = content.querySelector('#lcd-mode');
-        const storageStatus = content.querySelector('#storage-status');
-        const navContainer = content.querySelector('#playlist-nav');
-        const listContainer = content.querySelector('#track-list');
-        const searchInput = content.querySelector('#search-input');
-        const artEl = content.querySelector('#cover-art-' + winObj.id);
-        const dynBgEl = content.querySelector('#dynamic-bg');
-        const emjEl = content.querySelector('#cover-emoji');
-        const netStatus = content.querySelector('#net-status');
-        const ghUserInp = content.querySelector('#gh-user');
-        const ghRepoInp = content.querySelector('#gh-repo');
-        const btnSync = content.querySelector('#btn-sync');
-        
-        const lyricsContainerEl = content.querySelector(`#lyrics-container-${winObj.id}`);
-        const lyricsContentEl = content.querySelector(`#lyrics-content-${winObj.id}`);
-        const lyricsStatusEl = content.querySelector('#lyrics-status');
-
-        let playlists = {};
-        let currentPlaylist = 'Root';
-        let filteredTracks = [];
-        let curIdx = 0;
-        let loopMode = 'list';
-        let currentCoverObjectURL = null;
-        let currentAudioBlobURL = null;
-        let downloadedTracksSet = new Set();
-        
-        let parsedLyrics = [];
-        let currentLyricIndex = -1;
-        let isSyncedLyrics = false;
-        let isUserSeeking = false;
-
-        let currentTrackMeta = { title: '', artist: 'JRmusic', album: 'Local Music', coverUrl: null };
-
-        const savedUser = localStorage.getItem('jrmusic_gh_user') || 'zhangzhanhang855';
-        const savedRepo = localStorage.getItem('jrmusic_gh_repo') || 'musiconly';
-        ghUserInp.value = savedUser;
-        ghRepoInp.value = savedRepo;
-
-        if (!window.jsmediatags) {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js';
-            document.head.appendChild(script);
-        }
-
-        // Lyric Processing
-        function aggressivelyFindLyrics(tags) {
-            if (!tags) return "";
-            const extract = (obj) => {
-                if (!obj) return "";
-                if (typeof obj === 'string') return obj;
-                if (typeof obj.text === 'string') return obj.text;
-                if (typeof obj.lyrics === 'string') return obj.lyrics;
-                if (obj.data) {
-                    if (typeof obj.data === 'string') return obj.data;
-                    if (typeof obj.data.text === 'string') return obj.data.text;
-                }
-                return "";
-            };
-
-            let primary = extract(tags.lyrics) || extract(tags.USLT) || extract(tags.SYLT);
-            if (primary && primary.includes('[')) return primary;
-
-            for (let key in tags) {
-                const item = tags[key];
-                const arr = Array.isArray(item) ? item : [item];
-                for (let i of arr) {
-                    let txt = extract(i);
-                    if (typeof txt === 'string' && txt.includes('[00:')) return txt;
-                    if (i && i.data) {
-                        let deepTxt = extract(i.data.data) || extract(i.data);
-                        if (typeof deepTxt === 'string' && deepTxt.includes('[00:')) return deepTxt;
-                    }
-                }
-            }
-            return primary; 
-        }
-
-        function processLyrics(rawText, source) {
-            if (!rawText || typeof rawText !== 'string') {
-                parsedLyrics = [];
-                isSyncedLyrics = false;
-                lyricsStatusEl.innerText = "INSTRUMENTAL";
-                lyricsContentEl.innerHTML = '<div class="text-left text-white/30 text-xl font-medium mt-10 tracking-widest font-sans">Instrumental</div>';
-                return;
-            }
-            
-            const cleanText = rawText.replace(/\0/g, '').trim();
-            const lines = cleanText.split(/\r?\n/);
-            const timeReg = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
-            parsedLyrics = [];
-            
-            for (let line of lines) {
-                line = line.trim();
-                if (!line) continue;
-                
-                let match;
-                let timeTags = [];
-                timeReg.lastIndex = 0; 
-                
-                while ((match = timeReg.exec(line)) !== null) {
-                    const m = parseInt(match[1], 10);
-                    const s = parseInt(match[2], 10);
-                    const msStr = match[3] || '0';
-                    const ms = parseInt(msStr.padEnd(3, '0').slice(0, 3), 10);
-                    timeTags.push(m * 60 + s + ms / 1000);
-                }
-                
-                if (timeTags.length > 0) {
-                    let text = line.replace(/\[\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?\]/g, '').trim();
-                    text = text.replace(/[（(](?:翻译|translation)[：:].*?[）)]/gi, '').trim();
-                    for (let t of timeTags) {
-                        parsedLyrics.push({ time: t, text: text || '...' });
-                    }
-                }
-            }
-            
-            if (parsedLyrics.length > 0) {
-                isSyncedLyrics = true;
-                lyricsStatusEl.innerText = `${source}`;
-                parsedLyrics.sort((a, b) => a.time - b.time);
-                
-                lyricsContentEl.innerHTML = parsedLyrics.map((l, i) => 
-                    `<div class="lyric-line font-sans" id="lyric-${i}" data-time="${l.time}">
-                        <span class="block">${l.text}</span>
-                    </div>`
-                ).join('');
-                
-                lyricsContentEl.style.paddingTop = '30vh';
-                lyricsContentEl.style.paddingBottom = '50vh';
-                
-                lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => {
-                    el.onclick = () => {
-                        audio.currentTime = parseFloat(el.getAttribute('data-time'));
-                        if (audio.paused) audio.play();
-                    };
-                });
-            } else {
-                isSyncedLyrics = false;
-                lyricsStatusEl.innerText = `TEXT [${source}]`;
-                lyricsContentEl.style.paddingTop = '10vh';
-                lyricsContentEl.style.paddingBottom = '10vh';
-                lyricsContentEl.innerHTML = `<div class="text-left text-white/50 text-xl whitespace-pre-wrap leading-loose px-2 font-sans">${cleanText}</div>`;
-            }
-        }
-
-        const updateMediaSession = (lyricText = null) => {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({ 
-                    title: currentTrackMeta.title, 
-                    artist: lyricText || currentTrackMeta.artist, 
-                    album: currentTrackMeta.album, 
-                    artwork: currentTrackMeta.coverUrl ? [{ src: currentTrackMeta.coverUrl, sizes: '512x512', type: 'image/jpeg' }] : [] 
-                });
-                navigator.mediaSession.setActionHandler('play', () => audio.play());
-                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
-                navigator.mediaSession.setActionHandler('previoustrack', () => btnPrev.click());
-                navigator.mediaSession.setActionHandler('nexttrack', () => btnNext.click());
-            }
-        };
-
-        const filterAudio = (items) => {
-            const audioRegex = /\.(mp3|flac|wav|m4a)$/i;
-            const extRegex = /\.[^/.]+$/;
-            return items.filter(f => audioRegex.test(f.name)).map(f => ({
-                t: f.name.replace(extRegex, ''), 
-                u: f.download_url,
-                fileName: f.name
-            }));
-        };
-
-        const renderNav = () => {
-            navContainer.innerHTML = Object.keys(playlists).map(name => {
-                const isActive = name === currentPlaylist;
-                const activeClass = isActive ? 'liquid-btn-active' : 'text-white/70 hover:text-white';
-                return `<button class="liquid-btn text-[11px] md:text-xs px-3 py-1 font-bold whitespace-nowrap btn-nav font-sans ${activeClass}" data-name="${name}">${name}</button>`;
-            }).join('');
-            navContainer.querySelectorAll('.btn-nav').forEach(btn => btn.onclick = () => switchPlaylist(btn.dataset.name));
-        };
-
-        const renderList = () => {
-            listContainer.innerHTML = filteredTracks.map((s, i) => {
-                const isActive = curIdx === i;
-                const isCached = downloadedTracksSet.has(s.t);
-                const activeClass = isActive ? 'track-active' : 'text-white/70 hover:bg-white/10 hover:border-white/10 border border-transparent';
-                const playingAnim = isActive && !audio.paused ? `<span class="inline-block w-2 h-2 bg-[#fa233b] rounded-full animate-pulse ml-2 shadow-[0_0_8px_#fa233b]"></span>` : '';
-                const cachedBadge = isCached ? `<span class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-md font-sans">OFFLINE</span>` : '';
-
-                return `<li class="p-2 md:p-2.5 text-xs rounded-2xl cursor-pointer transition-all duration-300 font-sans flex items-center justify-between ${activeClass}" data-idx="${i}">
-                    <div class="truncate flex items-center gap-2">
-                        <span class="opacity-40 text-[10px] font-sans tracking-wider">${String(i + 1).padStart(2, '0')}</span>
-                        <span class="truncate">${s.t}</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        ${cachedBadge}
-                        ${playingAnim}
-                    </div>
-                </li>`;
-            }).join('');
-            listContainer.querySelectorAll('li').forEach(item => item.onclick = () => executeLoad(parseInt(item.dataset.idx), true));
-        };
-
-        const switchPlaylist = (name) => {
-            currentPlaylist = name;
-            filteredTracks = [...playlists[name]];
-            renderNav();
-            renderList();
-            if (filteredTracks.length > 0) executeLoad(0, false);
-        };
-
-        async function executeLoad(idx, auto) {
-            if (filteredTracks.length === 0) return;
-            curIdx = idx;
-            const song = filteredTracks[curIdx];
-
-            titleEl.innerText = song.t;
-            currentTrackMeta = {
-                title: song.t,
-                artist: 'JRmusic',
-                album: currentPlaylist,
-                coverUrl: null
-            };
-
-            artEl.classList.remove('loaded', 'opacity-100');
-            artEl.classList.add('opacity-0');
-            artEl.style.backgroundImage = 'none';
-            dynBgEl.style.backgroundImage = 'none';
-            emjEl.style.opacity = '1';
-            
-            currentLyricIndex = -1;
-            processLyrics(null, '');
-            lyricsContainerEl.scrollTo({ top: 0, behavior: 'auto' });
-
-            if (currentCoverObjectURL) {
-                URL.revokeObjectURL(currentCoverObjectURL);
-                currentCoverObjectURL = null;
-            }
-            if (currentAudioBlobURL) {
-                URL.revokeObjectURL(currentAudioBlobURL);
-                currentAudioBlobURL = null;
-            }
-
-            // Check if downloaded locally
-            const localBlob = await getLocalAudio(song.t);
-            let audioBlobToTag = null;
-
-            if (localBlob) {
-                storageStatus.innerText = 'LOCAL STORAGE (OFFLINE)';
-                downloadText.innerText = 'SAVED';
-                btnDownload.classList.add('liquid-btn-active');
-                
-                currentAudioBlobURL = URL.createObjectURL(localBlob);
-                audio.src = currentAudioBlobURL;
-                audioBlobToTag = localBlob;
-            } else {
-                storageStatus.innerText = 'REMOTE STREAM';
-                downloadText.innerText = 'SAVE';
-                btnDownload.classList.remove('liquid-btn-active');
-                audio.src = song.u;
-            }
-
-            audio.load();
-            updateMediaSession();
-            
-            if (auto) audio.play().catch(e => console.log('Gesture needed:', e));
-            renderList();
-
-            // Fetch Lyrics (.lrc)
-            const lrcUrl = song.u.replace(/\.(mp3|flac|wav|m4a)$/i, '.lrc');
-            fetch(lrcUrl)
-                .then(res => { if (res.ok) return res.text(); throw new Error(); })
-                .then(lrcText => {
-                    if (lrcText && lrcText.trim()) processLyrics(lrcText, 'LRC FILE');
-                })
-                .catch(() => {});
-
-            // Parse ID3 Tags
-            const inspectBlob = audioBlobToTag ? Promise.resolve(audioBlobToTag) : fetch(song.u).then(r => r.ok ? r.blob() : Promise.reject());
-            inspectBlob.then(blob => {
-                if (!window.jsmediatags) return;
-                new window.jsmediatags.Reader(blob).read({
-                    onSuccess: (tag) => {
-                        if (tag.tags.title) {
-                            currentTrackMeta.title = tag.tags.title;
-                            titleEl.innerText = tag.tags.title;
-                        }
-                        if (tag.tags.artist) currentTrackMeta.artist = tag.tags.artist;
-                        if (tag.tags.album) currentTrackMeta.album = tag.tags.album;
-
-                        const pic = tag.tags.picture;
-                        if (pic) {
-                            const byteArray = new Uint8Array(pic.data);
-                            const coverBlob = new Blob([byteArray], { type: pic.format });
-                            currentCoverObjectURL = URL.createObjectURL(coverBlob);
-                            currentTrackMeta.coverUrl = currentCoverObjectURL;
-                            
-                            artEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
-                            dynBgEl.style.backgroundImage = `url(${currentCoverObjectURL})`;
-                            artEl.classList.remove('opacity-0');
-                            artEl.classList.add('opacity-100');
-                            emjEl.style.opacity = '0';
-                        }
-                        
-                        updateMediaSession();
-
-                        if (!isSyncedLyrics) {
-                            const aggressiveLrcText = aggressivelyFindLyrics(tag.tags);
-                            if (aggressiveLrcText) processLyrics(aggressiveLrcText, 'ID3 TAG');
-                        }
-                    },
-                    onError: () => {}
-                });
-            }).catch(() => {});
-        }
-
-        // Trigger Download to App's Sandbox Storage
-        btnDownload.onclick = async () => {
-            if (filteredTracks.length === 0) return;
-            const song = filteredTracks[curIdx];
-
-            const alreadySaved = await getLocalAudio(song.t);
-            if (alreadySaved) {
-                showToast(`"${song.t}" is already stored locally.`, 'info');
-                return;
-            }
-
-            showToast(`Starting download: ${song.t}`, 'loading');
-            downloadText.innerText = 'DOWNLOADING...';
-
-            try {
-                const response = await fetch(song.u);
-                if (!response.ok) throw new Error('Network transfer failed');
-                
-                const blob = await response.blob();
-                await saveAudioLocally(song.t, blob);
-                
-                downloadedTracksSet.add(song.t);
-                storageStatus.innerText = 'LOCAL STORAGE (OFFLINE)';
-                downloadText.innerText = 'SAVED';
-                btnDownload.classList.add('liquid-btn-active');
-                
-                showToast(`Downloaded successfully! Offline ready.`, 'success');
-                renderList();
-            } catch (err) {
-                downloadText.innerText = 'SAVE';
-                showToast(`Download failed: Check connection`, 'error');
-            }
-        };
-
-        // Scrubber
-        seekBar.oninput = () => { isUserSeeking = true; };
-        seekBar.onchange = () => {
-            if (audio.duration) audio.currentTime = (seekBar.value / 100) * audio.duration;
-            isUserSeeking = false;
-        };
-
-        audio.onended = () => {
-            if (filteredTracks.length === 0) return;
-            if (loopMode === 'single') executeLoad(curIdx, true);
-            else if (loopMode === 'random') {
-                let nextIndex = Math.floor(Math.random() * filteredTracks.length);
-                if (filteredTracks.length > 1 && nextIndex === curIdx) nextIndex = (nextIndex + 1) % filteredTracks.length;
-                executeLoad(nextIndex, true);
-            } else {
-                executeLoad((curIdx + 1) % filteredTracks.length, true);
-            }
-        };
-
-        btnPlay.onclick = () => { audio.paused ? audio.play() : audio.pause(); };
-        btnPrev.onclick = () => { executeLoad((curIdx - 1 + filteredTracks.length) % filteredTracks.length, true); };
-        btnNext.onclick = () => { executeLoad((curIdx + 1 + filteredTracks.length) % filteredTracks.length, true); };
-
-        audio.onplay = () => { 
-            artEl.classList.add('playing');
-            playIcon.className = 'w-3 h-3.5 border-l-[3.5px] border-r-[3.5px] border-black ml-0'; 
-            renderList();
-        };
-        audio.onpause = () => { 
-            artEl.classList.remove('playing');
-            playIcon.className = 'w-0 h-0 border-y-[7px] border-y-transparent border-l-[12px] border-l-black ml-1'; 
-            renderList();
-        };
-        
-        audio.ontimeupdate = () => {
-            let s = audio.currentTime;
-            let d = audio.duration;
-
-            if (!isNaN(s)) {
-                let m = Math.floor(s / 60), sec = Math.floor(s % 60);
-                curTimeEl.innerText = m.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0');
-                if (d && !isUserSeeking) seekBar.value = (s / d) * 100;
-            }
-            if (!isNaN(d)) {
-                let dm = Math.floor(d / 60), dsec = Math.floor(d % 60);
-                durTimeEl.innerText = dm.toString().padStart(2, '0') + ':' + dsec.toString().padStart(2, '0');
-            }
-
-            if (isSyncedLyrics && parsedLyrics.length > 0) {
-                let activeIdx = -1;
-                for (let i = 0; i < parsedLyrics.length; i++) {
-                    if (s >= parsedLyrics[i].time) activeIdx = i;
-                    else break;
-                }
-                
-                if (activeIdx !== currentLyricIndex) {
-                    lyricsContentEl.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
-                    if (activeIdx !== -1) {
-                        const currEl = lyricsContentEl.querySelector(`#lyric-${activeIdx}`);
-                        if (currEl) {
-                            currEl.classList.add('active');
-                            const container = lyricsContainerEl;
-                            const scrollPos = currEl.offsetTop - (container.clientHeight / 2) + (currEl.clientHeight / 2);
-                            container.scrollTo({ top: scrollPos, behavior: 'smooth' });
-                            updateMediaSession(parsedLyrics[activeIdx].text);
-                        }
-                    } else {
-                        updateMediaSession();
-                    }
-                    currentLyricIndex = activeIdx;
-                }
-            }
-        };
-
-        searchInput.oninput = () => {
-            const val = searchInput.value.toLowerCase();
-            filteredTracks = playlists[currentPlaylist].filter(s => s.t.toLowerCase().includes(val));
-            renderList();
-        };
-
-        btnMode.onclick = () => { 
-            const modes = ['list', 'random', 'single']; 
-            loopMode = modes[(modes.indexOf(loopMode) + 1) % modes.length]; 
-            lcdMode.innerText = loopMode.toUpperCase();
-        };
-
-        async function loadLibrary(user, repo) {
-            try {
-                audio.pause(); audio.src = ''; curTimeEl.innerText = '00:00'; durTimeEl.innerText = '00:00';
-                playlists = {}; filteredTracks = []; listContainer.innerHTML = ''; navContainer.innerHTML = '';
-                titleEl.innerText = 'Syncing Repo...'; netStatus.innerText = `CONNECTING...`;
-                
-                const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/`);
-                if (!res.ok) throw new Error('API limit reached or repo unreachable');
-                
-                const items = await res.json();
-                playlists['Root'] = filterAudio(items);
-                
-                const folders = items.filter(i => i.type === 'dir');
-                for (let f of folders) {
-                    netStatus.innerText = `DIR: ${f.name}`;
-                    const subData = await (await fetch(f.url)).json();
-                    const tracks = filterAudio(subData);
-                    if(tracks.length > 0) playlists[f.name] = tracks;
-                }
-                
-                netStatus.innerText = 'ONLINE';
-                localStorage.setItem('jrmusic_gh_user', user);
-                localStorage.setItem('jrmusic_gh_repo', repo);
-                
-                renderNav(); 
-                switchPlaylist('Root');
-            } catch (e) {
-                titleEl.innerText = 'Offline Mode'; 
-                netStatus.innerText = 'STANDALONE OFFLINE READY';
-                
-                // Fallback: Populate library with locally stored offline songs
-                const cachedKeys = await getAllSavedNames();
-                if (cachedKeys.length > 0) {
-                    playlists['Offline'] = cachedKeys.map(k => ({ t: k, u: '' }));
-                    renderNav();
-                    switchPlaylist('Offline');
-                    showToast('Loaded offline library', 'info');
-                } else {
-                    showToast('Connection failed and no offline music found', 'error');
-                }
-            }
-        }
-        
-        btnSync.onclick = () => { 
-            const u = ghUserInp.value.trim(); 
-            const r = ghRepoInp.value.trim(); 
-            if(u && r) loadLibrary(u, r); 
-        };
-
-        // Initialize DB & Startup Flow
-        (async () => {
-            try {
-                await initIndexedDB();
-                const savedKeys = await getAllSavedNames();
-                downloadedTracksSet = new Set(savedKeys);
-                storageStatus.innerText = `${savedKeys.length} Cached Song(s)`;
-            } catch (e) {
-                console.error('Storage initialization failed:', e);
-            }
-            loadLibrary(savedUser, savedRepo);
-        })();
-
-        winObj.onDestroy = () => {
-            audio.pause(); audio.src = '';
-            if (currentCoverObjectURL) URL.revokeObjectURL(currentCoverObjectURL);
-            if (currentAudioBlobURL) URL.revokeObjectURL(currentAudioBlobURL);
-        };
-    </script>
+      if (status === "connected") {
+        btn.innerText = "Stop Proxy";
+        btn.className = "btn-toggle active";
+      } else if (status === "connecting") {
+        btn.innerText = "Connecting...";
+        btn.className = "btn-toggle";
+      } else {
+        btn.innerText = "Start Proxy";
+        btn.className = "btn-toggle";
+      }
+    };
+  </script>
 </body>
 </html>
