@@ -18,27 +18,32 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: 'stable'
           cache: false
 
       - name: Install Tools
         run: |
           brew install xcodegen
 
-      # 直接现场拉取 sing-box 源码并编译 Libbox.xcframework
+      # 编译 Libbox.xcframework 核心库
       - name: Build Libbox.xcframework from Source
         run: |
           mkdir -p Frameworks
           if [ ! -d "Frameworks/Libbox.xcframework" ]; then
-            echo ">>> Building Libbox.xcframework using gomobile..."
+            echo ">>> Setting up gomobile tools..."
             go install golang.org/x/mobile/cmd/gomobile@latest
             go install golang.org/x/mobile/cmd/gobind@latest
             gomobile init
 
+            echo ">>> Cloning sing-box source..."
             git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
             cd /tmp/sing-box
 
-            # 编译适配 iOS 的 XCFramework
+            # 注入 gomobile 依赖到当前 module，解决 missing dependency 报错
+            go get golang.org/x/mobile/bind
+            go get -tool golang.org/x/mobile/cmd/gobind || true
+
+            echo ">>> Compiling Libbox.xcframework..."
             gomobile bind -v \
               -target=ios \
               -tags "with_quic with_dhcp with_wireguard with_ech" \
@@ -53,7 +58,7 @@ jobs:
             echo "ERROR: Libbox.xcframework compilation failed!"
             exit 1
           fi
-          echo ">>> Libbox.xcframework ready."
+          echo ">>> Libbox.xcframework successfully built."
 
       - name: Generate Xcode Project
         run: xcodegen generate
