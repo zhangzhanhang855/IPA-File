@@ -25,7 +25,7 @@ jobs:
         run: |
           brew install xcodegen
 
-      # 编译 Libbox.xcframework 核心库
+      # 编译 Libbox.xcframework
       - name: Build Libbox.xcframework from Source
         run: |
           mkdir -p Frameworks
@@ -39,14 +39,15 @@ jobs:
             git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
             cd /tmp/sing-box
 
-            # 注入 gomobile 依赖到当前 module，解决 missing dependency 报错
+            # 注入 gomobile 依赖到当前 module
             go get golang.org/x/mobile/bind
             go get -tool golang.org/x/mobile/cmd/gobind || true
 
             echo ">>> Compiling Libbox.xcframework..."
+            # 移除已废弃的 with_ech 标签
             gomobile bind -v \
               -target=ios \
-              -tags "with_quic with_dhcp with_wireguard with_ech" \
+              -tags "with_quic with_dhcp with_wireguard" \
               -o Libbox.xcframework \
               ./experimental/libbox
 
@@ -115,16 +116,16 @@ jobs:
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
 
-          # 确保将 Network Extension 放入主包的 PlugIns 目录
+          # 注入 Network Extension
           mkdir -p "Payload/StockScope.app/PlugIns"
           cp -R "$EXT_PATH" "Payload/StockScope.app/PlugIns/"
 
-          # 确保前端 index.html 存在于 App 根目录
+          # 确保 index.html 存在于 App 根目录
           if [ -f "StockScope/index.html" ]; then
             cp "StockScope/index.html" "Payload/StockScope.app/"
           fi
 
-          # 压缩为标准 IPA 结构
+          # 打包为 IPA
           zip -qry StockScope-unsigned.ipa Payload/
 
       - name: Upload IPA Artifact
