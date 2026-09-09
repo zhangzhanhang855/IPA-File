@@ -3,7 +3,6 @@ import Libbox
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
 
-    private var commandClient: LibboxCommandClient?
     private let appGroupId = "group.com.yourname.StockScope"
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
@@ -13,7 +12,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
-        // 2. 读取前端写入的 config.json
+        // 2. 读取配置文件 config.json
         let configFile = containerURL.appendingPathComponent("config.json")
         guard let configData = try? Data(contentsOf: configFile),
               let configString = String(data: configData, encoding: .utf8), !configString.isEmpty else {
@@ -21,7 +20,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
-        // 3. 配置 iOS 虚拟网络接口 (TUN)
+        // 3. 配置虚拟网卡 (TUN)
         let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         let ipv4Settings = NEIPv4Settings(addresses: ["172.19.0.1"], subnetMasks: ["255.255.255.0"])
         ipv4Settings.includedRoutes = [NEIPv4Route.default()]
@@ -32,34 +31,21 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         settings.dnsSettings = dnsSettings
         settings.mtu = 1500
 
-        setTunnelNetworkSettings(settings) { [weak self] error in
+        setTunnelNetworkSettings(settings) { error in
             if let error = error {
                 completionHandler(error)
                 return
             }
 
-            guard let self = self else { return }
+            // 4. 初始化基础环境并加载配置
+            // LibboxSetup 参数: baseDir, workingDir, tempDir, isLogOutput
+            LibboxSetup(containerURL.path, containerURL.path, containerURL.path, false)
 
-            // 4. 启动 Libbox 核心服务
-            do {
-                var optErr: NSError?
-                // 新版 Libbox 启动接口
-                self.commandClient = LibboxNewCommandClient(nil, 0)
-                
-                // 设置并启动服务配置
-                LibboxSetup(containerURL.path, containerURL.path, containerURL.path, false)
-                
-                completionHandler(nil)
-            } catch {
-                completionHandler(error)
-            }
+            completionHandler(nil)
         }
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        // 停止核心
-        try? commandClient?.disconnect()
-        commandClient = nil
         completionHandler()
     }
 }
