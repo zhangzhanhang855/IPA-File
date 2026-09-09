@@ -17,24 +17,40 @@ jobs:
 
       - name: Install Tools
         run: |
-          brew install xcodegen xz
+          brew install xcodegen
 
-      # 下载并配置 Libbox.xcframework 核心库
+      # 从 sing-box-for-apple 仓库拉取最新预编译的 Libbox.xcframework.zip
       - name: Setup Libbox Core Framework
         run: |
           mkdir -p Frameworks
           if [ ! -d "Frameworks/Libbox.xcframework" ]; then
-            echo ">>> Libbox.xcframework not found in repository. Downloading prebuilt core..."
-            curl -L -o Libbox.xcframework.tar.xz "https://github.com/SagerNet/sing-box/releases/download/v1.10.7/libbox-1.10.7-ios.tar.xz"
-            tar -xf Libbox.xcframework.tar.xz -C Frameworks/
-            rm -f Libbox.xcframework.tar.xz
+            echo ">>> Fetching Libbox.xcframework from sing-box-for-apple..."
+            
+            # 使用 GitHub API 自动匹配并下载最新的 Libbox.xcframework.zip
+            DOWNLOAD_URL=$(curl -s https://api.github.com/repos/SagerNet/sing-box-for-apple/releases/latest \
+              | grep "browser_download_url.*Libbox.xcframework.zip" \
+              | cut -d : -f 2,3 \
+              | tr -d '\" ')
+            
+            echo ">>> Target URL: $DOWNLOAD_URL"
+            curl -L -o Libbox.xcframework.zip "$DOWNLOAD_URL"
+            
+            # 校验是否为有效 zip 文件
+            if ! file Libbox.xcframework.zip | grep -q "Zip archive"; then
+              echo "ERROR: Downloaded file is not a valid zip archive! Response content:"
+              cat Libbox.xcframework.zip
+              exit 1
+            fi
+
+            unzip -q Libbox.xcframework.zip -d Frameworks/
+            rm -f Libbox.xcframework.zip
           fi
 
           if [ ! -d "Frameworks/Libbox.xcframework" ]; then
             echo "ERROR: Libbox.xcframework does not exist!"
             exit 1
           fi
-          echo ">>> Libbox.xcframework ready."
+          echo ">>> Libbox.xcframework successfully installed."
 
       - name: Generate Xcode Project
         run: xcodegen generate
@@ -91,7 +107,7 @@ jobs:
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
 
-          # 确保 Network Extension 注入到主包 PlugIns 目录
+          # 确保将 Network Extension 放入主包的 PlugIns 目录
           mkdir -p "Payload/StockScope.app/PlugIns"
           cp -R "$EXT_PATH" "Payload/StockScope.app/PlugIns/"
 
@@ -100,7 +116,7 @@ jobs:
             cp "StockScope/index.html" "Payload/StockScope.app/"
           fi
 
-          # 压缩为 IPA
+          # 压缩为标准 IPA 结构
           zip -qry StockScope-unsigned.ipa Payload/
 
       - name: Upload IPA Artifact
