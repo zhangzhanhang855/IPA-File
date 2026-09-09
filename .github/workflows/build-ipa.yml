@@ -15,41 +15,42 @@ jobs:
         with:
           lfs: true
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: false
+
       - name: Install Tools
         run: |
           brew install xcodegen
 
-      # 下载预编译 Libbox.xcframework
-      - name: Setup Libbox Core Framework
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 直接现场拉取 sing-box 源码并编译 Libbox.xcframework
+      - name: Build Libbox.xcframework from Source
         run: |
           mkdir -p Frameworks
           if [ ! -d "Frameworks/Libbox.xcframework" ]; then
-            echo ">>> Downloading Libbox.xcframework..."
-            
-            # 使用固定稳定版本的直链进行下载，避免 API 速率限制导致 URL 为空
-            FALLBACK_URL="https://github.com/SagerNet/sing-box-for-apple/releases/download/v1.11.4/Libbox.xcframework.zip"
-            
-            # 优先尝试从 API 获取最新发布链接，若失败则走兜底直链
-            API_URL=$(curl -s -H "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/SagerNet/sing-box-for-apple/releases/latest \
-              | grep "browser_download_url" \
-              | grep "Libbox.xcframework.zip" \
-              | head -n 1 \
-              | cut -d '"' -f 4 || true)
+            echo ">>> Building Libbox.xcframework using gomobile..."
+            go install golang.org/x/mobile/cmd/gomobile@latest
+            go install golang.org/x/mobile/cmd/gobind@latest
+            gomobile init
 
-            TARGET_URL="${API_URL:-$FALLBACK_URL}"
-            echo ">>> Target Download URL: $TARGET_URL"
-            
-            curl -fL -o Libbox.xcframework.zip "$TARGET_URL"
+            git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
+            cd /tmp/sing-box
 
-            unzip -q Libbox.xcframework.zip -d Frameworks/
-            rm -f Libbox.xcframework.zip
+            # 编译适配 iOS 的 XCFramework
+            gomobile bind -v \
+              -target=ios \
+              -tags "with_quic with_dhcp with_wireguard with_ech" \
+              -o Libbox.xcframework \
+              ./experimental/libbox
+
+            mv Libbox.xcframework "$GITHUB_WORKSPACE/Frameworks/"
+            cd "$GITHUB_WORKSPACE"
           fi
 
           if [ ! -d "Frameworks/Libbox.xcframework" ]; then
-            echo "ERROR: Libbox.xcframework was not extracted properly!"
-            ls -la Frameworks/
+            echo "ERROR: Libbox.xcframework compilation failed!"
             exit 1
           fi
           echo ">>> Libbox.xcframework ready."
