@@ -1,136 +1,51 @@
-name: Build Unsigned IPA
+import NetworkExtension
+import Libbox
 
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
+class PacketTunnelProvider: NEPacketTunnelProvider {
 
-jobs:
-  build:
-    runs-on: macos-latest
+    private let appGroupId = "group.com.yourname.StockScope"
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          lfs: true
+    override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
+        // 1. 获取 App Group 共享目录
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
+            completionHandler(NSError(domain: "PacketTunnel", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法访问 App Group 目录"]))
+            return
+        }
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-          cache: false
+        // 2. 读取配置文件 config.json
+        let configFile = containerURL.appendingPathComponent("config.json")
+        guard let configData = try? Data(contentsOf: configFile),
+              let configString = String(data: configData, encoding: .utf8), !configString.isEmpty else {
+            completionHandler(NSError(domain: "PacketTunnel", code: 2, userInfo: [NSLocalizedDescriptionKey: "未找到有效的代理配置文件"]))
+            return
+        }
 
-      - name: Install Tools
-        run: |
-          brew install xcodegen
+        // 3. 配置虚拟网卡 (TUN)
+        let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
+        let ipv4Settings = NEIPv4Settings(addresses: ["172.19.0.1"], subnetMasks: ["255.255.255.0"])
+        ipv4Settings.includedRoutes = [NEIPv4Route.default()]
+        settings.ipv4Settings = ipv4Settings
 
-      # 编译 Libbox.xcframework
-      - name: Build Libbox.xcframework from Source
-        run: |
-          mkdir -p Frameworks
-          if [ ! -d "Frameworks/Libbox.xcframework" ]; then
-            echo ">>> Setting up gomobile tools..."
-            go install golang.org/x/mobile/cmd/gomobile@latest
-            go install golang.org/x/mobile/cmd/gobind@latest
-            gomobile init
+        let dnsSettings = NEDNSSettings(servers: ["1.1.1.1", "8.8.8.8"])
+        dnsSettings.matchDomains = [""]
+        settings.dnsSettings = dnsSettings
+        settings.mtu = 1500
 
-            echo ">>> Cloning sing-box source..."
-            git clone --depth=1 https://github.com/SagerNet/sing-box.git /tmp/sing-box
-            cd /tmp/sing-box
+        setTunnelNetworkSettings(settings) { error in
+            if let error = error {
+                completionHandler(error)
+                return
+            }
 
-            # 注入 gomobile 依赖到当前 module
-            go get golang.org/x/mobile/bind
-            go get -tool golang.org/x/mobile/cmd/gobind || true
+            // 4. 初始化基础环境并加载配置
+            // LibboxSetup 参数: baseDir, workingDir, tempDir, isLogOutput
+            LibboxSetup(containerURL.path, containerURL.path, containerURL.path, false)
 
-            echo ">>> Compiling Libbox.xcframework..."
-            # 移除已废弃的 with_ech 标签
-            gomobile bind -v \
-              -target=ios \
-              -tags "with_quic with_dhcp with_wireguard" \
-              -o Libbox.xcframework \
-              ./experimental/libbox
+            completionHandler(nil)
+        }
+    }
 
-            mv Libbox.xcframework "$GITHUB_WORKSPACE/Frameworks/"
-            cd "$GITHUB_WORKSPACE"
-          fi
-
-          if [ ! -d "Frameworks/Libbox.xcframework" ]; then
-            echo "ERROR: Libbox.xcframework compilation failed!"
-            exit 1
-          fi
-          echo ">>> Libbox.xcframework successfully built."
-
-      - name: Generate Xcode Project
-        run: xcodegen generate
-
-      - name: Build Targets
-        run: |
-          # 1. 编译 PacketTunnel Network Extension Target
-          xcodebuild clean build \
-            -project StockScope.xcodeproj \
-            -target PacketTunnel \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            ARCHS="arm64" \
-            ONLY_ACTIVE_ARCH=NO \
-            CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
-
-          # 2. 编译主 App Target
-          xcodebuild build \
-            -project StockScope.xcodeproj \
-            -scheme StockScope \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            ARCHS="arm64" \
-            ONLY_ACTIVE_ARCH=NO \
-            CONFIGURATION_BUILD_DIR=./build/Release-iphoneos
-
-      - name: Verify & Package IPA
-        run: |
-          APP_PATH="./build/Release-iphoneos/StockScope.app"
-          EXT_PATH="./build/Release-iphoneos/PacketTunnel.appex"
-
-          if [ ! -f "$APP_PATH/StockScope" ]; then
-            echo "ERROR: StockScope executable not found in $APP_PATH!"
-            ls -la "$APP_PATH"
-            exit 1
-          fi
-
-          if [ ! -d "$EXT_PATH" ]; then
-            echo "ERROR: PacketTunnel.appex not found in ./build/Release-iphoneos/!"
-            exit 1
-          fi
-
-          lipo -info "$APP_PATH/StockScope"
-
-          rm -rf Payload StockScope-unsigned.ipa
-          mkdir -p Payload
-          cp -R "$APP_PATH" Payload/
-
-          # 注入 Network Extension
-          mkdir -p "Payload/StockScope.app/PlugIns"
-          cp -R "$EXT_PATH" "Payload/StockScope.app/PlugIns/"
-
-          # 确保 index.html 存在于 App 根目录
-          if [ -f "StockScope/index.html" ]; then
-            cp "StockScope/index.html" "Payload/StockScope.app/"
-          fi
-
-          # 打包为 IPA
-          zip -qry StockScope-unsigned.ipa Payload/
-
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: StockScope-unsigned-ipa
-          path: StockScope-unsigned.ipa
-          retention-days: 14
+    override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
+        completionHandler()
+    }
+}
