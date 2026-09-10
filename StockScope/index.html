@@ -1,18 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>StockScope Proxy</title>
+  <title>StockScope AnyTLS</title>
   <style>
     :root {
-      --bg: #090a0f;
-      --card: #141721;
-      --input-bg: #1c2130;
-      --border: #262c3d;
-      --text: #f0f3f8;
-      --muted: #7e8b9f;
-      --accent: #3b82f6;
+      --bg: #0b0c10;
+      --card: #161822;
+      --border: #232738;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --primary: #2563eb;
       --green: #10b981;
       --red: #ef4444;
       --yellow: #f59e0b;
@@ -27,20 +26,20 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px);
+      justify-content: space-between;
+      padding: calc(env(safe-area-inset-top, 24px) + 20px) 20px calc(env(safe-area-inset-bottom, 24px) + 20px);
     }
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 4px 20px;
     }
     .title {
-      font-size: 20px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.5px;
     }
@@ -48,190 +47,110 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 13px;
       font-weight: 600;
-      text-transform: uppercase;
-      background: var(--input-bg);
+      background: #1e2433;
       border: 1px solid var(--border);
     }
-    .badge-dot {
+    .dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: var(--muted);
     }
-    .status-disconnected .badge-dot { background: var(--muted); }
-    .status-connecting .badge-dot { background: var(--yellow); }
-    .status-connected .badge-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .status-disconnecting .badge-dot { background: var(--red); }
+    .status-connected .dot { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .status-connecting .dot { background: var(--yellow); }
+    .status-disconnected .dot { background: var(--muted); }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
+      border-radius: 20px;
+      padding: 20px;
+      margin-top: 30px;
     }
-    .card-title {
-      font-size: 13px;
+    .node-title {
+      font-size: 16px;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-    .form-group {
-      margin-bottom: 12px;
-    }
-    .form-group:last-child {
-      margin-bottom: 0;
-    }
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    input {
-      width: 100%;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      color: var(--text);
-      font-size: 14px;
-      outline: none;
-      user-select: text;
-    }
-    input:focus {
-      border-color: var(--accent);
-    }
-    .row {
+      margin-bottom: 8px;
       display: flex;
-      gap: 10px;
+      align-items: center;
+      gap: 8px;
     }
-    .flex-1 { flex: 1; }
-    .flex-2 { flex: 2; }
-
+    .node-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      word-break: break-all;
+    }
     .btn-toggle {
       width: 100%;
-      padding: 15px;
-      border-radius: 14px;
+      height: 60px;
+      border-radius: 18px;
       border: none;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 700;
-      cursor: pointer;
       color: #fff;
-      background: var(--accent);
-      transition: opacity 0.2s, transform 0.1s;
-      margin-top: auto;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease;
     }
     .btn-toggle:active {
       transform: scale(0.98);
       opacity: 0.9;
     }
-    .btn-toggle.active {
+    .btn-toggle.connected {
       background: var(--red);
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
     }
   </style>
 </head>
 <body>
-
-  <div class="header">
-    <div class="title">StockScope Proxy</div>
-    <div id="statusBadge" class="badge status-disconnected">
-      <span class="badge-dot"></span>
-      <span id="statusText">Disconnected</span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">AnyTLS Endpoint</div>
-    <div class="row form-group">
-      <div class="flex-2">
-        <label>Server Host / IP</label>
-        <input id="server" type="text" placeholder="1.2.3.4">
-      </div>
-      <div class="flex-1">
-        <label>Port</label>
-        <input id="port" type="number" placeholder="443" value="443">
+  <div>
+    <div class="header">
+      <div class="title">AnyTLS VPN</div>
+      <div id="statusBadge" class="badge status-disconnected">
+        <span class="dot"></span>
+        <span id="statusText">未连接</span>
       </div>
     </div>
-    <div class="form-group">
-      <label>Password / Token</label>
-      <input id="password" type="text" placeholder="anytls password">
-    </div>
-    <div class="form-group">
-      <label>SNI (Optional)</label>
-      <input id="sni" type="text" placeholder="example.com">
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-title">Network Setting</div>
-    <div class="row form-group">
-      <div class="flex-1">
-        <label>Virtual TUN IP</label>
-        <input id="tunIp" type="text" value="172.19.0.1">
-      </div>
-      <div class="flex-1">
-        <label>DNS Server</label>
-        <input id="dnsServer" type="text" value="1.1.1.1">
+    <div class="card">
+      <div class="node-title">🇸🇬 Singapore丨03</div>
+      <div class="node-desc">
+        节点: 8afkpepd7.yn33dfs2.sbs:643<br>
+        SNI: down-30005.sz.gfp.tencent-cloud.com<br>
+        类型: AnyTLS / uTLS Chrome
       </div>
     </div>
   </div>
 
-  <button id="toggleBtn" class="btn-toggle" onclick="toggleProxy()">Start Proxy</button>
+  <button id="toggleBtn" class="btn-toggle" onclick="toggleProxy()">启动连接</button>
 
   <script>
     let currentStatus = "disconnected";
 
-    // 载入本地配置
-    window.onload = function() {
-      const saved = localStorage.getItem("anytls_config");
-      if (saved) {
-        try {
-          const cfg = JSON.parse(saved);
-          document.getElementById("server").value = cfg.server || "";
-          document.getElementById("port").value = cfg.port || 443;
-          document.getElementById("password").value = cfg.password || "";
-          document.getElementById("sni").value = cfg.sni || "";
-          document.getElementById("tunIp").value = cfg.tunIp || "172.19.0.1";
-          document.getElementById("dnsServer").value = cfg.dnsServer || "1.1.1.1";
-        } catch (e) {}
-      }
-      postNativeMessage("getProxyStatus", null);
-    };
-
-    function saveInputs() {
-      const cfg = {
-        server: document.getElementById("server").value.trim(),
-        port: parseInt(document.getElementById("port").value) || 443,
-        password: document.getElementById("password").value.trim(),
-        sni: document.getElementById("sni").value.trim(),
-        tunIp: document.getElementById("tunIp").value.trim() || "172.19.0.1",
-        dnsServer: document.getElementById("dnsServer").value.trim() || "1.1.1.1"
-      };
-      localStorage.setItem("anytls_config", JSON.stringify(cfg));
-      return cfg;
-    }
-
-    function buildSingBoxConfig(c) {
+    // 内嵌 AnyTLS 节点的标准 sing-box 配置
+    function getEmbeddedConfig() {
       return {
-        "log": { "level": "warn" },
+        "log": {
+          "level": "warn"
+        },
         "dns": {
-          "servers": [{ "tag": "dns-remote", "address": c.dnsServer, "detour": "proxy" }]
+          "servers": [
+            { "tag": "dns-remote", "address": "1.1.1.1", "detour": "proxy" }
+          ]
         },
         "inbounds": [
           {
             "type": "tun",
             "tag": "tun-in",
             "interface_name": "utun",
-            "inet4_address": `${c.tunIp}/24`,
-            "auto_route": true,
+            "inet4_address": "172.19.0.1/28",
+            "auto_route": false,
             "strict_route": false,
             "sniff": true
           }
@@ -240,18 +159,25 @@
           {
             "type": "anytls",
             "tag": "proxy",
-            "server": c.server,
-            "server_port": c.port,
-            "password": c.password,
+            "server": "8afkpepd7.yn33dfs2.sbs",
+            "server_port": 643,
+            "password": "cdbde5eb-3df1-4907-a831-c6c3680b9369",
             "tls": {
               "enabled": true,
-              "server_name": c.sni || c.server
+              "server_name": "down-30005.sz.gfp.tencent-cloud.com",
+              "insecure": true,
+              "utls": {
+                "enabled": true,
+                "fingerprint": "chrome"
+              }
             }
           },
           { "type": "direct", "tag": "direct" }
         ],
         "route": {
-          "rules": [{ "outbound": "proxy" }],
+          "rules": [
+            { "outbound": "proxy" }
+          ],
           "auto_detect_interface": true
         }
       };
@@ -259,43 +185,38 @@
 
     function toggleProxy() {
       if (currentStatus === "connected") {
-        postNativeMessage("stopProxy", null);
+        window.webkit.messageHandlers.stopProxy.postMessage(null);
       } else {
-        const c = saveInputs();
-        if (!c.server || !c.password) {
-          alert("Server and Password cannot be empty.");
-          return;
-        }
-        const singBoxJSON = JSON.stringify(buildSingBoxConfig(c), null, 2);
-        postNativeMessage("startProxy", singBoxJSON);
+        const configStr = JSON.stringify(getEmbeddedConfig());
+        window.webkit.messageHandlers.startProxy.postMessage(configStr);
       }
     }
 
-    function postNativeMessage(name, body) {
-      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name]) {
-        window.webkit.messageHandlers[name].postMessage(body);
-      }
-    }
-
-    // 由 Native 的 evaluateJavaScript 调用
     window.onProxyStatusChange = function(status) {
       currentStatus = status;
       const badge = document.getElementById("statusBadge");
-      const statusText = document.getElementById("statusText");
+      const text = document.getElementById("statusText");
       const btn = document.getElementById("toggleBtn");
 
       badge.className = `badge status-${status}`;
-      statusText.innerText = status.charAt(0).toUpperCase() + status.slice(1);
-
       if (status === "connected") {
-        btn.innerText = "Stop Proxy";
-        btn.className = "btn-toggle active";
+        text.innerText = "已连接";
+        btn.innerText = "断开连接";
+        btn.classList.add("connected");
       } else if (status === "connecting") {
-        btn.innerText = "Connecting...";
-        btn.className = "btn-toggle";
+        text.innerText = "正在连接...";
+        btn.innerText = "正在连接...";
+        btn.classList.remove("connected");
       } else {
-        btn.innerText = "Start Proxy";
-        btn.className = "btn-toggle";
+        text.innerText = "未连接";
+        btn.innerText = "启动连接";
+        btn.classList.remove("connected");
+      }
+    };
+
+    window.onload = function() {
+      if (window.webkit && window.webkit.messageHandlers.getProxyStatus) {
+        window.webkit.messageHandlers.getProxyStatus.postMessage(null);
       }
     };
   </script>
