@@ -10,6 +10,8 @@ targets:
     dependencies:
       - target: PacketTunnel
       - framework: Frameworks/Libbox.xcframework
+      - sdk: NetworkExtension.framework
+      - sdk: libresolv.tbd
     settings:
       CODE_SIGN_ENTITLEMENTS: StockScope/StockScope.entitlements
 
@@ -20,6 +22,12 @@ targets:
     sources: [PacketTunnel]
     dependencies:
       - framework: Frameworks/Libbox.xcframework
+      - sdk: UIKit.framework
+      - sdk: NetworkExtension.framework
+      - sdk: libresolv.tbd
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.yourname.StockScope.PacketTunnel
       CODE_SIGN_ENTITLEMENTS: PacketTunnel/PacketTunnel.entitlements
+      OTHER_LDFLAGS:
+        - $(inherited)
+        - -lresolv
