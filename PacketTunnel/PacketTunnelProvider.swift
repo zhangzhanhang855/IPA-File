@@ -3,7 +3,8 @@ import Libbox
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
 
-    private var client: LibboxStandaloneCommandClient?
+    // 使用 AnyObject 容纳 gomobile 实例，彻底避免具体类型名匹配失败
+    private var client: AnyObject?
     private let appGroupId = "group.com.yourname.StockScope"
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
@@ -45,7 +46,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
-            // 4. 调用无参构造函数实例化 StandaloneCommandClient
+            // 4. 实例化客户端对象
             self.client = LibboxNewStandaloneCommandClient()
 
             completionHandler(nil)
@@ -53,8 +54,17 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        try? client?.close()
-        client = nil
+        if let client = self.client as? NSObject {
+            // 安全反射调用可能存在的清理方法
+            let closeSel = Selector(("close"))
+            let disconnectSel = Selector(("disconnect"))
+            if client.responds(to: closeSel) {
+                client.perform(closeSel)
+            } else if client.responds(to: disconnectSel) {
+                client.perform(disconnectSel)
+            }
+        }
+        self.client = nil
         completionHandler()
     }
 }
