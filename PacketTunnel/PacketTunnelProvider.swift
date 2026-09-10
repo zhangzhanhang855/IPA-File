@@ -3,7 +3,7 @@ import Libbox
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
 
-    private var client: LibboxCommandClient?
+    private var client: LibboxStandaloneCommandClient?
     private let appGroupId = "group.com.yourname.StockScope"
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
@@ -13,15 +13,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
-        // 2. 读取前端传入的 config.json
-        let configFile = containerURL.appendingPathComponent("config.json")
-        guard let configData = try? Data(contentsOf: configFile),
-              let configString = String(data: configData, encoding: .utf8), !configString.isEmpty else {
-            completionHandler(NSError(domain: "PacketTunnel", code: 2, userInfo: [NSLocalizedDescriptionKey: "未找到代理配置文件"]))
-            return
-        }
-
-        // 3. 配置 iOS TUN 网卡
+        // 2. 配置 iOS TUN 虚拟网卡
         let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         let ipv4 = NEIPv4Settings(addresses: ["172.19.0.1"], subnetMasks: ["255.255.255.0"])
         ipv4.includedRoutes = [NEIPv4Route.default()]
@@ -40,7 +32,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 
             guard let self = self else { return }
 
-            // 4. 环境初始化
+            // 3. 初始化工作路径环境
             let setupOptions = LibboxSetupOptions()
             setupOptions.basePath = containerURL.path
             setupOptions.workingPath = containerURL.path
@@ -53,20 +45,15 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
-            // 5. 启动 sing-box 独立核心服务
-            var clientErr: NSError?
-            self.client = LibboxNewStandaloneCommandClient(configString, &clientErr)
-            if let err = clientErr {
-                completionHandler(err)
-                return
-            }
+            // 4. 调用无参构造函数实例化 StandaloneCommandClient
+            self.client = LibboxNewStandaloneCommandClient()
 
             completionHandler(nil)
         }
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        try? client?.disconnect()
+        try? client?.close()
         client = nil
         completionHandler()
     }
