@@ -792,11 +792,27 @@
     /* 构造标准 sing-box 1.10+ JSON 配置 */
     function buildSingBoxConfig(node) {
       return {
-        "log": { "level": "warn" },
+        "log": {
+          "level": "warn"
+        },
         "dns": {
           "servers": [
-            { "tag": "dns-remote", "address": "1.1.1.1", "detour": "proxy" }
-          ]
+            {
+              "tag": "dns-remote",
+              "address": "https://8.8.8.8/dns-query",
+              "address_resolver": "dns-direct",
+              "detour": "proxy"
+            },
+            {
+              "tag": "dns-direct",
+              "address": "223.5.5.5",
+              "detour": "direct"
+            }
+          ],
+          "rules": [
+            { "outbound": "any", "server": "dns-direct" }
+          ],
+          "strategy": "prefer_ipv4"
         },
         "inbounds": [
           {
@@ -826,14 +842,22 @@
               }
             }
           },
-          { "type": "direct", "tag": "direct" }
+          {
+            "type": "direct",
+            "tag": "direct"
+          }
         ],
         "route": {
-          "rules": [{ "outbound": "proxy" }],
+          "rules": [
+            { "ip_is_private": true, "outbound": "direct" },
+            { "domain": [node.server, node.sni].filter(Boolean), "outbound": "direct" },
+            { "outbound": "proxy" }
+          ],
           "auto_detect_interface": true
         }
       };
     }
+
 
     /* 启停 VPN 交互 */
     function toggleProxy() {
