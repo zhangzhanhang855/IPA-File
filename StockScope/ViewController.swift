@@ -10,14 +10,18 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
     private var isOperating = false
     private var lastLoggedMessage = ""
 
-    // 动态获取当前 Bundle ID，避免签名工具改名后与插件对不上
-    private var tunnelBundleId: String {
-        let mainId = Bundle.main.bundleIdentifier ?? "com.yourname.StockScope"
-        return "\(mainId).PacketTunnel"
+    // 动态获取当前主 App 的 Bundle ID
+    private var mainBundleId: String {
+        return Bundle.main.bundleIdentifier ?? "com.yourname.StockScope"
     }
 
+    private var tunnelBundleId: String {
+        return "\(mainBundleId).PacketTunnel"
+    }
+
+    // 动态拼接 App Group
     private var appGroupId: String {
-        return "group.com.yourname.StockScope"
+        return "group.\(mainBundleId)"
     }
 
     override func loadView() {
@@ -60,7 +64,6 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
             webView.loadFileURL(htmlUrl, allowingReadAccessTo: htmlUrl.deletingLastPathComponent())
         }
 
-        // 初始化只加载一次 Manager
         reloadManager(initial: true)
 
         NotificationCenter.default.addObserver(
@@ -71,7 +74,7 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
         )
     }
 
-    // MARK: - 日志推送（带去重防刷屏）
+    // MARK: - 日志推送
     private func logToWeb(_ message: String, level: String = "info") {
         if message == lastLoggedMessage { return }
         lastLoggedMessage = message
@@ -95,11 +98,9 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
             isOperating = true
             logToWeb("收到启动指令")
             if let configString = message.body as? String {
-                if saveConfigToSharedGroup(configString) {
-                    startTunnel()
-                } else {
-                    isOperating = false
-                }
+                // 无论写入文件是否成功，都通过内存传参兜底
+                _ = saveConfigToSharedGroup(configString)
+                startTunnel(configString: configString)
             } else {
                 logToWeb("配置非字符串格式", level: "error")
                 isOperating = false
@@ -117,21 +118,28 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
         }
     }
 
-    // MARK: - 文件写入
+    // MARK: - 文件写入与兜底
     private func saveConfigToSharedGroup(_ config: String) -> Bool {
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            logToWeb("AppGroup 目录不可用: \(appGroupId)", level: "error")
-            return false
+        // 1. 尝试动态 App Group
+        if let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) {
+            let configURL = containerURL.appendingPathComponent("config.json")
+            if (try? config.write(to: configURL, atomically: true, encoding: .utf8)) != nil {
+                logToWeb("配置已写入 App Group: \(appGroupId)")
+                return true
+            }
         }
-        let configURL = containerURL.appendingPathComponent("config.json")
-        do {
-            try config.write(to: configURL, atomically: true, encoding: .utf8)
-            logToWeb("config.json 已保存")
-            return true
-        } catch {
-            logToWeb("保存配置失败: \(error.localizedDescription)", level: "error")
-            return false
+
+        // 2. 尝试备用默认 App Group
+        if let defaultURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.yourname.StockScope") {
+            let configURL = defaultURL.appendingPathComponent("config.json")
+            if (try? config.write(to: configURL, atomically: true, encoding: .utf8)) != nil {
+                logToWeb("配置已写入备用 App Group")
+                return true
+            }
         }
+
+        logToWeb("提示: App Group 不可用，将通过内存通道直接传递配置", level: "warn")
+        return false
     }
 
     // MARK: - VPN 管理核心
@@ -163,25 +171,37 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
         }
     }
 
-    private func startTunnel() {
+    private func startTunnel(configString: String) {
         reloadManager { [weak self] manager in
             guard let self = self, let manager = manager else {
                 self?.isOperating = false
                 return
             }
 
+            // 确保协议与 Bundle ID 匹配
+            let proto = (manager.protocolConfiguration as? NETunnelProviderProtocol) ?? NETunnelProviderProtocol()
+            proto.providerBundleIdentifier = self.tunnelBundleId
+            proto.serverAddress = "127.0.0.1"
+            
+            // 关键：将配置直接放入 providerConfiguration 内存字典，Extension 可以直接拿到！
+            proto.providerConfiguration = [
+                "config": configString,
+                "appGroupId": self.appGroupId
+            ]
+            manager.protocolConfiguration = proto
+            manager.localizedDescription = "StockScope AnyTLS"
             manager.isEnabled = true
-            self.logToWeb("正在请求系统注册/更新 VPN 描述...")
+
+            self.logToWeb("正在请求系统注册/更新 VPN 描述 (触发系统弹窗)...")
 
             manager.saveToPreferences { [weak self] error in
                 guard let self = self else { return }
                 if let error = error {
-                    self.logToWeb("保存失败(弹窗未允许或证书无权): \(error.localizedDescription)", level: "error")
+                    self.logToWeb("保存失败(权限不足或被拒): \(error.localizedDescription)", level: "error")
                     self.isOperating = false
                     return
                 }
 
-                // 保存成功后重新加载使其生效并开启
                 manager.loadFromPreferences { [weak self] loadErr in
                     guard let self = self else { return }
                     if let loadErr = loadErr {
@@ -192,8 +212,9 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
 
                     do {
                         self.logToWeb("正在拉起底层 PacketTunnel...")
-                        try manager.connection.startVPNTunnel()
-                        self.logToWeb("startVPNTunnel 已调用")
+                        // 启动时同时传入 options 字典进行双重保证
+                        try manager.connection.startVPNTunnel(options: ["config": configString as NSObject])
+                        self.logToWeb("startVPNTunnel 调用成功，正在建立握手")
                     } catch {
                         self.logToWeb("拉起隧道抛出异常: \(error.localizedDescription)", level: "error")
                     }
