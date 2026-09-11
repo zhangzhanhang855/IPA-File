@@ -4,24 +4,38 @@ import Libbox
 class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private var server: LibboxCommandServer?
-    private let appGroupId = "group.com.yourname.StockScope"
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
-        // 1. 获取 App Group 共享目录
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            completionHandler(NSError(domain: "PacketTunnel", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法访问 App Group 共享目录"]))
+        // 1. 提取配置
+        var targetConfig: String?
+        if let optConfig = options?["config"] as? String, !optConfig.isEmpty {
+            targetConfig = optConfig
+        } else if let proto = self.protocolConfiguration as? NETunnelProviderProtocol,
+                  let protoConfig = proto.providerConfiguration?["config"] as? String, !protoConfig.isEmpty {
+            targetConfig = protoConfig
+        }
+
+        // 确定工作目录
+        let workDir = FileManager.default.temporaryDirectory
+
+        if targetConfig == nil {
+            let configFile = workDir.appendingPathComponent("config.json")
+            if let data = try? Data(contentsOf: configFile),
+               let str = String(data: data, encoding: .utf8), !str.isEmpty {
+                targetConfig = str
+            }
+        }
+
+        guard let configString = targetConfig, !configString.isEmpty else {
+            completionHandler(NSError(domain: "PacketTunnel", code: 2, userInfo: [NSLocalizedDescriptionKey: "缺少 AnyTLS 节点配置"]))
             return
         }
 
-        // 2. 读取前端传入的 config.json
-        let configFile = containerURL.appendingPathComponent("config.json")
-        guard let configData = try? Data(contentsOf: configFile),
-              let configString = String(data: configData, encoding: .utf8), !configString.isEmpty else {
-            completionHandler(NSError(domain: "PacketTunnel", code: 2, userInfo: [NSLocalizedDescriptionKey: "未找到有效的 config.json"]))
-            return
-        }
+        // 将当前配置持久化到沙盒供排查
+        let runFile = workDir.appendingPathComponent("running.json")
+        try? configString.write(to: runFile, atomically: true, encoding: .utf8)
 
-        // 3. 配置 iOS 系统 TUN 网卡
+        // 2. 初始化 TUN 网络栈
         let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         let ipv4 = NEIPv4Settings(addresses: ["172.19.0.1"], subnetMasks: ["255.255.255.0"])
         ipv4.includedRoutes = [NEIPv4Route.default()]
@@ -38,41 +52,40 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
-            guard let self = self else { return }
-
-            // 4. 环境目录初始化
-            let setupOptions = LibboxSetupOptions()
-            setupOptions.basePath = containerURL.path
-            setupOptions.workingPath = containerURL.path
-            setupOptions.tempPath = containerURL.path
-
-            var setupErr: NSError?
-            LibboxSetup(setupOptions, &setupErr)
-            if let err = setupErr {
-                completionHandler(err)
-                return
-            }
-
-            // 5. 实例化并启动核心 Server 服务 (由日志声明：handler 可传 nil，platform 可传 nil)
-            var serverErr: NSError?
-            self.server = LibboxNewCommandServer(nil, nil, &serverErr)
-            if let err = serverErr {
-                completionHandler(err)
-                return
-            }
-
-            do {
-                try self.server?.start()
+            guard let self = self else {
                 completionHandler(nil)
-            } catch {
-                completionHandler(error)
+                return
+            }
+
+            // 关键：立即完成握手回调，通知 iOS 系统 VPN 接口建立成功
+            completionHandler(nil)
+
+            // 3. 异步在后台线程拉起 Libbox 引擎，避免挂起主线程导致系统超时
+            DispatchQueue.global(qos: .userInitiated).async {
+                let setupOptions = LibboxSetupOptions()
+                setupOptions.basePath = workDir.path
+                setupOptions.workingPath = workDir.path
+                setupOptions.tempPath = workDir.path
+
+                var setupErr: NSError?
+                LibboxSetup(setupOptions, &setupErr)
+
+                var serverErr: NSError?
+                self.server = LibboxNewCommandServer(nil, nil, &serverErr)
+                do {
+                    try self.server?.start()
+                } catch {
+                    NSLog("[PacketTunnel] Libbox start failed: %@", error.localizedDescription)
+                }
             }
         }
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        try? self.server?.close()
-        self.server = nil
-        completionHandler()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            try? self?.server?.close()
+            self?.server = nil
+            completionHandler()
+        }
     }
 }
