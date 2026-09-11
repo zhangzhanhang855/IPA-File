@@ -53,21 +53,26 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
-            // 5. 启动核心服务 (传入包含 AnyTLS 的 configString)
-            var startErr: NSError?
-            // 新版 sing-box 独立核心加载服务
-            self.server = LibboxNewCommandServer(nil, 0)
-            
-            // 写入运行时临时配置并载入
-            let runConfig = containerURL.appendingPathComponent("running_config.json")
-            try? configString.write(to: runConfig, atomically: true, encoding: .utf8)
-            
-            completionHandler(nil)
+            // 5. 按照头文件签名启动 CommandServer (handler: nil, platformInterface: nil, error)
+            var serverErr: NSError?
+            self.server = LibboxNewCommandServer(nil, nil, &serverErr)
+            if let err = serverErr {
+                completionHandler(err)
+                return
+            }
+
+            // 启动核心服务
+            do {
+                try self.server?.start()
+                completionHandler(nil)
+            } catch {
+                completionHandler(error)
+            }
         }
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        self.server?.close()
+        try? self.server?.close()
         self.server = nil
         completionHandler()
     }
