@@ -6,7 +6,11 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     private var server: LibboxCommandServer?
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
-        // 1. 提取配置
+        // 1. 压低 Go 运行时内存占用，防止触发 iOS 15MB Jetsam OOM 强杀
+        setenv("GOMEMLIMIT", "10MiB", 1)
+        setenv("GOGC", "20", 1)
+
+        // 2. 提取配置
         var targetConfig: String?
         if let optConfig = options?["config"] as? String, !optConfig.isEmpty {
             targetConfig = optConfig
@@ -15,7 +19,6 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             targetConfig = protoConfig
         }
 
-        // 确定工作目录
         let workDir = FileManager.default.temporaryDirectory
 
         if targetConfig == nil {
@@ -31,20 +34,21 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
-        // 将当前配置持久化到沙盒供排查
-        let runFile = workDir.appendingPathComponent("running.json")
-        try? configString.write(to: runFile, atomically: true, encoding: .utf8)
-
-        // 2. 初始化 TUN 网络栈
+        // 3. 配置 TUN 网卡，注意避免回环
         let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         let ipv4 = NEIPv4Settings(addresses: ["172.19.0.1"], subnetMasks: ["255.255.255.0"])
         ipv4.includedRoutes = [NEIPv4Route.default()]
+        // 排除内网与本地域，降低开销
+        ipv4.excludedRoutes = [
+            NEIPv4Route(destinationAddress: "10.0.0.0", subnetMask: "255.0.0.0"),
+            NEIPv4Route(destinationAddress: "192.168.0.0", subnetMask: "255.255.0.0")
+        ]
         settings.ipv4Settings = ipv4
 
         let dns = NEDNSSettings(servers: ["1.1.1.1", "8.8.8.8"])
         dns.matchDomains = [""]
         settings.dnsSettings = dns
-        settings.mtu = 1500
+        settings.mtu = 1280 // 调小 MTU 避免拆包重组爆内存
 
         setTunnelNetworkSettings(settings) { [weak self] error in
             if let error = error {
@@ -57,11 +61,10 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
-            // 关键：立即完成握手回调，通知 iOS 系统 VPN 接口建立成功
             completionHandler(nil)
 
-            // 3. 异步在后台线程拉起 Libbox 引擎，避免挂起主线程导致系统超时
-            DispatchQueue.global(qos: .userInitiated).async {
+            // 4. 后台低优先级平滑启动核心
+            DispatchQueue.global(qos: .utility).async {
                 let setupOptions = LibboxSetupOptions()
                 setupOptions.basePath = workDir.path
                 setupOptions.workingPath = workDir.path
@@ -72,12 +75,17 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 
                 var serverErr: NSError?
                 self.server = LibboxNewCommandServer(nil, nil, &serverErr)
-                do {
-                    try self.server?.start()
-                } catch {
-                    NSLog("[PacketTunnel] Libbox start failed: %@", error.localizedDescription)
-                }
+                try? self.server?.start()
             }
+
+            // 5. 持续消费 PacketFlow，防止 iOS 缓冲区堆满挂死
+            self.startPacketLoop()
+        }
+    }
+
+    private func startPacketLoop() {
+        self.packetFlow.readPackets { [weak self] _, _ in
+            self?.startPacketLoop()
         }
     }
 
