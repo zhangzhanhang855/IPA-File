@@ -6,8 +6,19 @@ import NetworkExtension
 class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandler {
 
     var webView: WKWebView!
-    private let appGroupId = "group.com.yourname.StockScope"
-    private let tunnelBundleId = "com.yourname.StockScope.PacketTunnel"
+    private var vpnManager: NETunnelProviderManager?
+    private var isOperating = false
+    private var lastLoggedMessage = ""
+
+    // 动态获取当前 Bundle ID，避免签名工具改名后与插件对不上
+    private var tunnelBundleId: String {
+        let mainId = Bundle.main.bundleIdentifier ?? "com.yourname.StockScope"
+        return "\(mainId).PacketTunnel"
+    }
+
+    private var appGroupId: String {
+        return "group.com.yourname.StockScope"
+    }
 
     override func loadView() {
         do {
@@ -49,17 +60,29 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
             webView.loadFileURL(htmlUrl, allowingReadAccessTo: htmlUrl.deletingLastPathComponent())
         }
 
-        NotificationCenter.default.addObserver(self, selector: #selector(vpnStatusDidChange), name: .NEVPNStatusDidChange, object: nil)
+        // 初始化只加载一次 Manager
+        reloadManager(initial: true)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(vpnStatusDidChange),
+            name: .NEVPNStatusDidChange,
+            object: nil
+        )
     }
 
-    // MARK: - 日志推送到前端
+    // MARK: - 日志推送（带去重防刷屏）
     private func logToWeb(_ message: String, level: String = "info") {
+        if message == lastLoggedMessage { return }
+        lastLoggedMessage = message
+
         DispatchQueue.main.async { [weak self] in
-            let escapedMsg = message
+            let cleanMsg = message
                 .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "'", with: "\\'")
                 .replacingOccurrences(of: "\"", with: "\\\"")
                 .replacingOccurrences(of: "\n", with: " ")
-            let js = "if (window.appendLog) { window.appendLog('\(escapedMsg)', '\(level)'); }"
+            let js = "window.appendLog && window.appendLog('\(cleanMsg)', '\(level)');"
             self?.webView.evaluateJavaScript(js, completionHandler: nil)
         }
     }
@@ -68,135 +91,140 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, WKSc
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
         case "startProxy":
-            logToWeb("收到启动请求...")
+            if isOperating { return }
+            isOperating = true
+            logToWeb("收到启动指令")
             if let configString = message.body as? String {
                 if saveConfigToSharedGroup(configString) {
                     startTunnel()
+                } else {
+                    isOperating = false
                 }
             } else {
-                logToWeb("配置格式解析失败 (非字符串)", level: "error")
+                logToWeb("配置非字符串格式", level: "error")
+                isOperating = false
             }
+
         case "stopProxy":
-            logToWeb("收到停止请求...")
+            logToWeb("收到停止指令")
             stopTunnel()
+
         case "getProxyStatus":
-            notifyWebStatus()
+            sendCurrentStatus()
+
         default:
             break
         }
     }
 
-    // MARK: - 写入 App Group
+    // MARK: - 文件写入
     private func saveConfigToSharedGroup(_ config: String) -> Bool {
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            logToWeb("错误: 无法获取 App Group 容器路径！请检查证书或 entitlements 的 App Group ID 是否与 '\(appGroupId)' 一致", level: "error")
+            logToWeb("AppGroup 目录不可用: \(appGroupId)", level: "error")
             return false
         }
         let configURL = containerURL.appendingPathComponent("config.json")
         do {
             try config.write(to: configURL, atomically: true, encoding: .utf8)
-            logToWeb("配置已写入 App Group: \(configURL.lastPathComponent)")
+            logToWeb("config.json 已保存")
             return true
         } catch {
-            logToWeb("写入配置文件失败: \(error.localizedDescription)", level: "error")
+            logToWeb("保存配置失败: \(error.localizedDescription)", level: "error")
             return false
         }
     }
 
-    // MARK: - VPN Manager
-    private func loadManager(completion: @escaping (NETunnelProviderManager?) -> Void) {
-        logToWeb("正在加载系统 VPN 描述配置...")
+    // MARK: - VPN 管理核心
+    private func reloadManager(initial: Bool = false, completion: ((NETunnelProviderManager?) -> Void)? = nil) {
         NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
+            guard let self = self else { return }
             if let error = error {
-                self?.logToWeb("加载 VPN 配置失败: \(error.localizedDescription)", level: "error")
-                completion(nil)
+                self.logToWeb("读取系统 VPN 描述失败: \(error.localizedDescription)", level: "error")
+                completion?(nil)
                 return
             }
 
-            if let manager = managers?.first {
-                self?.logToWeb("检测到现有 VPN 配置项")
-                completion(manager)
+            if let existing = managers?.first {
+                self.vpnManager = existing
+                if initial { self.logToWeb("已检测到系统 VPN 描述") }
+                completion?(existing)
             } else {
-                self?.logToWeb("未找到现有配置，正在新建 NETunnelProviderManager...")
-                let manager = NETunnelProviderManager()
+                if initial { self.logToWeb("未注册 VPN 描述，等待点击创建") }
+                let newManager = NETunnelProviderManager()
                 let proto = NETunnelProviderProtocol()
-                proto.providerBundleIdentifier = self?.tunnelBundleId
+                proto.providerBundleIdentifier = self.tunnelBundleId
                 proto.serverAddress = "127.0.0.1"
-                manager.protocolConfiguration = proto
-                manager.localizedDescription = "StockScope AnyTLS"
-                manager.isEnabled = true
-                
-                manager.saveToPreferences { err in
-                    if let err = err {
-                        self?.logToWeb("保存新 VPN 配置到系统失败 (证书权限不足或用户拒绝): \(err.localizedDescription)", level: "error")
-                        completion(nil)
-                    } else {
-                        self?.logToWeb("成功将 VPN 配置注册到系统！")
-                        // 重新 load 一次确保状态有效
-                        manager.loadFromPreferences { _ in
-                            completion(manager)
-                        }
-                    }
-                }
+                newManager.protocolConfiguration = proto
+                newManager.localizedDescription = "StockScope AnyTLS"
+                newManager.isEnabled = true
+                self.vpnManager = newManager
+                completion?(newManager)
             }
         }
     }
 
     private func startTunnel() {
-        loadManager { [weak self] manager in
-            guard let manager = manager else {
-                self?.logToWeb("VPN Manager 实例为空，终止启动", level: "error")
+        reloadManager { [weak self] manager in
+            guard let self = self, let manager = manager else {
+                self?.isOperating = false
                 return
             }
-            manager.loadFromPreferences { err in
-                if let err = err {
-                    self?.logToWeb("刷新配置错误: \(err.localizedDescription)", level: "error")
+
+            manager.isEnabled = true
+            self.logToWeb("正在请求系统注册/更新 VPN 描述...")
+
+            manager.saveToPreferences { [weak self] error in
+                guard let self = self else { return }
+                if let error = error {
+                    self.logToWeb("保存失败(弹窗未允许或证书无权): \(error.localizedDescription)", level: "error")
+                    self.isOperating = false
                     return
                 }
-                manager.isEnabled = true
-                manager.saveToPreferences { saveErr in
-                    if let saveErr = saveErr {
-                        self?.logToWeb("启用配置失败: \(saveErr.localizedDescription)", level: "error")
+
+                // 保存成功后重新加载使其生效并开启
+                manager.loadFromPreferences { [weak self] loadErr in
+                    guard let self = self else { return }
+                    if let loadErr = loadErr {
+                        self.logToWeb("重载配置失败: \(loadErr.localizedDescription)", level: "error")
+                        self.isOperating = false
                         return
                     }
+
                     do {
-                        self?.logToWeb("正在唤起 Network Extension 底层隧道...")
+                        self.logToWeb("正在拉起底层 PacketTunnel...")
                         try manager.connection.startVPNTunnel()
-                        self?.logToWeb("startVPNTunnel 调用成功，等待系统握手")
+                        self.logToWeb("startVPNTunnel 已调用")
                     } catch {
-                        self?.logToWeb("启动 VPN 隧道失败: \(error.localizedDescription)", level: "error")
+                        self.logToWeb("拉起隧道抛出异常: \(error.localizedDescription)", level: "error")
                     }
+                    self.isOperating = false
                 }
             }
         }
     }
 
     private func stopTunnel() {
-        loadManager { [weak self] manager in
-            guard let manager = manager else { return }
-            manager.connection.stopVPNTunnel()
-            self?.logToWeb("已发送停止隧道信号")
-        }
+        vpnManager?.connection.stopVPNTunnel()
+        logToWeb("隧道停止命令已下发")
     }
 
     @objc private func vpnStatusDidChange() {
-        notifyWebStatus()
+        sendCurrentStatus()
     }
 
-    private func notifyWebStatus() {
-        loadManager { [weak self] manager in
-            let status = manager?.connection.status ?? .disconnected
-            let statusString: String
-            switch status {
-            case .connected: statusString = "connected"
-            case .connecting: statusString = "connecting"
-            case .disconnecting: statusString = "disconnecting"
-            default: statusString = "disconnected"
-            }
-            self?.logToWeb("底层 VPN 状态变更: \(statusString)")
-            DispatchQueue.main.async {
-                self?.webView.evaluateJavaScript("if (window.onProxyStatusChange) { window.onProxyStatusChange('\(statusString)'); }", completionHandler: nil)
-            }
+    private func sendCurrentStatus() {
+        let status = vpnManager?.connection.status ?? .disconnected
+        let statusString: String
+        switch status {
+        case .connected: statusString = "connected"
+        case .connecting: statusString = "connecting"
+        case .disconnecting: statusString = "disconnecting"
+        default: statusString = "disconnected"
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            let js = "window.onProxyStatusChange && window.onProxyStatusChange('\(statusString)');"
+            self?.webView.evaluateJavaScript(js, completionHandler: nil)
         }
     }
 
