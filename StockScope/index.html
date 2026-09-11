@@ -98,7 +98,7 @@
     .status-connecting .status-dot { background: var(--yellow); }
     .status-disconnected .status-dot { background: var(--text-muted); }
 
-    /* 控制面板 */
+    /* 核心主控板 */
     .dashboard-panel {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -136,7 +136,7 @@
 
     .action-btn-row {
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1.2fr 1fr 1fr;
       gap: 8px;
     }
 
@@ -151,7 +151,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 0 14px;
+      padding: 0 10px;
       transition: all 0.15s ease;
     }
     .btn:active {
@@ -281,7 +281,7 @@
       padding: 10px;
       display: flex;
       flex-direction: column;
-      min-height: 200px;
+      min-height: 220px;
     }
     .terminal-head {
       display: flex;
@@ -531,7 +531,7 @@
   </div>
 
   <script>
-    /* 全局常量与预置默认节点 */
+    /* 全局预置默认节点 */
     const DEFAULT_NODE = {
       id: "node_default",
       name: "🇸🇬 Singapore丨03",
@@ -547,7 +547,7 @@
     let selectedNodeId = "";
     let currentProxyStatus = "disconnected";
     let currentLogFilter = "all";
-    const MAX_LOGS = 80;
+    const MAX_LOGS = 60;
 
     /* 节点存储管理 */
     function loadNodesFromStorage() {
@@ -789,7 +789,7 @@
       openModal("importModal");
     }
 
-    /* 构造标准 sing-box 1.10+ JSON 配置 */
+    /* 构造适配 iOS NetworkExtension 的标准 sing-box 1.10+ JSON 配置 */
     function buildSingBoxConfig(node) {
       return {
         "log": {
@@ -799,8 +799,7 @@
           "servers": [
             {
               "tag": "dns-remote",
-              "address": "https://8.8.8.8/dns-query",
-              "address_resolver": "dns-direct",
+              "address": "1.1.1.1",
               "detour": "proxy"
             },
             {
@@ -818,11 +817,10 @@
           {
             "type": "tun",
             "tag": "tun-in",
-            "interface_name": "utun",
             "inet4_address": "172.19.0.1/28",
-            "auto_route": true,
+            "auto_route": false,
             "strict_route": false,
-            "sniff": true
+            "sniff": false
           }
         ],
         "outbounds": [
@@ -858,11 +856,10 @@
       };
     }
 
-
     /* 启停 VPN 交互 */
     function toggleProxy() {
       if (!window.webkit || !window.webkit.messageHandlers) {
-        appendLog("未在 iOS 原生 WKWebView 中执行", "error");
+        appendLog("未在 iOS 原生 WKWebView 容器中运行", "error");
         return;
       }
 
