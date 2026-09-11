@@ -3,19 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>StockScope AnyTLS</title>
+  <title>StockScope AnyTLS Manager</title>
   <style>
     :root {
-      --bg: #090a0f;
-      --card: #141721;
-      --border: #232738;
-      --text: #f1f5f9;
-      --muted: #64748b;
+      --bg: #090a10;
+      --card-bg: #121520;
+      --card-sub: #171b29;
+      --card-hover: #1c2235;
+      --border: #232a3d;
+      --border-focus: #3b82f6;
+      --text: #f3f4f6;
+      --text-muted: #8492a6;
       --primary: #2563eb;
+      --primary-hover: #1d4ed8;
       --green: #10b981;
       --red: #ef4444;
       --yellow: #f59e0b;
+      --blue-sub: #1e293b;
+      --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -23,164 +34,763 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
+
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      font-family: var(--font-sans);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding: calc(env(safe-area-inset-top, 24px) + 16px) 16px calc(env(safe-area-inset-bottom, 24px) + 16px);
-      gap: 16px;
+      padding: calc(env(safe-area-inset-top, 20px) + 8px) 12px calc(env(safe-area-inset-bottom, 20px) + 8px);
+      gap: 10px;
+      overflow-x: hidden;
     }
-    .header {
+
+    /* 顶部导航与状态条 */
+    .header-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 4px 2px;
     }
-    .title {
-      font-size: 22px;
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 14px;
+      color: #fff;
+    }
+    .brand-title {
+      font-size: 18px;
       font-weight: 700;
+      letter-spacing: -0.3px;
     }
-    .badge {
+
+    .badge-status {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
+      padding: 4px 10px;
       border-radius: 99px;
-      font-size: 13px;
-      font-weight: 600;
-      background: #1e2433;
-      border: 1px solid var(--border);
-    }
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--muted);
-    }
-    .status-connected .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .status-connecting .dot { background: var(--yellow); }
-    .status-disconnected .dot { background: var(--muted); }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-    }
-    .node-title {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-    .node-desc {
       font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
+      font-weight: 600;
+      background: var(--card-sub);
+      border: 1px solid var(--border);
     }
-    .btn-toggle {
-      width: 100%;
-      height: 52px;
-      border-radius: 14px;
-      border: none;
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-      background: var(--primary);
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
-      transition: all 0.2s;
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
     }
-    .btn-toggle:active {
-      transform: scale(0.98);
-      opacity: 0.9;
-    }
-    .btn-toggle.connected {
-      background: var(--red);
-      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
-    }
-    
-    /* 实时日志终端 */
-    .terminal {
-      flex: 1;
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 12px;
+    .status-connected .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-connecting .status-dot { background: var(--yellow); }
+    .status-disconnected .status-dot { background: var(--text-muted); }
+
+    /* 控制面板 */
+    .dashboard-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       padding: 12px;
       display: flex;
       flex-direction: column;
-      min-height: 220px;
+      gap: 10px;
     }
-    .terminal-header {
+    .node-active-bar {
       display: flex;
       justify-content: space-between;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-      border-bottom: 1px solid #21262d;
-      padding-bottom: 4px;
+      align-items: center;
     }
-    .terminal-body {
+    .node-active-info {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-right: 8px;
+    }
+    .node-active-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .node-active-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    .action-btn-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+    }
+
+    .btn {
+      height: 42px;
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 14px;
+      transition: all 0.15s ease;
+    }
+    .btn:active {
+      transform: scale(0.97);
+      opacity: 0.85;
+    }
+    .btn-main {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+    }
+    .btn-main.connected {
+      background: var(--red);
+      box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+    }
+    .btn-secondary {
+      background: var(--card-sub);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* 节点列表容器 */
+    .nodes-wrapper {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .nodes-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2px;
+    }
+    .nodes-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .nodes-toolbar {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-tiny {
+      padding: 3px 8px;
+      font-size: 11px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      background: var(--card-sub);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .btn-tiny:active {
+      color: var(--text);
+    }
+
+    .node-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .node-card {
+      background: var(--card-sub);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .node-card.active {
+      border-color: var(--border-focus);
+      background: #141b2e;
+    }
+    .node-details {
+      flex: 1;
+      min-width: 0;
+      padding-right: 8px;
+    }
+    .node-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .node-address {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+    .node-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .icon-action {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 4px;
+      cursor: pointer;
+    }
+    .icon-action:hover {
+      color: var(--text);
+    }
+
+    /* 实时控制台终端 */
+    .terminal-container {
+      flex: 1;
+      background: #0b0d13;
+      border: 1px solid #1e2433;
+      border-radius: var(--radius-lg);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+    .terminal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1c2233;
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+    }
+    .terminal-tags {
+      display: flex;
+      gap: 6px;
+      font-size: 10px;
+    }
+    .tag-filter {
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #141926;
+      color: var(--text-muted);
+    }
+    .tag-filter.active {
+      background: var(--blue-sub);
+      color: #60a5fa;
+      font-weight: bold;
+    }
+    .terminal-stream {
       flex: 1;
       overflow-y: auto;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 11px;
-      line-height: 1.4;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      line-height: 1.45;
       user-select: text;
     }
-    .log-item {
-      margin-bottom: 4px;
+    .log-line {
+      margin-bottom: 3px;
       word-break: break-all;
     }
-    .log-info { color: #8b949e; }
-    .log-error { color: #f85149; font-weight: 600; }
-    .log-warn { color: #d29922; }
+    .log-info { color: #94a3b8; }
+    .log-error { color: #f87171; font-weight: 600; }
+    .log-warn { color: #fbbf24; }
+
+    /* 模态框 / 弹窗层 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-end;
+      z-index: 999;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-sheet {
+      width: 100%;
+      background: #141724;
+      border-top: 1px solid var(--border);
+      border-radius: 18px 18px 0 0;
+      padding: 14px 16px calc(env(safe-area-inset-bottom, 16px) + 14px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .form-input, .form-textarea {
+      background: #090a10;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      padding: 8px 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      outline: none;
+    }
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--border-focus);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 8px;
+    }
+    .form-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .form-check input {
+      accent-color: var(--primary);
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="title">JRvpn</div>
-    <div id="statusBadge" class="badge status-disconnected">
-      <span class="dot"></span>
+
+  <!-- 头部状态栏 -->
+  <div class="header-bar">
+    <div class="brand-group">
+      <div class="brand-logo">A</div>
+      <div class="brand-title">StockScope AnyTLS</div>
+    </div>
+    <div id="statusBadge" class="badge-status status-disconnected">
+      <span class="status-dot"></span>
       <span id="statusText">未连接</span>
     </div>
   </div>
 
-  <div class="card">
-    <div class="node-title">🇸🇬 Singapore丨03</div>
-    <div class="node-desc">
-      8afkpepd7.yn33dfs2.sbs:643<br>
-      SNI: down-30005.sz.gfp.tencent-cloud.com (AnyTLS)
+  <!-- 核心主控板 -->
+  <div class="dashboard-panel">
+    <div class="node-active-bar">
+      <div class="node-active-info">
+        <div id="activeNodeName" class="node-active-title">🇸🇬 Singapore丨03</div>
+        <div id="activeNodeSub" class="node-active-sub">8afkpepd7.yn33dfs2.sbs:643 (AnyTLS)</div>
+      </div>
+    </div>
+    <div class="action-btn-row">
+      <button id="toggleBtn" class="btn btn-main" onclick="toggleProxy()">启动连接</button>
+      <button class="btn btn-secondary" onclick="openImportModal()">+ 链接导入</button>
+      <button class="btn btn-secondary" onclick="openManualModal()">+ 手动配置</button>
     </div>
   </div>
 
-  <button id="toggleBtn" class="btn-toggle" onclick="toggleProxy()">启动JRvpn For iOS</button>
-
-  <div class="terminal">
-    <div class="terminal-header">
-      <span>Console Logs</span>
-      <span onclick="document.getElementById('logs').innerHTML=''" style="cursor: pointer; color: var(--primary);">清屏</span>
+  <!-- 节点列表 -->
+  <div class="nodes-wrapper">
+    <div class="nodes-header">
+      <span class="nodes-title">已配置节点库 (<span id="nodeCount">1</span>)</span>
+      <div class="nodes-toolbar">
+        <button class="btn-tiny" onclick="resetDefaultNode()">默认配置</button>
+        <button class="btn-tiny" onclick="clearAllNodes()">清空</button>
+      </div>
     </div>
-    <div id="logs" class="terminal-body"></div>
+    <div id="nodesList" class="node-list">
+      <!-- 动态注入节点列表 -->
+    </div>
+  </div>
+
+  <!-- 控制台终端 -->
+  <div class="terminal-container">
+    <div class="terminal-head">
+      <div class="terminal-tags">
+        <span class="tag-filter active" onclick="setLogFilter('all', this)">全部</span>
+        <span class="tag-filter" onclick="setLogFilter('info', this)">信息</span>
+        <span class="tag-filter" onclick="setLogFilter('error', this)">报错</span>
+      </div>
+      <button class="btn-tiny" onclick="clearLogs()">清屏</button>
+    </div>
+    <div id="logsStream" class="terminal-stream"></div>
+  </div>
+
+  <!-- 弹窗：通过 URI 导入 -->
+  <div id="importModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title">导入 AnyTLS 节点链接</span>
+        <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">链接地址 (anytls://...)</label>
+        <textarea id="importUriInput" rows="4" class="form-textarea" placeholder="anytls://uuid@host:port?peer=sni&insecure=1&fingerprint=chrome#NodeName"></textarea>
+      </div>
+      <button class="btn btn-main" onclick="handleImportUri()">确认解析并保存</button>
+    </div>
+  </div>
+
+  <!-- 弹窗：图形化手动配置/编辑 -->
+  <div id="manualModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span id="manualModalTitle" class="modal-title">添加 AnyTLS 节点</span>
+        <button class="modal-close" onclick="closeModal('manualModal')">✕</button>
+      </div>
+      <input type="hidden" id="editNodeId" value="">
+      <div class="form-group">
+        <label class="form-label">节点名称</label>
+        <input type="text" id="cfgName" class="form-input" placeholder="例如：🇸🇬 香港丨01">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">服务器地址 (Host/IP)</label>
+          <input type="text" id="cfgServer" class="form-input" placeholder="example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">端口 (Port)</label>
+          <input type="number" id="cfgPort" class="form-input" placeholder="443" value="443">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">密码 / UUID</label>
+        <input type="text" id="cfgPassword" class="form-input" placeholder="UUID 或 Password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">TLS SNI / Peer 域名</label>
+        <input type="text" id="cfgSni" class="form-input" placeholder="sni.domain.com">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">uTLS 指纹 (Fingerprint)</label>
+          <input type="text" id="cfgFingerprint" class="form-input" value="chrome" placeholder="chrome / safari / firefox">
+        </div>
+        <div class="form-group" style="justify-content: flex-end;">
+          <label class="form-check">
+            <input type="checkbox" id="cfgInsecure" checked>
+            <span>允许不安全证书 (insecure)</span>
+          </label>
+        </div>
+      </div>
+      <button class="btn btn-main" onclick="saveManualNode()">保存并选用</button>
+    </div>
   </div>
 
   <script>
-    let currentStatus = "disconnected";
+    /* 全局常量与预置默认节点 */
+    const DEFAULT_NODE = {
+      id: "node_default",
+      name: "🇸🇬 Singapore丨03",
+      server: "8afkpepd7.yn33dfs2.sbs",
+      port: 643,
+      password: "cdbde5eb-3df1-4907-a831-c6c3680b9369",
+      sni: "down-30005.sz.gfp.tencent-cloud.com",
+      insecure: true,
+      fingerprint: "chrome"
+    };
 
-    function appendLog(msg, level = "info") {
-      const logs = document.getElementById("logs");
-      const item = document.createElement("div");
-      item.className = `log-item log-${level}`;
-      const time = new Date().toTimeString().split(' ')[0];
-      item.innerText = `[${time}] ${msg}`;
-      logs.appendChild(item);
-      logs.scrollTop = logs.scrollHeight;
+    let nodeList = [];
+    let selectedNodeId = "";
+    let currentProxyStatus = "disconnected";
+    let currentLogFilter = "all";
+    const MAX_LOGS = 80;
+
+    /* 节点存储管理 */
+    function loadNodesFromStorage() {
+      try {
+        const raw = localStorage.getItem("anytls_nodes");
+        if (raw) {
+          nodeList = JSON.parse(raw);
+        }
+      } catch (e) {
+        appendLog("读取本地存储节点失败: " + e.message, "warn");
+      }
+      if (!nodeList || nodeList.length === 0) {
+        nodeList = [{ ...DEFAULT_NODE }];
+      }
+      selectedNodeId = localStorage.getItem("anytls_selected_id") || nodeList[0].id;
+      if (!nodeList.find(n => n.id === selectedNodeId)) {
+        selectedNodeId = nodeList[0].id;
+      }
+      saveNodesToStorage();
+      renderNodes();
     }
 
-    function getEmbeddedConfig() {
+    function saveNodesToStorage() {
+      localStorage.setItem("anytls_nodes", JSON.stringify(nodeList));
+      localStorage.setItem("anytls_selected_id", selectedNodeId);
+      document.getElementById("nodeCount").innerText = nodeList.length;
+    }
+
+    function resetDefaultNode() {
+      nodeList = [{ ...DEFAULT_NODE }];
+      selectedNodeId = DEFAULT_NODE.id;
+      saveNodesToStorage();
+      renderNodes();
+      appendLog("已重置为默认节点");
+    }
+
+    function clearAllNodes() {
+      if (confirm("确定清空全部节点吗？")) {
+        nodeList = [];
+        selectedNodeId = "";
+        saveNodesToStorage();
+        renderNodes();
+        appendLog("节点库已清空", "warn");
+      }
+    }
+
+    /* 节点渲染 */
+    function renderNodes() {
+      const container = document.getElementById("nodesList");
+      container.innerHTML = "";
+
+      const activeNode = nodeList.find(n => n.id === selectedNodeId);
+      if (activeNode) {
+        document.getElementById("activeNodeName").innerText = activeNode.name;
+        document.getElementById("activeNodeSub").innerText = `${activeNode.server}:${activeNode.port} (SNI: ${activeNode.sni || "无"})`;
+      } else {
+        document.getElementById("activeNodeName").innerText = "请选择或添加节点";
+        document.getElementById("activeNodeSub").innerText = "无活动配置";
+      }
+
+      nodeList.forEach(node => {
+        const card = document.createElement("div");
+        card.className = `node-card ${node.id === selectedNodeId ? "active" : ""}`;
+        card.onclick = () => selectNode(node.id);
+
+        card.innerHTML = `
+          <div class="node-details">
+            <div class="node-name">${escapeHtml(node.name)}</div>
+            <div class="node-address">${escapeHtml(node.server)}:${node.port} · ${escapeHtml(node.sni || "direct")}</div>
+          </div>
+          <div class="node-actions" onclick="event.stopPropagation()">
+            <button class="icon-action" title="编辑" onclick="editNode('${node.id}')">✏️</button>
+            <button class="icon-action" title="删除" onclick="deleteNode('${node.id}')">🗑️</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function selectNode(id) {
+      selectedNodeId = id;
+      saveNodesToStorage();
+      renderNodes();
+      const node = nodeList.find(n => n.id === id);
+      if (node) {
+        appendLog(`选用节点: ${node.name}`);
+      }
+    }
+
+    function deleteNode(id) {
+      if (nodeList.length <= 1) {
+        alert("至少保留一个节点");
+        return;
+      }
+      nodeList = nodeList.filter(n => n.id !== id);
+      if (selectedNodeId === id) {
+        selectedNodeId = nodeList[0].id;
+      }
+      saveNodesToStorage();
+      renderNodes();
+      appendLog("节点已移除");
+    }
+
+    /* URI 解析器: anytls://password@host:port?peer=sni&insecure=1&fingerprint=chrome#name */
+    function parseAnyTlsUri(uriStr) {
+      uriStr = uriStr.trim();
+      if (!uriStr.toLowerCase().startsWith("anytls://")) {
+        throw new Error("链接必须以 anytls:// 开头");
+      }
+
+      const url = new URL(uriStr);
+      const password = decodeURIComponent(url.username || "");
+      const server = url.hostname;
+      const port = parseInt(url.port || "443", 10);
+      const peer = url.searchParams.get("peer") || url.searchParams.get("sni") || "";
+      const insecure = url.searchParams.get("insecure") === "1" || url.searchParams.get("allowInsecure") === "1";
+      const fingerprint = url.searchParams.get("fingerprint") || url.searchParams.get("fp") || "chrome";
+      const name = decodeURIComponent(url.hash.replace(/^#/, "")) || `${server}:${port}`;
+
+      if (!server || !password) {
+        throw new Error("缺少必要的服务器地址或密码/UUID");
+      }
+
+      return {
+        id: "node_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+        name: name,
+        server: server,
+        port: port,
+        password: password,
+        sni: peer,
+        insecure: insecure,
+        fingerprint: fingerprint
+      };
+    }
+
+    function handleImportUri() {
+      const input = document.getElementById("importUriInput").value;
+      try {
+        const parsed = parseAnyTlsUri(input);
+        nodeList.unshift(parsed);
+        selectedNodeId = parsed.id;
+        saveNodesToStorage();
+        renderNodes();
+        closeModal("importModal");
+        document.getElementById("importUriInput").value = "";
+        appendLog(`成功导入节点: ${parsed.name}`);
+      } catch (err) {
+        alert("导入失败: " + err.message);
+      }
+    }
+
+    /* 手动表单弹窗逻辑 */
+    function openManualModal(editId = null) {
+      document.getElementById("editNodeId").value = editId || "";
+      if (editId) {
+        const node = nodeList.find(n => n.id === editId);
+        if (!node) return;
+        document.getElementById("manualModalTitle").innerText = "编辑 AnyTLS 节点";
+        document.getElementById("cfgName").value = node.name;
+        document.getElementById("cfgServer").value = node.server;
+        document.getElementById("cfgPort").value = node.port;
+        document.getElementById("cfgPassword").value = node.password;
+        document.getElementById("cfgSni").value = node.sni || "";
+        document.getElementById("cfgFingerprint").value = node.fingerprint || "chrome";
+        document.getElementById("cfgInsecure").checked = !!node.insecure;
+      } else {
+        document.getElementById("manualModalTitle").innerText = "添加 AnyTLS 节点";
+        document.getElementById("cfgName").value = "";
+        document.getElementById("cfgServer").value = "";
+        document.getElementById("cfgPort").value = 443;
+        document.getElementById("cfgPassword").value = "";
+        document.getElementById("cfgSni").value = "";
+        document.getElementById("cfgFingerprint").value = "chrome";
+        document.getElementById("cfgInsecure").checked = true;
+      }
+      openModal("manualModal");
+    }
+
+    function editNode(id) {
+      openManualModal(id);
+    }
+
+    function saveManualNode() {
+      const editId = document.getElementById("editNodeId").value;
+      const name = document.getElementById("cfgName").value.trim();
+      const server = document.getElementById("cfgServer").value.trim();
+      const port = parseInt(document.getElementById("cfgPort").value.trim(), 10);
+      const password = document.getElementById("cfgPassword").value.trim();
+      const sni = document.getElementById("cfgSni").value.trim();
+      const fingerprint = document.getElementById("cfgFingerprint").value.trim() || "chrome";
+      const insecure = document.getElementById("cfgInsecure").checked;
+
+      if (!server || !port || !password) {
+        alert("请完整填写服务器地址、端口与密码");
+        return;
+      }
+
+      if (editId) {
+        const node = nodeList.find(n => n.id === editId);
+        if (node) {
+          node.name = name || `${server}:${port}`;
+          node.server = server;
+          node.port = port;
+          node.password = password;
+          node.sni = sni;
+          node.fingerprint = fingerprint;
+          node.insecure = insecure;
+          appendLog(`已更新节点: ${node.name}`);
+        }
+      } else {
+        const newNode = {
+          id: "node_" + Date.now(),
+          name: name || `${server}:${port}`,
+          server: server,
+          port: port,
+          password: password,
+          sni: sni,
+          fingerprint: fingerprint,
+          insecure: insecure
+        };
+        nodeList.unshift(newNode);
+        selectedNodeId = newNode.id;
+        appendLog(`已添加节点: ${newNode.name}`);
+      }
+
+      saveNodesToStorage();
+      renderNodes();
+      closeModal("manualModal");
+    }
+
+    /* 弹窗通用控制 */
+    function openModal(id) {
+      document.getElementById(id).classList.add("open");
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove("open");
+    }
+    function openImportModal() {
+      openModal("importModal");
+    }
+
+    /* 构造标准 sing-box 1.10+ JSON 配置 */
+    function buildSingBoxConfig(node) {
       return {
         "log": { "level": "warn" },
         "dns": {
@@ -203,14 +813,17 @@
           {
             "type": "anytls",
             "tag": "proxy",
-            "server": "8afkpepd7.yn33dfs2.sbs",
-            "server_port": 643,
-            "password": "cdbde5eb-3df1-4907-a831-c6c3680b9369",
+            "server": node.server,
+            "server_port": node.port,
+            "password": node.password,
             "tls": {
               "enabled": true,
-              "server_name": "down-30005.sz.gfp.tencent-cloud.com",
-              "insecure": true,
-              "utls": { "enabled": true, "fingerprint": "chrome" }
+              "server_name": node.sni || node.server,
+              "insecure": !!node.insecure,
+              "utls": {
+                "enabled": true,
+                "fingerprint": node.fingerprint || "chrome"
+              }
             }
           },
           { "type": "direct", "tag": "direct" }
@@ -222,35 +835,42 @@
       };
     }
 
+    /* 启停 VPN 交互 */
     function toggleProxy() {
-      appendLog("按钮被点击，当前状态: " + currentStatus);
       if (!window.webkit || !window.webkit.messageHandlers) {
-        appendLog("错误: 未检测到 WKScriptMessageHandler 桥接环境！", "error");
+        appendLog("未在 iOS 原生 WKWebView 中执行", "error");
         return;
       }
 
-      if (currentStatus === "connected") {
-        appendLog("调用原生 stopProxy...");
+      if (currentProxyStatus === "connected") {
+        appendLog("下发 stopProxy 指令...");
         window.webkit.messageHandlers.stopProxy.postMessage(null);
       } else {
-        appendLog("生成 AnyTLS JSON 配置并调用 startProxy...");
+        const node = nodeList.find(n => n.id === selectedNodeId);
+        if (!node) {
+          appendLog("未选中任何有效节点，无法连接", "error");
+          return;
+        }
+
         try {
-          const configStr = JSON.stringify(getEmbeddedConfig());
+          const configObj = buildSingBoxConfig(node);
+          const configStr = JSON.stringify(configObj);
+          appendLog(`准备启动隧道: ${node.name} (${node.server}:${node.port})`);
           window.webkit.messageHandlers.startProxy.postMessage(configStr);
-          appendLog("已发送 startProxy 请求，等待原生返回...");
         } catch (e) {
-          appendLog("配置序列化失败: " + e.message, "error");
+          appendLog("配置生成异常: " + e.message, "error");
         }
       }
     }
 
+    /* 原生回调钩子 */
     window.onProxyStatusChange = function(status) {
-      currentStatus = status;
+      currentProxyStatus = status;
       const badge = document.getElementById("statusBadge");
       const text = document.getElementById("statusText");
       const btn = document.getElementById("toggleBtn");
 
-      badge.className = `badge status-${status}`;
+      badge.className = `badge-status status-${status}`;
       if (status === "connected") {
         text.innerText = "已连接";
         btn.innerText = "断开连接";
@@ -266,8 +886,59 @@
       }
     };
 
+    /* 日志控制台系统 */
+    function appendLog(msg, level = "info") {
+      const container = document.getElementById("logsStream");
+      const line = document.createElement("div");
+      line.className = `log-line log-${level}`;
+      line.dataset.level = level;
+      const t = new Date().toTimeString().split(" ")[0];
+      line.innerText = `[${t}] ${msg}`;
+
+      if (currentLogFilter !== "all" && currentLogFilter !== level) {
+        line.style.display = "none";
+      }
+
+      container.appendChild(line);
+      while (container.children.length > MAX_LOGS) {
+        container.removeChild(container.firstChild);
+      }
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById("logsStream").innerHTML = "";
+    }
+
+    function setLogFilter(filter, elem) {
+      currentLogFilter = filter;
+      document.querySelectorAll(".tag-filter").forEach(t => t.classList.remove("active"));
+      elem.classList.add("active");
+
+      const lines = document.querySelectorAll(".log-line");
+      lines.forEach(l => {
+        if (filter === "all" || l.dataset.level === filter) {
+          l.style.display = "block";
+        } else {
+          l.style.display = "none";
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    /* 页面载入初始化 */
     window.onload = function() {
-      appendLog("Web 前端初始化完毕");
+      loadNodesFromStorage();
+      appendLog("UI就绪，多节点管理器已加载");
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.getProxyStatus) {
         window.webkit.messageHandlers.getProxyStatus.postMessage(null);
       }
