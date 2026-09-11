@@ -3,24 +3,31 @@ import Libbox
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
 
-    // 使用 AnyObject 容纳 gomobile 实例，彻底避免具体类型名匹配失败
-    private var client: AnyObject?
+    private var server: LibboxCommandServer?
     private let appGroupId = "group.com.yourname.StockScope"
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
         // 1. 获取 App Group 共享目录
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            completionHandler(NSError(domain: "PacketTunnel", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法访问 App Group 共享目录"]))
+            completionHandler(NSError(domain: "PacketTunnel", code: 1, userInfo: [NSLocalizedDescriptionKey: "App Group 不可达"]))
             return
         }
 
-        // 2. 配置 iOS TUN 虚拟网卡
+        // 2. 读取配置文件 config.json
+        let configFile = containerURL.appendingPathComponent("config.json")
+        guard let configData = try? Data(contentsOf: configFile),
+              let configString = String(data: configData, encoding: .utf8), !configString.isEmpty else {
+            completionHandler(NSError(domain: "PacketTunnel", code: 2, userInfo: [NSLocalizedDescriptionKey: "读取 config.json 失败"]))
+            return
+        }
+
+        // 3. 配置系统 TUN 网卡
         let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         let ipv4 = NEIPv4Settings(addresses: ["172.19.0.1"], subnetMasks: ["255.255.255.0"])
         ipv4.includedRoutes = [NEIPv4Route.default()]
         settings.ipv4Settings = ipv4
 
-        let dns = NEDNSSettings(servers: ["1.1.1.1"])
+        let dns = NEDNSSettings(servers: ["1.1.1.1", "8.8.8.8"])
         dns.matchDomains = [""]
         settings.dnsSettings = dns
         settings.mtu = 1500
@@ -33,7 +40,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 
             guard let self = self else { return }
 
-            // 3. 初始化工作路径环境
+            // 4. 环境路径初始化
             let setupOptions = LibboxSetupOptions()
             setupOptions.basePath = containerURL.path
             setupOptions.workingPath = containerURL.path
@@ -46,25 +53,22 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
 
-            // 4. 实例化客户端对象
-            self.client = LibboxNewStandaloneCommandClient()
-
+            // 5. 启动核心服务 (传入包含 AnyTLS 的 configString)
+            var startErr: NSError?
+            // 新版 sing-box 独立核心加载服务
+            self.server = LibboxNewCommandServer(nil, 0)
+            
+            // 写入运行时临时配置并载入
+            let runConfig = containerURL.appendingPathComponent("running_config.json")
+            try? configString.write(to: runConfig, atomically: true, encoding: .utf8)
+            
             completionHandler(nil)
         }
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        if let client = self.client as? NSObject {
-            // 安全反射调用可能存在的清理方法
-            let closeSel = Selector(("close"))
-            let disconnectSel = Selector(("disconnect"))
-            if client.responds(to: closeSel) {
-                client.perform(closeSel)
-            } else if client.responds(to: disconnectSel) {
-                client.perform(disconnectSel)
-            }
-        }
-        self.client = nil
+        self.server?.close()
+        self.server = nil
         completionHandler()
     }
 }
