@@ -1,19 +1,19 @@
 import NetworkExtension
 import Libbox
 
-class PacketTunnelProvider: NEPacketTunnelProvider, LibboxPlatformInterfaceProtocol {
+class PacketTunnelProvider: NEPacketTunnelProvider {
 
-    private var boxService: LibboxBoxService?
+    private var server: LibboxCommandServer?
     private let appGroupId = "group.com.yourname.StockScope"
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
         // 1. 获取 App Group 共享目录
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            completionHandler(NSError(domain: "PacketTunnel", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法访问 App Group 目录"]))
+            completionHandler(NSError(domain: "PacketTunnel", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法访问 App Group 共享目录"]))
             return
         }
 
-        // 2. 读取配置文件 config.json
+        // 2. 读取前端传入的 config.json
         let configFile = containerURL.appendingPathComponent("config.json")
         guard let configData = try? Data(contentsOf: configFile),
               let configString = String(data: configData, encoding: .utf8), !configString.isEmpty else {
@@ -53,16 +53,16 @@ class PacketTunnelProvider: NEPacketTunnelProvider, LibboxPlatformInterfaceProto
                 return
             }
 
-            // 5. 将自身作为 PlatformInterface 传入，实例化真正的 BoxService 并启动
-            var serviceErr: NSError?
-            self.boxService = LibboxNewService(configString, self, &serviceErr)
-            if let err = serviceErr {
+            // 5. 实例化并启动核心 Server 服务 (由日志声明：handler 可传 nil，platform 可传 nil)
+            var serverErr: NSError?
+            self.server = LibboxNewCommandServer(nil, nil, &serverErr)
+            if let err = serverErr {
                 completionHandler(err)
                 return
             }
 
             do {
-                try self.boxService?.start()
+                try self.server?.start()
                 completionHandler(nil)
             } catch {
                 completionHandler(error)
@@ -71,37 +71,8 @@ class PacketTunnelProvider: NEPacketTunnelProvider, LibboxPlatformInterfaceProto
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        try? self.boxService?.close()
-        self.boxService = nil
+        try? self.server?.close()
+        self.server = nil
         completionHandler()
-    }
-
-    // MARK: - LibboxPlatformInterfaceProtocol 必需实现的底层网卡及路由桥接
-
-    func openTun(_ options: LibboxTunOptionsProtocol?) throws -> Int32 {
-        // 获取 iOS 系统分配给 packetFlow 的底层 socket 描述符
-        guard let tunFd = self.packetFlow.value(forKeyPath: "socket.fileDescriptor") as? Int32 else {
-            throw NSError(domain: "PacketTunnel", code: 3, userInfo: [NSLocalizedDescriptionKey: "无法获取 TUN 文件描述符"])
-        }
-        return tunFd
-    }
-
-    func writeLog(_ message: String?) {
-        NSLog("[LibboxCore] %@", message ?? "")
-    }
-
-    func usePlatformAutoDetectInterfaceControl() -> Bool {
-        return false
-    }
-
-    func autoDetectInterfaceControl(_ fd: Int32) throws {
-        // 控制流保护，防止死循环回环
-    }
-
-    func readPacket() throws -> Data {
-        return Data()
-    }
-
-    func writePacket(_ packet: Data?) throws {
     }
 }
