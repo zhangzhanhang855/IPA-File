@@ -6,8 +6,8 @@
   <title>StockScope AnyTLS</title>
   <style>
     :root {
-      --bg: #0b0c10;
-      --card: #161822;
+      --bg: #090a0f;
+      --card: #141721;
       --border: #232738;
       --text: #f1f5f9;
       --muted: #64748b;
@@ -30,8 +30,8 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      padding: calc(env(safe-area-inset-top, 24px) + 20px) 20px calc(env(safe-area-inset-bottom, 24px) + 20px);
+      padding: calc(env(safe-area-inset-top, 24px) + 16px) 16px calc(env(safe-area-inset-bottom, 24px) + 16px);
+      gap: 16px;
     }
     .header {
       display: flex;
@@ -39,9 +39,8 @@
       align-items: center;
     }
     .title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
-      letter-spacing: -0.5px;
     }
     .badge {
       display: inline-flex;
@@ -60,43 +59,38 @@
       border-radius: 50%;
       background: var(--muted);
     }
-    .status-connected .dot { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .status-connected .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
     .status-connecting .dot { background: var(--yellow); }
     .status-disconnected .dot { background: var(--muted); }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
-      margin-top: 30px;
+      border-radius: 16px;
+      padding: 16px;
     }
     .node-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      margin-bottom: 6px;
     }
     .node-desc {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
       line-height: 1.5;
-      word-break: break-all;
     }
     .btn-toggle {
       width: 100%;
-      height: 60px;
-      border-radius: 18px;
+      height: 52px;
+      border-radius: 14px;
       border: none;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       color: #fff;
       background: var(--primary);
       cursor: pointer;
-      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
-      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      transition: all 0.2s;
     }
     .btn-toggle:active {
       transform: scale(0.98);
@@ -104,41 +98,91 @@
     }
     .btn-toggle.connected {
       background: var(--red);
-      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
     }
+    
+    /* 实时日志终端 */
+    .terminal {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+    }
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 4px;
+    }
+    .terminal-body {
+      flex: 1;
+      overflow-y: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      user-select: text;
+    }
+    .log-item {
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+    .log-info { color: #8b949e; }
+    .log-error { color: #f85149; font-weight: 600; }
+    .log-warn { color: #d29922; }
   </style>
 </head>
 <body>
-  <div>
-    <div class="header">
-      <div class="title">AnyTLS VPN</div>
-      <div id="statusBadge" class="badge status-disconnected">
-        <span class="dot"></span>
-        <span id="statusText">未连接</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="node-title">🇸🇬 Singapore丨03</div>
-      <div class="node-desc">
-        节点: 8afkpepd7.yn33dfs2.sbs:643<br>
-        SNI: down-30005.sz.gfp.tencent-cloud.com<br>
-        类型: AnyTLS / uTLS Chrome
-      </div>
+  <div class="header">
+    <div class="title">JRvpn</div>
+    <div id="statusBadge" class="badge status-disconnected">
+      <span class="dot"></span>
+      <span id="statusText">未连接</span>
     </div>
   </div>
 
-  <button id="toggleBtn" class="btn-toggle" onclick="toggleProxy()">启动连接</button>
+  <div class="card">
+    <div class="node-title">🇸🇬 Singapore丨03</div>
+    <div class="node-desc">
+      8afkpepd7.yn33dfs2.sbs:643<br>
+      SNI: down-30005.sz.gfp.tencent-cloud.com (AnyTLS)
+    </div>
+  </div>
+
+  <button id="toggleBtn" class="btn-toggle" onclick="toggleProxy()">启动JRvpn For iOS</button>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <span>Console Logs</span>
+      <span onclick="document.getElementById('logs').innerHTML=''" style="cursor: pointer; color: var(--primary);">清屏</span>
+    </div>
+    <div id="logs" class="terminal-body"></div>
+  </div>
 
   <script>
     let currentStatus = "disconnected";
 
-    // 内嵌 AnyTLS 节点的标准 sing-box 配置
+    function appendLog(msg, level = "info") {
+      const logs = document.getElementById("logs");
+      const item = document.createElement("div");
+      item.className = `log-item log-${level}`;
+      const time = new Date().toTimeString().split(' ')[0];
+      item.innerText = `[${time}] ${msg}`;
+      logs.appendChild(item);
+      logs.scrollTop = logs.scrollHeight;
+    }
+
     function getEmbeddedConfig() {
       return {
-        "log": {
-          "level": "warn"
-        },
+        "log": { "level": "warn" },
         "dns": {
           "servers": [
             { "tag": "dns-remote", "address": "1.1.1.1", "detour": "proxy" }
@@ -150,7 +194,7 @@
             "tag": "tun-in",
             "interface_name": "utun",
             "inet4_address": "172.19.0.1/28",
-            "auto_route": false,
+            "auto_route": true,
             "strict_route": false,
             "sniff": true
           }
@@ -166,29 +210,37 @@
               "enabled": true,
               "server_name": "down-30005.sz.gfp.tencent-cloud.com",
               "insecure": true,
-              "utls": {
-                "enabled": true,
-                "fingerprint": "chrome"
-              }
+              "utls": { "enabled": true, "fingerprint": "chrome" }
             }
           },
           { "type": "direct", "tag": "direct" }
         ],
         "route": {
-          "rules": [
-            { "outbound": "proxy" }
-          ],
+          "rules": [{ "outbound": "proxy" }],
           "auto_detect_interface": true
         }
       };
     }
 
     function toggleProxy() {
+      appendLog("按钮被点击，当前状态: " + currentStatus);
+      if (!window.webkit || !window.webkit.messageHandlers) {
+        appendLog("错误: 未检测到 WKScriptMessageHandler 桥接环境！", "error");
+        return;
+      }
+
       if (currentStatus === "connected") {
+        appendLog("调用原生 stopProxy...");
         window.webkit.messageHandlers.stopProxy.postMessage(null);
       } else {
-        const configStr = JSON.stringify(getEmbeddedConfig());
-        window.webkit.messageHandlers.startProxy.postMessage(configStr);
+        appendLog("生成 AnyTLS JSON 配置并调用 startProxy...");
+        try {
+          const configStr = JSON.stringify(getEmbeddedConfig());
+          window.webkit.messageHandlers.startProxy.postMessage(configStr);
+          appendLog("已发送 startProxy 请求，等待原生返回...");
+        } catch (e) {
+          appendLog("配置序列化失败: " + e.message, "error");
+        }
       }
     }
 
@@ -215,7 +267,8 @@
     };
 
     window.onload = function() {
-      if (window.webkit && window.webkit.messageHandlers.getProxyStatus) {
+      appendLog("Web 前端初始化完毕");
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.getProxyStatus) {
         window.webkit.messageHandlers.getProxyStatus.postMessage(null);
       }
     };
